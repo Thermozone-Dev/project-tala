@@ -14,8 +14,16 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            ViewAction::make(),
             DeleteAction::make(),
         ];
     }
+//    protected function mutateFormDataBeforeFill(array $data): array
+//    {
+//        $data['roles'] = $this->record
+//            ->roles()
+//            ->pluck('id')
+//            ->toArray();
+//
+//        return $data;
+//    }
 }

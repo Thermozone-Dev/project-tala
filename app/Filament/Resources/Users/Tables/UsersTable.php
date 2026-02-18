@@ -5,10 +5,10 @@ namespace App\Filament\Resources\Users\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class UsersTable
 {
@@ -16,6 +16,7 @@ class UsersTable
     {
         return $table
             ->columns([
+                IconColumn::make('is_active')->label('Active')->boolean(),
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('email')
@@ -24,6 +25,11 @@ class UsersTable
                 IconColumn::make('email_verified_at')
                     ->label('Email verified')
                     ->boolean(),
+                TextColumn::make('roles.name')
+                    ->label('Roles')
+                    ->formatStateUsing(fn ($state): string => Str::headline($state))
+                    ->colors(['primary'])
+                    ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -37,7 +43,6 @@ class UsersTable
                 //
             ])
             ->recordActions([
-                ViewAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([
