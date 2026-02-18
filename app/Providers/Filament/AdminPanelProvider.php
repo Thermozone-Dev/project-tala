@@ -2,7 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Resources\Committees\CommitteeResource;
 use App\Livewire\CustomPersonalInfo;
+use App\Models\Committee;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Auth\MultiFactor\Email\EmailAuthentication;
 use Filament\Http\Middleware\Authenticate;
@@ -10,10 +12,13 @@ use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -28,7 +33,17 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+
+        $navigation = [];
+        $committees = Committee::all();
+        foreach ($committees as $committee) {
+            $navigation[] = NavigationItem::make($committee->name)
+                ->group('Committees')
+                ->url(fn(): string => CommitteeResource::getUrl('edit', ['record' => $committee->id]));
+        }
+
         return $panel
+            ->darkMode(false)
             ->default()
             ->id('admin')
             ->path('admin')
@@ -65,11 +80,13 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
-                FilamentShieldPlugin::make(),
+                FilamentShieldPlugin::make()
+                    ->navigationGroup('Settings'),
                 BreezyCore::make()
                     ->avatarUploadComponent(fn($fileUpload) => $fileUpload->disableLabel())
                     ->myProfileComponents(['personal_info' => CustomPersonalInfo::class])
                     ->myProfile(
+                        shouldRegisterNavigation: true,
                         userMenuLabel: 'My Profile', // Customizes the 'account' link label in the panel User Menu (default = null)
                         navigationGroup: 'Settings', // Sets the navigation group for the My Profile page (default = null)
                         hasAvatars: true, // Enables the avatar upload form component (default = false)
@@ -77,6 +94,12 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label('Committees')
+                    ->icon(Heroicon::OutlinedUserGroup),
+            ])
+            ->navigationItems($navigation);
     }
 }
