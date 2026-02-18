@@ -14,12 +14,12 @@ class RolesSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            'chairman',
-            'vice_chairman',
-            'trustee',
-            'corporate_officer',
-            'lead_resource_person',
-            'super_admin',
+            'Super Admin',
+            'Chairman',
+            'Vice Chairman',
+            'Trustee',
+            'Corporate Officer',
+            'Lead Resource Person',
         ];
 
         foreach ($roles as $role) {
@@ -30,7 +30,7 @@ class RolesSeeder extends Seeder
         }
 
         $superAdmin = Role::firstOrCreate([
-            'name' => 'super_admin',
+            'name' => 'Super Admin',
             'guard_name' => 'web',
         ]);
 
