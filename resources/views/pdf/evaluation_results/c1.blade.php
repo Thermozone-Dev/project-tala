@@ -15,6 +15,7 @@
             height:100%;
         }
         body {
+            height:100%;
             font-family: 'DejaVu Sans', sans-serif;
             margin-left: 0.3in;
             margin-right: 0.3in;
@@ -33,6 +34,7 @@
         }
         .page {
             page-break-after:always;
+
         }
         .overlay{
             position: relative;
@@ -68,6 +70,14 @@
             text-align:left;
         }
 
+        footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20%;
+        }
+
     </style>
 </head>
 
@@ -75,7 +85,7 @@
     <div class="container-fluid">
         <div class="page">
             <div class="content" style="text-align: justify;">
-                <div class="row" style="padding-top: 10px" class="col-xs-12">
+                <div class="row" class="col-xs-12">
                     <h3 class="header3">
                         BOT EVALUATION FORM C.1 - CHAIRMAN OF THE BOARD
                     </h3>
@@ -97,8 +107,23 @@
                 <div class="row" style="padding-top: 10px" class="col-xs-12">
                     @include('pdf.components.attendance')
                 </div>
+                <div class="row" style="padding-top: 10px" class="col-xs-12">
+                    @include('pdf.components.attendance_rating_scale')
+                </div>
             </div>
         </div>
+
+        <div class="page">
+            <div class="page">
+                @include('pdf.components.other_comments')
+
+                <div style="margin-top:20px;">
+                    @include('pdf.components.cforms_footer')
+                </div>
+            </div>
+
+        </div>
+
     </div>
 </body>
 

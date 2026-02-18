@@ -16,7 +16,6 @@
             width: 100%;
             text-align: center;
             position: relative;
-            margin-bottom: 2px;
         }
 
         .header-logo {
@@ -46,5 +45,6 @@
         <p style="margin: 0;"> Capinpin Avenue, EDSA, Cor. Bonny Serrano Road, Camp Aguinaldo, Quezon City </p>
     </div>
 </div>
+<br>
 </body>
 </html>

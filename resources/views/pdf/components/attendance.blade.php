@@ -1,3 +1,8 @@
+
+<h3 class="header4" style="margin-bottom: 2px">
+    B.  Attendance in BOT Meetings (to be rated by the Corporate Secretary) - 30 %
+
+</h3>
 <table style="width: 100%; border-collapse: collapse;" border="1" >
     <thead>
         <th></th>
