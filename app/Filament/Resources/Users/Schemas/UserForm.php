@@ -37,7 +37,7 @@ class UserForm
                     ->password()
                     ->required(),
                 Select::make('roles')
-                    ->relationship('roles', 'name',   fn ($query) => auth()->user()?->hasRole('Super Admin') ? $query : $query->whereNotIn('name', ['Trustee', 'Super Admin']))
+                    ->relationship('roles', 'name',   fn ($query) => auth()->user()?->hasRole('Super Admin') ? $query : $query->whereNotIn('name', ['Trustee', 'Super Admin'])->orderBy('id', 'asc'))
                     ->multiple()
                     ->preload()
                     ->required()
