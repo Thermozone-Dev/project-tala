@@ -15,6 +15,7 @@ class RolesSeeder extends Seeder
     {
         $roles = [
             'Super Admin',
+            'Secretariat',
             'Chairman',
             'Vice Chairman',
             'Trustee',
@@ -35,5 +36,14 @@ class RolesSeeder extends Seeder
         ]);
 
         $superAdmin->syncPermissions(Permission::all());
+
+        $secretariat = Role::firstOrCreate([
+            'name' => 'Secretariat',
+            'guard_name' => 'web',
+        ]);
+
+        $secretariat->syncPermissions(
+            Permission::where('name', 'not like', '%role%')->get()
+        );
     }
 }
