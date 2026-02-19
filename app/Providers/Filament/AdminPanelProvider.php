@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Livewire\CustomPersonalInfo;
 use App\Models\Committee;
+use App\Models\CommitteeHasTrustee;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Auth\MultiFactor\Email\EmailAuthentication;
 use Filament\Http\Middleware\Authenticate;
@@ -37,10 +38,25 @@ class AdminPanelProvider extends PanelProvider
         $navigation = [];
         $committees = Committee::all();
         foreach ($committees as $committee) {
+
             $navigation[] = NavigationItem::make($committee->name)
                 ->group('Committees')
-                ->url(fn(): string => CommitteeResource::getUrl('edit', ['record' => $committee->id]));
+                ->url(fn(): string => CommitteeResource::getUrl('view', ['record' => $committee->id]))
+                ->visible(function () use ($committee) {
+                    if(auth()->user()->hasRole('Super Admin')) return true;
+                    return CommitteeHasTrustee::where('user_id',auth()->user()->id)
+                        ->where('committee_id',$committee->id)->exists();
+                });
+
+
         }
+
+        $navigation[] = NavigationItem::make('Setup MFA')
+            ->group('Settings')
+            ->icon(Heroicon::OutlinedLockClosed)
+            ->badge(fn() => !auth()->user()->has_email_authentication && !auth()->user()->app_authentication_secret ? '!' : '',
+                fn() => !auth()->user()->has_email_authentication && !auth()->user()->app_authentication_secret ? 'danger' : '')
+            ->url(fn(): string => route('filament.admin.auth.profile'));
 
         return $panel
             ->darkMode(false)
@@ -56,7 +72,7 @@ class AdminPanelProvider extends PanelProvider
                 AppAuthentication::make()
             ])
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Emerald,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -100,6 +116,9 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Committees')
                     ->icon(Heroicon::OutlinedUserGroup),
             ])
-            ->navigationItems($navigation);
+            ->navigationItems($navigation)
+            ->brandLogo(asset('images/AFPSLAI Logo.png'))
+            ->brandLogoHeight('3rem')
+            ->sidebarCollapsibleOnDesktop();
     }
 }
