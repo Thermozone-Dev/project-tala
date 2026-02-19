@@ -8,219 +8,188 @@ use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 
 class EvaluationFormPDF extends Controller
 {
+    public $evaluation;
+    public $attendance_rating;
+    public $assesment_rating;
+    public $pdfData;
 
     public function getEvaluationResult(){
-        // return $this->evaluation_c1();
-        // return $this->evaluation_c2();
-        // return $this->evaluation_c3();
-        // return $this->evaluation_c4();
-        // return $this->evaluation_c5();
-        // return $this->evaluation_c6();
-        // return $this->evaluation_c7();
-        // return $this->bot_selfassement();
-        return $this->committee_selfassement();
+        $id = 9;
+        $evaluation = \App\Models\EvaluationForm::findOrFail($id);
+        $this->evaluation = $evaluation;
 
+        $this->assesment_rating = null;
+        $this->attendance_rating = null;
+
+        $this->pdfData = [
+            'title' => $evaluation->title,
+            'show_instruction' => true,
+            'date' => date('m/d/Y'),
+            'sections' => $this->getData(), //dont remove-move need to gather rating typr
+            'assesment_rating' => $this->assesment_rating ?? null,
+            'attendance_rating' => $this->attendance_rating ?? null,
+        ];
+
+        switch( $evaluation->id){
+            case 1:
+                return $this->evaluation_c1();
+                break;
+            case 2:
+                return $this->evaluation_c2();
+                break;
+            case 3:
+                return $this->evaluation_c3();
+                break;
+            case 4:
+                return $this->evaluation_c4();
+                break;
+            case 5:
+                return $this->evaluation_c5();
+                break;
+            case 6:
+                return $this->evaluation_c6();
+                break;
+            case 7:
+                return $this->evaluation_c7();
+                break;
+            case 8:
+                return $this->committee_selfassement();
+                break;
+            case 9:
+                return $this->bot_selfassement();
+                break;
+            default:
+                return "Evaluation form not found.";
+        }
+        return $this->committee_selfassement();
     }
 
     public function evaluation_c1(){
-        $data = [
-            'title' => 'BOT EVALUATION FORM C.1 - CHAIRMAN OF THE BOARD',
-            'show_instruction' => true,
-            'date' => date('m/d/Y'),
-            'sections' => $this->getData(),
-        ];
+
+        $data = $this->pdfData;
         $filename = 'evaluation_result_c1';
         return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
     }
 
     public function evaluation_c2(){
-        $data = [
-            'title' => 'E BOT EVALUATION FORM C.2 - TRUSTEES',
-            'date' => date('m/d/Y'),
-            'show_instruction' => true,
-            'sections' => $this->getData(),
-        ];
+        $data = $this->pdfData;
         $filename = 'evaluation_result_c2';
         return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
     }
 
     public function evaluation_c3(){
-        $data = [
-            'title' => "EBOT EVALUATION FORM C.3 - EVP – GM",
-            'date' => date('m/d/Y'),
-            'show_instruction' => true,
-            'sections' => $this->getData(),
-        ];
+        $data = $this->pdfData;
         $filename = 'evaluation_result_c3';
         return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
     }
 
     public function evaluation_c4(){
-        $data = [
-            'title' => "BOT EVALUATION FORM C.4 - Corporate Secretary",
-            'date' => date('m/d/Y'),
-            'show_instruction' => true,
-            'sections' => $this->getData(),
-        ];
+        $data = $this->pdfData;
         $filename = 'evaluation_result_c4';
         return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
     }
 
     public function evaluation_c5(){
-        $data = [
-            'title' => "BOT EVALUATION FORM C.5 - Corporate Treasurer",
-            'date' => date('m/d/Y'),
-            'show_instruction' => true,
-            'sections' => $this->getData(),
-        ];
+        $data = $this->pdfData;
         $filename = 'evaluation_result_c5';
         return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
     }
 
     public function evaluation_c6(){
-        $data = [
-            'title' => "BOT EVALUATION FORM C.6 - Corporate Comptroller",
-            'date' => date('m/d/Y'),
-            'show_instruction' => true,
-            'sections' => $this->getData(),
-        ];
+        $data = $this->pdfData;
         $filename = 'evaluation_result_c6';
         return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
     }
 
     public function evaluation_c7(){
-        $data = [
-            'title' => "BOT EVALUATION FORM C.7 – LEAD RESOURCE PERSONS (LRPs)",
-            'date' => date('m/d/Y'),
-            'show_instruction' => false,
-            'sections' => $this->getData(),
-        ];
+        $data = $this->pdfData;
         $filename = 'evaluation_result_c6';
         return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
     }
 
     public function bot_selfassement(){
-        $data = [
-            'title' => "BOT COMMITTEE SELF-ASSESSMENT QUESTIONNAIRE",
-            'period_covered' => "June 2025 to April 2026",
-            'show_bot_self_instruction' => true,
-            'sections' => $this->getData(),
-        ];
+        $data = $this->pdfData;
+        $data['period_covered'] = "June 2025 to April 2026";
+        $data['show_bot_self_instruction'] = true;
+        $data['committee'] = "AUDIT AND COMPLIANCE COMMITTEE";
         $filename = 'BOT Self Assesment Questionaire';
         return $this->exportPDF('pdf.evaluation_results.selfassesment', $data, $filename);
     }
 
     public function committee_selfassement(){
-        $data = [
-            'title' => "BOT COMMITTEE SELF-ASSESSMENT QUESTIONNAIRE",
-            'period_covered' => "June 2025 to April 2026",
-            'committee' => "AUDIT AND COMPLIANCE COMMITTEE",
-            'show_committee_self_instruction' => true,
-            'sections' => $this->getData(),
-        ];
-        $filename = 'BOT Self Assesment Questionaire';
+        $data = $this->pdfData;
+        $data['period_covered'] = "June 2025 to April 2026";
+        $data['show_bot_self_instruction'] = true;
+        $filename = 'BOARD Self Assesment Questionaire';
         return $this->exportPDF('pdf.evaluation_results.selfassesment', $data, $filename);
     }
 
 
     public function getData(){
-        $attendance_criteria = [
-            'Total Number of meetings',
-            'Physically Present',
-            'Considered as present',
-            'Total Meetings Present',
-            'Attendance Rating',
-        ];
+        $evaluation = $this->evaluation;
+        $sections = [];
+        foreach($evaluation->sections as $eval_sec){
+            // dd($eval_sec);
+            $sec_data = [
+                'section_type' => $eval_sec->section_type_id, //assesment
+                'title' => $eval_sec->title,
+                'add_remarks' => $eval_sec->add_remarks,
+            ];
 
-        $meetings_to_asses = [
-            'BOT Meetings(Special & Regular)',
-            'Audit & Compliance',
-            'Human Resource',
-        ];
+            if($eval_sec->section_type_id == 1){ //assesment
+                $questions = $eval_sec->questionnaires->sortBy('id')->pluck('name');
+                $sec_data['questions'] = $questions;
+            }
 
-        $questions = [
-            '1. Ability to control and regulate BOT meetings.',
-            '2. Ability to control and regulate BOT meetings.',
-            '3. Ability to control and regulate BOT meetings.',
-            '4. Ability to control and regulate BOT meetings.',
-            '5. Ability to control and regulate BOT meetings.',
-            '6. Ability to control and regulate BOT meetings.',
-            '7. Ability to control and regulate BOT meetings.',
-            '8. Ability to control and regulate BOT meetings.',
-            '9. Ability to control and regulate BOT meetings.',
-            '10. Ability to control and regulate BOT meetings.',
-        ];
+            if($eval_sec->section_type_id == 2){ //attendance
+                $attendance = $eval_sec->attendanceSection;
+                $attendance_criteria = [
+                    'show_total_meetings' => [
+                        'name' => 'Total Number of meetings',
+                        'show' => $attendance->show_total_meetings
+                    ],
+                    'show_physically_present' => [
+                        'name' => 'Physically Present ',
+                        'show' => $attendance->show_physically_present
+                    ],
+                    'show_considered_present' => [
+                        'name' => 'Considered as present',
+                        'show' => $attendance->show_considered_present
+                    ],
+                    'show_total_present' => [
+                        'name' => 'Total Meetings Present',
+                        'show' => $attendance->show_total_present
+                    ],
+                    'show_attendance_rating' => [
+                        'name' => 'Attendance Rating',
+                        'show' => $attendance->show_attendance_rating
+                    ],
+                ];
+                $questions = $eval_sec->questionnaires->sortBy('id')->pluck('name');
+                $sec_data['attendance'] = ['criteria' => $attendance_criteria, 'meetings' => $attendance->meetings->pluck('name','id')];
+            }
+            if($eval_sec->rating_scale_id == 1 || $eval_sec->rating_scale_id == 3){
+                $ass_rating = $eval_sec->ratingScale->values
 
-        $sections = [
-            [
-                'section_type' => 1, //assesment
-                'title' => 'A.  Performance of Role as Corporate Officer - 70 % ',
-                'questions' => $questions,
-                'add_remarks' => true,
-            ],
-            [
-                'section_type' => 1, //assesment
-                'title' => 'B.  Performance of Role as Corporate Officer - 70 % ',
-                'questions' => $questions,
-                'add_remarks' => true,
-            ],
-            [
-                'section_type' => 1, //assesment
-                'title' => 'C.  Performance of Role as Corporate Officer - 70 % ',
-                'questions' => $questions,
-                'add_remarks' => true,
-            ],
-            [
-                'section_type' => 3, //text_area
-                'title' => 'G. OTHER AREAS NOT MENTIONED ABOVE/SPECIAL CONCERNS THAT REQUIRES BOT ATTENTION/CONSIDERATION (Use an additional sheet as necessary):',
-                // 'attendance' => ['criteria' => $attendance_criteria, 'meetings' => $meetings_to_asses],
-                // 'rating_scale' => $this->getAttendanceRatingScale(),
-                'add_remarks' => true,
-            ],
-            [
-                'section_type' => 2, //attendance
-                'title' => 'B.  Attendance in BOT / Committee Meetings & other related activities (to be rated by the Corporate Secretary) -30%',
-                'attendance' => ['criteria' => $attendance_criteria, 'meetings' => $meetings_to_asses],
-                'rating_scale' => $this->getAttendanceRatingScale(),
-                'add_remarks' => true,
-            ],
-        ];
+                                                ->map(function ($item) {
+                                                    return [
+                                                        'id' => $item->id,
+                                                        'value' => $item->value,
+                                                        'qualitative' => $item->qualitative,
+                                                    ];
+                                                })
+                                                ->values();
+
+                $this->assesment_rating = ($eval_sec->rating_scale_id == 1) ? $ass_rating->sortByDesc('value') : $ass_rating->sortBy('value');
+            }
+            if($eval_sec->rating_scale_id == 2){
+                $this->attendance_rating = $eval_sec->ratingScale->values->sortByDesc('value');
+            }
+
+            $sections[] = $sec_data;
+        }
         return $sections;
     }
-
-    public function getAttendanceRatingScale(){
-        $rating_scale = [
-            [
-                'name' => '100% attendance',
-                'quantitative' => 5,
-                'qualitative' => 'Excellent',
-            ],
-            [
-                'name' => '80% to less than 100% attendance',
-                'quantitative' => 4,
-                'qualitative' => 'Superior',
-            ],
-            [
-                'name' => '60% to less than 80% attendance',
-                'quantitative' => 3,
-                'qualitative' => 'Very Good',
-            ],
-            [
-                'name' => '40% to less than 60% attendance',
-                'quantitative' => 2,
-                'qualitative' => 'Good',
-            ],
-            [
-                'name' => 'Less than 40% of the time',
-                'quantitative' => 1,
-                'qualitative' => 'Satisfactory',
-            ],
-        ];
-
-
-        return collect($rating_scale);
-    }
-
 
     public function exportPDF($path, $data, $filename){
 
@@ -235,6 +204,4 @@ class EvaluationFormPDF extends Controller
 
     }
 
-
-    //
 }

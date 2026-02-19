@@ -34,7 +34,7 @@ return new class extends Migration
                 ->constrained('rating_scales')
                 ->cascadeOnDelete();
 
-            $table->string('name', 20)->nullable();
+            $table->string('name', 100)->nullable();
             $table->tinyInteger('value');
             $table->string('qualitative');
             $table->softDeletes();

@@ -9,22 +9,11 @@
         <th style="text-align: center"> DESCRIPTION</th>
     </thead>
     <tbody class="table-text text-center">
-
-        <tr class="text-uppercase">
-            <td>1</td>
-            <td>Strongly Disagree</td>
-        </tr>
-        <tr class="text-uppercase">
-            <td>2</td>
-            <td>Somewhat Disagree</td>
-        </tr>
-        <tr class="text-uppercase">
-            <td>3</td>
-            <td>Somewhat Agree</td>
-        </tr>
-        <tr class="text-uppercase">
-            <td>4</td>
-            <td>Strongly Agree</td>
-        </tr>
+        @foreach ($assesment_rating as $scale)
+            <tr class="text-uppercase">
+                <td>{{$scale['value']}}</td>
+                <td>{{$scale['qualitative']}}</td>
+            </tr>
+        @endforeach
     </tbody>
 </table>

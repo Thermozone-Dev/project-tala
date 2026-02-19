@@ -55,7 +55,9 @@
                     </div>
                 @endif
 
-                @include('pdf.components.rating_scale_2')
+                @if (isset($assesment_rating) && $assesment_rating)
+                    @include('pdf.components.rating_scale_2')
+                @endif
             </div>
             @foreach ($sections as $section)
                 @if ($section['section_type'] == 1)
@@ -70,7 +72,7 @@
                         @include('pdf.components.attendance_rating_scale')
                     </div>
                 @elseif($section['section_type'] == 3)
-                    <div class="row col-xs-12" style="padding-top: 10px">
+                    <div class="row col-xs-12" style="padding-top: 170px">
                         @include('pdf.components.text_area', ['section_data' => $section])
                     </div>
                 @endif

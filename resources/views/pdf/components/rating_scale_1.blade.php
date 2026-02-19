@@ -3,20 +3,45 @@
         Please use the following rating scale:
     </em>
 </p>
+@php
+    $values = $assesment_rating;
+    $count = $values->count();
+
+    $topRow = [];
+    $bottomRow = [];
+    $lastItem = null;
+
+    foreach ($values as $index => $item) {
+        // If odd total and last element → rowspan cell
+        if ($count % 2 !== 0 && $index === $count - 1) {
+            $lastItem = $item;
+        } elseif ($index % 2 === 0) {
+            $topRow[] = $item;
+        } else {
+            $bottomRow[] = $item;
+        }
+}
+@endphp
 <table style="width: 100%; border-collapse: collapse;" border="1.4" >
-    <tbody class="table-text">
-        {{-- <tr class="text-uppercase">
-            <td>Name</td>
-            <td rowspan="2" >MGEN ADRIANO S PEREZ JR PA (RET)</td>
-        </tr> --}}
-        <tr class="text-uppercase">
-            <td>5 - Excellent</td>
-            <td>3 - Very Good</td>
-            <td rowspan="2" style="width: 25%">1 - Satisfactory</td>
-        </tr>
-        <tr class="text-uppercase">
-            <td>4 - Superior</td>
-            <td>2 - Good</td>
-        </tr>
-    </tbody>
+    <tr class="text-uppercase">
+        @foreach ($topRow as $item)
+            <td>
+                {{ $item['value'] }} - {{ $item['qualitative'] }}
+            </td>
+        @endforeach
+
+        @if ($lastItem)
+            <td rowspan="2" style="width:25%">
+                {{ $lastItem['value'] }} - {{ $lastItem['qualitative'] }}
+            </td>
+        @endif
+    </tr>
+
+    <tr class="text-uppercase">
+        @foreach ($bottomRow as $item)
+            <td>
+                {{ $item['value'] }} - {{ $item['qualitative'] }}
+            </td>
+        @endforeach
+    </tr>
 </table>

@@ -16,7 +16,9 @@
                         </p>
                     </div>
                 @endif
-                @include('pdf.components.rating_scale_1')
+                @if (isset($assesment_rating) && $assesment_rating)
+                    @include('pdf.components.rating_scale_1')
+                @endif
             </div>
             @foreach ($sections as $section)
                 @if ($section['section_type'] == 1)
@@ -27,17 +29,21 @@
                     <div class="row col-xs-12" style="padding-top: 10px">
                         @include('pdf.components.attendance')
                     </div>
-                    <div class="row col-xs-12" style="padding-top: 10px">
-                        @include('pdf.components.attendance_rating_scale')
-                    </div>
                 @endif
             @endforeach
-        </div>
-        <div class="row col-xs-12" style="padding-top: 10px">
-            @include('pdf.components.other_comments')
 
-            <div style="margin-top:20px;">
-                @include('pdf.components.cforms_footer')
+            @if ($attendance_rating)
+                <div class="row col-xs-12" style="padding-top: 10px">
+                    @include('pdf.components.attendance_rating_scale')
+                </div>
+            @endif
+
+            <div class="row col-xs-12" style="padding-top: 10px">
+                @include('pdf.components.other_comments')
+
+                <div style="margin-top:20px;">
+                    @include('pdf.components.cforms_footer')
+                </div>
             </div>
         </div>
     </div>
