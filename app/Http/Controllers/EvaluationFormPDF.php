@@ -170,13 +170,20 @@ class EvaluationFormPDF extends Controller
                 'questions' => $questions,
                 'add_remarks' => true,
             ],
-            // [
-            //     'section_type' => 2, //attendance
-            //     'title' => 'B.  Attendance in BOT / Committee Meetings & other related activities (to be rated by the Corporate Secretary) -30%',
-            //     'attendance' => ['criteria' => $attendance_criteria, 'meetings' => $meetings_to_asses],
-            //     'rating_scale' => $this->getAttendanceRatingScale(),
-            //     'add_remarks' => true,
-            // ],
+            [
+                'section_type' => 3, //text_area
+                'title' => 'G. OTHER AREAS NOT MENTIONED ABOVE/SPECIAL CONCERNS THAT REQUIRES BOT ATTENTION/CONSIDERATION (Use an additional sheet as necessary):',
+                // 'attendance' => ['criteria' => $attendance_criteria, 'meetings' => $meetings_to_asses],
+                // 'rating_scale' => $this->getAttendanceRatingScale(),
+                'add_remarks' => true,
+            ],
+            [
+                'section_type' => 2, //attendance
+                'title' => 'B.  Attendance in BOT / Committee Meetings & other related activities (to be rated by the Corporate Secretary) -30%',
+                'attendance' => ['criteria' => $attendance_criteria, 'meetings' => $meetings_to_asses],
+                'rating_scale' => $this->getAttendanceRatingScale(),
+                'add_remarks' => true,
+            ],
         ];
         return $sections;
     }

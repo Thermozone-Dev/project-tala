@@ -69,14 +69,16 @@
                     <div class="row col-xs-12" style="padding-top: 10px">
                         @include('pdf.components.attendance_rating_scale')
                     </div>
+                @elseif($section['section_type'] == 3)
+                    <div class="row col-xs-12" style="padding-top: 10px">
+                        @include('pdf.components.text_area', ['section_data' => $section])
+                    </div>
                 @endif
             @endforeach
         </div>
         <div class="row col-xs-12" style="padding-top: 10px">
-            @include('pdf.components.other_comments')
-
             <div style="margin-top:20px;">
-                @include('pdf.components.cforms_footer')
+                @include('pdf.components.self_assesment_footer')
             </div>
         </div>
     </div>

@@ -66,7 +66,8 @@
             text-align:center;
         }
         .header4{
-            font-weight: 700;
+            font-weight: 900;
+            font-size: 18px;
             text-align:left;
         }
         table tr td {
