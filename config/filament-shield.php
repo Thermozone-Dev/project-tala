@@ -172,6 +172,9 @@ return [
                 'update',
                 'delete',
             ],
+            \App\Filament\Resources\Committees\CommitteeResource::class => [
+                'fullAccess'
+            ]
         ],
         'exclude' => [
             //
