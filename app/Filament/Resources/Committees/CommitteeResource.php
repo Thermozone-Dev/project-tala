@@ -5,7 +5,8 @@ namespace App\Filament\Resources\Committees;
 use App\Filament\Resources\Committees\Pages\CreateCommittee;
 use App\Filament\Resources\Committees\Pages\EditCommittee;
 use App\Filament\Resources\Committees\Pages\ListCommittees;
-use App\Filament\Resources\Committees\RelationManagers\AssigneesRelationManager;
+use App\Filament\Resources\Committees\Pages\ViewCommittee;
+use App\Filament\Resources\Committees\RelationManagers\MembersRelationManager;
 use App\Filament\Resources\Committees\Schemas\CommitteeForm;
 use App\Filament\Resources\Committees\Tables\CommitteesTable;
 use App\Models\Committee;
@@ -19,7 +20,11 @@ class CommitteeResource extends Resource
 {
     protected static ?string $model = Committee::class;
 
-    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()->hasRole(['Super Admin',]);
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
@@ -36,7 +41,7 @@ class CommitteeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            AssigneesRelationManager::class
+            MembersRelationManager::class
         ];
     }
 
@@ -45,6 +50,7 @@ class CommitteeResource extends Resource
         return [
             'index' => ListCommittees::route('/'),
             'create' => CreateCommittee::route('/create'),
+            'view' => ViewCommittee::route('/{record}'),
             'edit' => EditCommittee::route('/{record}/edit'),
         ];
     }

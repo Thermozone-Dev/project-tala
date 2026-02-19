@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Committees\Schemas;
 
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class CommitteeForm
@@ -12,10 +13,15 @@ class CommitteeForm
     {
         return $schema
             ->components([
-                TextInput::make('name')
-                    ->required(),
-                Textarea::make('description')
-                    ->columnSpanFull(),
+                Section::make('')
+                    ->columnSpanFull()
+                    ->schema([
+                        TextInput::make('name')
+                            ->required(),
+                        Textarea::make('description')
+                            ->columnSpanFull(),
+                    ])
+
             ]);
     }
 }
