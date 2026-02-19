@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
+use Filament\Models\Contracts\HasAvatar;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
 use Filament\Auth\MultiFactor\Email\Concerns\InteractsWithEmailAuthentication;
@@ -12,13 +13,16 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements FilamentUser, MustVerifyEmail, HasEmailAuthentication, HasAppAuthentication
+class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerifyEmail, HasEmailAuthentication, HasAppAuthentication
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
     use InteractsWithEmailAuthentication;
     use InteractsWithAppAuthentication;
+    use HasRoles;
 
 
     /**
@@ -28,9 +32,15 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
      */
     protected $fillable = [
         'name',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'suffix',
         'email',
+        'is_active',
         'password',
-        'has_email_authentication'
+        'has_email_authentication',
+        'avatar_url',
     ];
 
     /**
@@ -79,5 +89,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
     public function getAppAuthenticationHolderName(): string
     {
         return $this->email;
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->avatar_url ? Storage::url($this->avatar_url) : null;
     }
 }
