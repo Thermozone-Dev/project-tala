@@ -9,7 +9,7 @@
         <th style="text-align:center">Qualitative</th>
     </thead>
     <tbody class="table-text">
-        @foreach ($rating_scale as $scale)
+        @foreach ($section['rating_scale'] as $scale)
             <tr>
                 <td style="font-weight: normal">{{$scale['name']}}</td>
                 <td style="font-weight: normal">{{$scale['quantitative']}}</td>

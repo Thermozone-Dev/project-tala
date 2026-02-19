@@ -7,8 +7,8 @@
     <thead>
         <th ></th>
         <th style="width: 15%; text-align:center"> Rating</th>
-        @if (isset($section_data['remarks']) && $section_data['remarks'])
-            <th style="width: 15%; text-align:center"> Remarks</th>
+        @if (isset($section_data['add_remarks']) && $section_data['add_remarks'])
+            <th style="width: 20%; text-align:center"> Remarks</th>
         @endif
     </thead>
     <tbody class="table-text">
@@ -16,7 +16,7 @@
             <tr>
                 <td style="font-weight: normal">{{$question}}</td>
                 <td></td>
-                @if (isset($section_data['remarks']) && $section_data['remarks'])
+                @if (isset($section_data['add_remarks']) && $section_data['add_remarks'])
                     <td></td>
                 @endif
             </tr>

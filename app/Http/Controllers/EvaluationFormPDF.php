@@ -10,11 +10,120 @@ class EvaluationFormPDF extends Controller
 {
 
     public function getEvaluationResult(){
-        return $this->evaluation_c1();
+        // return $this->evaluation_c1();
+        // return $this->evaluation_c2();
+        // return $this->evaluation_c3();
+        // return $this->evaluation_c4();
+        // return $this->evaluation_c5();
+        // return $this->evaluation_c6();
+        // return $this->evaluation_c7();
+        // return $this->bot_selfassement();
+        return $this->committee_selfassement();
+
     }
 
     public function evaluation_c1(){
+        $data = [
+            'title' => 'BOT EVALUATION FORM C.1 - CHAIRMAN OF THE BOARD',
+            'show_instruction' => true,
+            'date' => date('m/d/Y'),
+            'sections' => $this->getData(),
+        ];
+        $filename = 'evaluation_result_c1';
+        return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
+    }
 
+    public function evaluation_c2(){
+        $data = [
+            'title' => 'E BOT EVALUATION FORM C.2 - TRUSTEES',
+            'date' => date('m/d/Y'),
+            'show_instruction' => true,
+            'sections' => $this->getData(),
+        ];
+        $filename = 'evaluation_result_c2';
+        return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
+    }
+
+    public function evaluation_c3(){
+        $data = [
+            'title' => "EBOT EVALUATION FORM C.3 - EVP – GM",
+            'date' => date('m/d/Y'),
+            'show_instruction' => true,
+            'sections' => $this->getData(),
+        ];
+        $filename = 'evaluation_result_c3';
+        return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
+    }
+
+    public function evaluation_c4(){
+        $data = [
+            'title' => "BOT EVALUATION FORM C.4 - Corporate Secretary",
+            'date' => date('m/d/Y'),
+            'show_instruction' => true,
+            'sections' => $this->getData(),
+        ];
+        $filename = 'evaluation_result_c4';
+        return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
+    }
+
+    public function evaluation_c5(){
+        $data = [
+            'title' => "BOT EVALUATION FORM C.5 - Corporate Treasurer",
+            'date' => date('m/d/Y'),
+            'show_instruction' => true,
+            'sections' => $this->getData(),
+        ];
+        $filename = 'evaluation_result_c5';
+        return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
+    }
+
+    public function evaluation_c6(){
+        $data = [
+            'title' => "BOT EVALUATION FORM C.6 - Corporate Comptroller",
+            'date' => date('m/d/Y'),
+            'show_instruction' => true,
+            'sections' => $this->getData(),
+        ];
+        $filename = 'evaluation_result_c6';
+        return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
+    }
+
+    public function evaluation_c7(){
+        $data = [
+            'title' => "BOT EVALUATION FORM C.7 – LEAD RESOURCE PERSONS (LRPs)",
+            'date' => date('m/d/Y'),
+            'show_instruction' => false,
+            'sections' => $this->getData(),
+        ];
+        $filename = 'evaluation_result_c6';
+        return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
+    }
+
+    public function bot_selfassement(){
+        $data = [
+            'title' => "BOT COMMITTEE SELF-ASSESSMENT QUESTIONNAIRE",
+            'period_covered' => "June 2025 to April 2026",
+            'show_bot_self_instruction' => true,
+            'sections' => $this->getData(),
+        ];
+        $filename = 'BOT Self Assesment Questionaire';
+        return $this->exportPDF('pdf.evaluation_results.selfassesment', $data, $filename);
+    }
+
+    public function committee_selfassement(){
+        $data = [
+            'title' => "BOT COMMITTEE SELF-ASSESSMENT QUESTIONNAIRE",
+            'period_covered' => "June 2025 to April 2026",
+            'committee' => "AUDIT AND COMPLIANCE COMMITTEE",
+            'show_committee_self_instruction' => true,
+            'sections' => $this->getData(),
+        ];
+        $filename = 'BOT Self Assesment Questionaire';
+        return $this->exportPDF('pdf.evaluation_results.selfassesment', $data, $filename);
+    }
+
+
+    public function getData(){
         $attendance_criteria = [
             'Total Number of meetings',
             'Physically Present',
@@ -25,6 +134,8 @@ class EvaluationFormPDF extends Controller
 
         $meetings_to_asses = [
             'BOT Meetings(Special & Regular)',
+            'Audit & Compliance',
+            'Human Resource',
         ];
 
         $questions = [
@@ -42,26 +153,32 @@ class EvaluationFormPDF extends Controller
 
         $sections = [
             [
+                'section_type' => 1, //assesment
                 'title' => 'A.  Performance of Role as Corporate Officer - 70 % ',
-                'questions' => $questions,
-                'add_remarks' => false,
-            ],
-            [
-                'title' => 'B.  Attendance in BOT / Committee Meetings & other related activities (to be rated by the Corporate Secretary) -30%',
                 'questions' => $questions,
                 'add_remarks' => true,
             ],
+            [
+                'section_type' => 1, //assesment
+                'title' => 'B.  Performance of Role as Corporate Officer - 70 % ',
+                'questions' => $questions,
+                'add_remarks' => true,
+            ],
+            [
+                'section_type' => 1, //assesment
+                'title' => 'C.  Performance of Role as Corporate Officer - 70 % ',
+                'questions' => $questions,
+                'add_remarks' => true,
+            ],
+            // [
+            //     'section_type' => 2, //attendance
+            //     'title' => 'B.  Attendance in BOT / Committee Meetings & other related activities (to be rated by the Corporate Secretary) -30%',
+            //     'attendance' => ['criteria' => $attendance_criteria, 'meetings' => $meetings_to_asses],
+            //     'rating_scale' => $this->getAttendanceRatingScale(),
+            //     'add_remarks' => true,
+            // ],
         ];
-
-        $data = [
-            'title' => 'Evaluation Result C1',
-            'date' => date('m/d/Y'),
-            'sections' => $sections,
-            'rating_scale' => $this->getAttendanceRatingScale(),
-            'attendance' => ['criteria' => $attendance_criteria, 'meetings' => $meetings_to_asses],
-        ];
-        $filename = 'evaluation_result_c1';
-        return $this->exportPDF('pdf.evaluation_results.c1', $data, $filename);
+        return $sections;
     }
 
     public function getAttendanceRatingScale(){
