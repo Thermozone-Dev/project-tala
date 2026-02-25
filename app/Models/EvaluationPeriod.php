@@ -36,6 +36,6 @@ class EvaluationPeriod extends Model
 
     public function assignments()
     {
-        return $this->hasMany(TrusteeHasEvaluation::class, 'evaluation_period_id');
+        return $this->hasMany(TrusteeHasEvaluation::class, 'evaluation_id');
     }
 }

@@ -38,7 +38,7 @@ return new class extends Migration
             $table->id();
             $table->date('date_from');
             $table->date('date_to');
-            $table->unsignedBigInteger('status_id');
+            $table->unsignedBigInteger('status_id')->default(1);
             $table->unsignedBigInteger('created_by');
             $table->softDeletes();
             $table->foreign(['status_id'], 'evaluation_period_ibfk_1')->references(['id'])->on('evaluation_period_status')->onUpdate('cascade')->onDelete('cascade')->default(1);
@@ -51,12 +51,12 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('evaluation_id');
             $table->unsignedBigInteger('ef_id');
-            $table->unsignedBigInteger('committe_id');
-            $table->unsignedBigInteger('member_id');
+            $table->unsignedBigInteger('committee_id');
+            $table->unsignedBigInteger('member_id')->nullable();
             $table->unsignedBigInteger('evaluator_id');
             $table->foreign(['evaluation_id'], 'trustee_has_evaluation_ibfk_1')->references(['id'])->on('evaluation_period')->onUpdate('cascade')->onDelete('cascade')->default(1);
             $table->foreign(['ef_id'], 'trustee_has_evaluation_ibfk_2')->references(['id'])->on('evaluation_forms')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreign(['committe_id'], 'trustee_has_evaluation_ibfk_3')->references(['id'])->on('committees')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign(['committee_id'], 'trustee_has_evaluation_ibfk_3')->references(['id'])->on('committees')->onUpdate('cascade')->onDelete('cascade');
             $table->foreign(['member_id'], 'trustee_has_evaluation_ibfk_4')->references(['id'])->on('users')->onUpdate('cascade')->onDelete('cascade');
             $table->foreign(['evaluator_id'], 'trustee_has_evaluation_ibfk_5')->references(['id'])->on('users')->onUpdate('cascade')->onDelete('cascade');
             $table->softDeletes();

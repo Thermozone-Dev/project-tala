@@ -36,4 +36,10 @@ class Committee extends Model
 	{
 		return $this->hasMany(CommitteeHasTrustee::class);
 	}
+
+
+    public function getFormByRole()
+	{
+		return $this->hasMany(CommitteeHasTrustee::class);
+	}
 }

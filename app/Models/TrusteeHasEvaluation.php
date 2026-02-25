@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class TrusteeHasEvaluation extends Model
 {
     //
-    
+
+    public $timestamps = false;
+
     protected $table = 'trustee_has_evaluation';
 
     protected $fillable = [
-        'evaluation_period_id',
+        'evaluation_id',
         'ef_id',
         'committee_id',
         'member_id',

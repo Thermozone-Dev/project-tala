@@ -13,15 +13,17 @@ class EvaluationPeriodForm
         return $schema
             ->components([
                 DatePicker::make('date_from')
+                    ->default('06/25/2024')
                     ->required(),
                 DatePicker::make('date_to')
+                    ->default('06/25/2026')
                     ->required(),
-                TextInput::make('status_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('created_by')
-                    ->required()
-                    ->numeric(),
+                // Selec::make('status_id')
+                //     ->required()
+                //     ->numeric(),
+                // TextInput::make('created_by')
+                //     ->required()
+                //     ->numeric(),
             ]);
     }
 }
