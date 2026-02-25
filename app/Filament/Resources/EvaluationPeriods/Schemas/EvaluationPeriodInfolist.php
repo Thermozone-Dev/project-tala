@@ -11,14 +11,15 @@ class EvaluationPeriodInfolist
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 TextEntry::make('date_from')
                     ->date(),
                 TextEntry::make('date_to')
                     ->date(),
-                TextEntry::make('status_id')
-                    ->numeric(),
-                TextEntry::make('created_by')
+                TextEntry::make('status.name')
+                    ->label('Status'),
+                TextEntry::make('creator.email')
                     ->numeric(),
                 TextEntry::make('deleted_at')
                     ->dateTime()

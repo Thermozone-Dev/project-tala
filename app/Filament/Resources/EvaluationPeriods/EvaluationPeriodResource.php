@@ -22,8 +22,8 @@ class EvaluationPeriodResource extends Resource
 {
     protected static ?string $model = EvaluationPeriod::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
-
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
+    
     protected static ?string $recordTitleAttribute = 'Evaluation Period';
 
     public static function form(Schema $schema): Schema

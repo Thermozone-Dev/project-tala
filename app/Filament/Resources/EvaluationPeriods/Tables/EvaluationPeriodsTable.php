@@ -24,11 +24,10 @@ class EvaluationPeriodsTable
                 TextColumn::make('date_to')
                     ->date()
                     ->sortable(),
-                TextColumn::make('status_id')
-                    ->numeric()
+                TextColumn::make('status.name')
                     ->sortable(),
-                TextColumn::make('created_by')
-                    ->numeric()
+                TextColumn::make('creator.email')
+                    ->label('Created By')
                     ->sortable(),
                 TextColumn::make('deleted_at')
                     ->dateTime()
