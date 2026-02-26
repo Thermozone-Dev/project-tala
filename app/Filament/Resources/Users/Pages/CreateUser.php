@@ -8,4 +8,10 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateUser extends CreateRecord
 {
     protected static string $resource = UserResource::class;
+
+    public function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['name'] = $data['first_name'];
+        return parent::mutateFormDataBeforeCreate($data);
+    }
 }
