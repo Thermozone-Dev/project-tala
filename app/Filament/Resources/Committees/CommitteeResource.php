@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Committees;
 
 use App\Filament\Resources\Committees\Pages\CreateCommittee;
 use App\Filament\Resources\Committees\Pages\EditCommittee;
+use App\Filament\Resources\Committees\Pages\EvaluationMembers;
+use App\Filament\Resources\Committees\Pages\EvaluationPeriods;
 use App\Filament\Resources\Committees\Pages\ListCommittees;
 use App\Filament\Resources\Committees\Pages\ViewCommittee;
 use App\Filament\Resources\Committees\RelationManagers\MembersRelationManager;
@@ -52,6 +54,8 @@ class CommitteeResource extends Resource
             'create' => CreateCommittee::route('/create'),
             'view' => ViewCommittee::route('/{record}'),
             'edit' => EditCommittee::route('/{record}/edit'),
+            'evaluation-periods' => EvaluationPeriods::route('/{record}/{evaluator_id}/evaluation-periods'),
+            'evaluation-members' => EvaluationMembers::route('/{record}/{evaluator_id}/{evaluation_id}/evaluation-periods/evaluation-members'),
         ];
     }
 }
