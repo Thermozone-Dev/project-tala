@@ -10,6 +10,7 @@ use App\Models\User;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\ListRecords;
@@ -62,14 +63,15 @@ class EvaluationMembers extends ListRecords
             ->headerActions([
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                ViewAction::make()->authorize(check_committee_permission($this->record,'View:Committee')),
+                EditAction::make()->authorize(check_committee_permission($this->record,'Update:Committee')),
                 Action::make('Print')
                     ->authorize(check_committee_permission($this->record,'PrintEvaluation:Committee'))
                     ->icon(Heroicon::OutlinedPrinter),
                 Action::make('Evaluate Attendance')
                     ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
                     ->icon(Heroicon::OutlinedClipboardDocumentCheck),
+                DeleteAction::make()->authorize(check_committee_permission($this->record,'Delete:Committee')),
             ])
             ->toolbarActions([
 //                BulkActionGroup::make([
