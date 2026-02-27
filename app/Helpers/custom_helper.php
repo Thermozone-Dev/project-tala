@@ -1,10 +1,9 @@
 <?php
 
+use App\Models\CommitteeHasTrustee;
 use App\Models\EvaluationForm;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
+
 if (! function_exists('get_eval_form_by_role')) {
     function get_eval_form_by_role($role)
     {
@@ -42,6 +41,21 @@ if (! function_exists('get_eval_form_by_role')) {
             dd('No form found for role: ' . $role);
         }
         return $form->id;
+
+    }
+}
+if (! function_exists('check_committee_permission')) {
+    function check_committee_permission($committee_id,$permission)
+    {
+        if(auth()->user()->hasPermissionTo('FullAccess:Committee')) return true;
+
+        $user_id = auth()->user()->id;
+        $role_id = CommitteeHasTrustee::where('committee_id', $committee_id)
+            ->where('user_id', $user_id)
+            ->first()?->role_id;
+
+        $role = Role::where('id', $role_id)->first();
+        return $role->hasPermissionTo($permission);
 
     }
 }
