@@ -117,8 +117,8 @@ class AdminPanelProvider extends PanelProvider
                     ->icon(Heroicon::OutlinedUserGroup),
             ])
             ->navigationItems($navigation)
-            ->brandLogo(asset('images/AFPSLAI Logo.png'))
-            ->brandLogoHeight('3rem')
+            ->brandLogo(asset('image/logos/brand-logo-white-bg.jpeg'))
+            ->brandLogoHeight('6rem')
             ->sidebarCollapsibleOnDesktop();
     }
 }

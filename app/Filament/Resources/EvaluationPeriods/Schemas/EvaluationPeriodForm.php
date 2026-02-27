@@ -25,9 +25,6 @@ class EvaluationPeriodForm
                     ->relationship(name: 'status', titleAttribute: 'name')
                     ->hiddenOn('create')
                     ->required(),
-                // TextInput::make('created_by')
-                //     ->required()
-                //     ->numeric(),
             ]);
     }
 }

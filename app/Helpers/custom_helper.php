@@ -17,11 +17,11 @@ if (! function_exists('get_eval_form_by_role')) {
                 $form =  $model->find(1);
                 break;
             case 'vice chairman':
-                $form =  $model->find(2);
+                $form =  $model->find(3);
                 break;
 
             case 'trustee':
-                $form =  $model->find(3);
+                $form =  $model->find(2);
                 break;
 
             case 'corporate officer':
@@ -29,7 +29,7 @@ if (! function_exists('get_eval_form_by_role')) {
                 break;
 
             case 'lead resource person':
-                $form =  $model->find(5);
+                $form =  $model->find(7);
                 break;
 
             default:

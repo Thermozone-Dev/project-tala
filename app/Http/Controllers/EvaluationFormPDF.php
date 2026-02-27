@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
-
+use Filament\Notifications\Notification;
 
 class EvaluationFormPDF extends Controller
 {
@@ -14,8 +14,20 @@ class EvaluationFormPDF extends Controller
     public $pdfData;
 
     public function getEvaluationResult(){
-        $id = 9;
-        $evaluation = \App\Models\EvaluationForm::findOrFail($id);
+
+        $formId = request()->query('formID', null);
+
+        $evaluation = \App\Models\EvaluationForm::find($formId);
+
+        if(!$evaluation){
+            Notification::make()
+                ->title('Evaluation form not found.')
+                ->danger()
+                ->send();
+
+                return redirect()->route('filament.admin.pages.dashboard');
+
+        }
         $this->evaluation = $evaluation;
 
         $this->assesment_rating = null;
@@ -59,7 +71,7 @@ class EvaluationFormPDF extends Controller
                 return $this->bot_selfassement();
                 break;
             default:
-                return "Evaluation form not found.";
+                return $this->evaluation_c1();
         }
         return $this->committee_selfassement();
     }

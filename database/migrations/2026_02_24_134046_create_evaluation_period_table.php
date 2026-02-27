@@ -63,6 +63,11 @@ return new class extends Migration
 
         });
 
+
+        Schema::table('rating_scales', function (Blueprint $table) {
+           $table->string('name',20)->nullable()->after('type');
+        });
+
     }
 
     /**
@@ -70,6 +75,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('rating_scales', function (Blueprint $table) {
+            $table->dropColumn('name');
+         });
         Schema::dropIfExists('trustee_has_evaluation');
         Schema::dropIfExists('evaluation_period');
         Schema::dropIfExists('evaluation_period_status');
