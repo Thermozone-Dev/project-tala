@@ -173,7 +173,9 @@ return [
                 'delete',
             ],
             \App\Filament\Resources\Committees\CommitteeResource::class => [
-                'fullAccess'
+                'fullAccess',
+                'printEvaluation',
+                'attendanceEvaluation'
             ]
         ],
         'exclude' => [

@@ -72,4 +72,13 @@ class CommitteePolicy
         return $authUser->can('FullAccess:Committee');
     }
 
+    public function printEvaluation(AuthUser $authUser): bool
+    {
+        return $authUser->can('PrintEvaluation:Committee');
+    }
+    public function attendanceEvaluation(AuthUser $authUser): bool
+    {
+        return $authUser->can('AttendanceEvaluation:Committee');
+    }
+
 }

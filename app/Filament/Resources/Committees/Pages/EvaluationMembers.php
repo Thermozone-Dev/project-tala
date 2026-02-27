@@ -64,8 +64,12 @@ class EvaluationMembers extends ListRecords
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
-                Action::make('Print')->icon(Heroicon::OutlinedPrinter),
-                Action::make('Evaluate Attendance')->icon(Heroicon::OutlinedClipboardDocumentCheck),
+                Action::make('Print')
+                    ->authorize(check_committee_permission($this->record,'PrintEvaluation:Committee'))
+                    ->icon(Heroicon::OutlinedPrinter),
+                Action::make('Evaluate Attendance')
+                    ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
+                    ->icon(Heroicon::OutlinedClipboardDocumentCheck),
             ])
             ->toolbarActions([
 //                BulkActionGroup::make([

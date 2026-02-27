@@ -65,18 +65,7 @@ class EvaluationPeriods extends ListRecords
             ])
             ->recordActions([
                 ViewAction::make()
-                    ->authorize(function (): bool {
-                        if(auth()->user()->hasPermissionTo('FullAccess:Committee')) return true;
-
-                        $committee_id = $this->getOwnerRecord()->id;
-                        $user_id = auth()->user()->id;
-                        $role_id = CommitteeHasTrustee::where('committee_id', $committee_id)
-                            ->where('user_id', $user_id)
-                            ->first()?->role_id;
-
-                        $role = Role::where('id', $role_id)->first();
-                        return $role->hasPermissionTo('View:Committee');
-                    })
+                    ->authorize(check_committee_permission($this->record,'View:Committee'))
                     ->url(fn(Model $record): string => CommitteeResource::getUrl('evaluation-members', ['record' => $this->record,'evaluator_id' => $this->evaluator_id,'evaluation_id' => $record->id])),
             ])
             ->toolbarActions([
