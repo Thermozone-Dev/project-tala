@@ -21,6 +21,7 @@ class CustomPermissionSeeder extends Seeder
             'FullAccess:Committee',
             'PrintEvaluation:Committee',
             'AttendanceEvaluation:Committee',
+            'AssessmentEvaluation:Committee',
         ];
 
         foreach ($permissionNames as $permissionName) {

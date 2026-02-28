@@ -68,6 +68,9 @@ class EvaluationMembers extends ListRecords
                 Action::make('Print')
                     ->authorize(check_committee_permission($this->record,'PrintEvaluation:Committee'))
                     ->icon(Heroicon::OutlinedPrinter),
+                Action::make('Evaluate Assessment')
+                    ->authorize(check_committee_permission($this->record,'AssessmentEvaluation:Committee'))
+                    ->icon(Heroicon::OutlinedClipboardDocumentCheck),
                 Action::make('Evaluate Attendance')
                     ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
                     ->icon(Heroicon::OutlinedClipboardDocumentCheck),

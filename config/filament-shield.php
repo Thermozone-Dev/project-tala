@@ -175,7 +175,8 @@ return [
             \App\Filament\Resources\Committees\CommitteeResource::class => [
                 'fullAccess',
                 'printEvaluation',
-                'attendanceEvaluation'
+                'attendanceEvaluation',
+                'assessmentEvaluation',
             ]
         ],
         'exclude' => [

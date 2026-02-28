@@ -81,4 +81,8 @@ class CommitteePolicy
         return $authUser->can('AttendanceEvaluation:Committee');
     }
 
+    public function assessmentEvaluation(AuthUser $authUser): bool
+    {
+        return $authUser->can('AssessmentEvaluation:Committee');
+    }
 }
