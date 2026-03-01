@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Committees\Pages;
 
+use App\Actions\Form\AssessmentEvaluationFields;
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\Committee;
 use App\Models\EvaluationPeriod;
@@ -18,6 +19,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 class EvaluationMembers extends ListRecords
@@ -69,6 +71,12 @@ class EvaluationMembers extends ListRecords
                     ->authorize(check_committee_permission($this->record,'PrintEvaluation:Committee'))
                     ->icon(Heroicon::OutlinedPrinter),
                 Action::make('Evaluate Assessment')
+                    ->closeModalByClickingAway(false)
+                    ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
+                    ->schema(fn(Model $record) => AssessmentEvaluationFields::run($record->ef_id))
+                    ->action(function (array $data){
+                        dd($data);
+                    })
                     ->authorize(check_committee_permission($this->record,'AssessmentEvaluation:Committee'))
                     ->icon(Heroicon::OutlinedClipboardDocumentCheck),
                 Action::make('Evaluate Attendance')
