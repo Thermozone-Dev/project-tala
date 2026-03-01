@@ -45,4 +45,9 @@ class Committee extends Model
         return LogOptions::defaults()
             ->logOnly(['name', 'description']);
     }
+
+    public function getFormByRole()
+	{
+		return $this->hasMany(CommitteeHasTrustee::class);
+	}
 }
