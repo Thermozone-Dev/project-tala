@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerifyEmail, HasEmailAuthentication, HasAppAuthentication
@@ -23,6 +25,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
     use InteractsWithEmailAuthentication;
     use InteractsWithAppAuthentication;
     use HasRoles;
+    use LogsActivity;
 
 
     /**
@@ -98,7 +101,21 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
 
     public function getFullNameAttribute()
     {
-        $middlename = $this->middle_name ? $this->middle_name.' ' : '';
-        return $this->first_name.' '.$middlename.$this->last_name;
+        $middlename = $this->middle_name ? $this->middle_name . ' ' : '';
+        return $this->first_name . ' ' . $middlename . $this->last_name;
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'is_active',
+                'first_name',
+                'middle_name',
+                'last_name',
+                'suffix',
+                'email',
+                'has_email_authentication'
+            ]);
     }
 }
