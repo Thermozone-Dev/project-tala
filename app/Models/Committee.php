@@ -9,6 +9,8 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
  * Class Committee
@@ -25,6 +27,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Committee extends Model
 {
+    use LogsActivity;
 	protected $table = 'committees';
 
 	protected $fillable = [
@@ -37,6 +40,11 @@ class Committee extends Model
 		return $this->hasMany(CommitteeHasTrustee::class);
 	}
 
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'description']);
+    }
 
     public function getFormByRole()
 	{
