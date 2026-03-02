@@ -3,12 +3,14 @@
 namespace App\Actions\Form;
 
 use App\Models\EvaluationFormSection;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Support\Enums\FontWeight;
 use Illuminate\Support\Str;
 use Lorisleiva\Actions\Concerns\AsAction;
+use Filament\Schemas\Components\Text;
+
 
 class AttendanceEvaluationFields
 {
@@ -28,8 +30,12 @@ class AttendanceEvaluationFields
             $rating_scales[] =
                 Grid::make()
                     ->schema([
-                        Placeholder::make('placeholder')->label($rating_scale_value->name),
-                        Placeholder::make('placeholder')->label($rating_scale_value->value.' - '.$rating_scale_value->qualitative),
+                        Text::make($rating_scale_value->name)
+                            ->weight(FontWeight::Bold)
+                            ->color('neutral'),
+                        Text::make($rating_scale_value->value.' - '.$rating_scale_value->qualitative)
+                            ->weight(FontWeight::Bold)
+                            ->color('neutral'),
                     ]);
         }
 
@@ -50,17 +56,15 @@ class AttendanceEvaluationFields
 
         $columns_count = count($is_true_columns);
 
-        // >>> Display Heading
-        $heading[] = Placeholder::make('placeholder')->label('placeholder')->hiddenLabel()->columnSpan(2);
+        $heading[] = Text::make('')->columnSpan(2);
 
         foreach ($is_true_columns as $column) {
-                $heading[] = Placeholder::make('placeholder')->label(Str::headline($column));
+                $heading[] = Text::make(Str::headline($column))->weight(FontWeight::Bold)->color('neutral');
         }
-        // <<< Display Heading
 
         foreach ($eval_form_section->attendanceSection->meetings as $meeting) {
 
-            $fields[] =  Placeholder::make('placeholder')->label($meeting->name)->columnSpan(2);
+            $fields[] =  Text::make($meeting->name)->columnSpan(2)->weight(FontWeight::Bold)->color('neutral');
 
             foreach ($is_true_columns as $column) {
 

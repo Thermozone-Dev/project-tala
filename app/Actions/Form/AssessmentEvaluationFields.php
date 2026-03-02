@@ -3,11 +3,12 @@
 namespace App\Actions\Form;
 
 use App\Models\EvaluationFormSection;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
+use Filament\Support\Enums\FontWeight;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class AssessmentEvaluationFields
@@ -33,7 +34,7 @@ class AssessmentEvaluationFields
                     ->toArray();
 
                 foreach ($rating_scale_values as $rating_scale_value) {
-                    $rating_scales[] = Placeholder::make('placeholder')->label($rating_scale_value);
+                    $rating_scales[] = Text::make($rating_scale_value)->weight(FontWeight::Bold)->color('neutral');
                 }
 
                 $sections[] = Section::make('Rating Scale')->columns(count($rating_scale_values))->schema($rating_scales);
@@ -43,8 +44,10 @@ class AssessmentEvaluationFields
 
                 if($eval_form_section->add_remarks){
                     $fields[] = Grid::make(4)->schema([
-                        Placeholder::make('placeholder')->label($question->name)
-                            ->columnSpan(2),
+                        Text::make($question->name)
+                            ->columnSpan(2)
+                            ->weight(FontWeight::Bold)
+                            ->color('neutral'),
                         Select::make($question->id)
                             ->required()
                             ->hiddenLabel()
@@ -59,8 +62,10 @@ class AssessmentEvaluationFields
 
                 }else{
                     $fields[] = Grid::make(3)->schema([
-                        Placeholder::make('placeholder')->label($question->name)
-                            ->columnSpan(2),
+                        Text::make($question->name)
+                            ->columnSpan(2)
+                            ->weight(FontWeight::Bold)
+                            ->color('neutral'),
                         Select::make($question->id)
                             ->required()
                             ->hiddenLabel()
