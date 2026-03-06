@@ -57,8 +57,8 @@ return new class extends Migration
             $table->foreign(['evaluation_id'], 'trustee_has_evaluation_ibfk_1')->references(['id'])->on('evaluation_period')->onUpdate('cascade')->onDelete('cascade')->default(1);
             $table->foreign(['ef_id'], 'trustee_has_evaluation_ibfk_2')->references(['id'])->on('evaluation_forms')->onUpdate('cascade')->onDelete('cascade');
             $table->foreign(['committee_id'], 'trustee_has_evaluation_ibfk_3')->references(['id'])->on('committees')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreign(['member_id'], 'trustee_has_evaluation_ibfk_4')->references(['id'])->on('users')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreign(['evaluator_id'], 'trustee_has_evaluation_ibfk_5')->references(['id'])->on('users')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign(['member_id'], 'trustee_has_evaluation_ibfk_4')->references(['id'])->on('users');
+            $table->foreign(['evaluator_id'], 'trustee_has_evaluation_ibfk_5')->references(['id'])->on('users');
             $table->softDeletes();
 
         });
