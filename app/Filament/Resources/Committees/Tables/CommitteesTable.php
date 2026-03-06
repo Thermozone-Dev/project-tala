@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Committees\Tables;
 
+use App\Models\Committee;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -15,6 +16,7 @@ class CommitteesTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->description(fn (Committee $record): string => $record->description)
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
