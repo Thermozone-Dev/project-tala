@@ -16,6 +16,9 @@ class EvaluationC1Seeder extends Seeder
      */
     public function run(): void
     {
+
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms ON');
+
         DB::table('evaluation_forms')->insert([
             [
                 'id' => 1,
@@ -26,6 +29,10 @@ class EvaluationC1Seeder extends Seeder
                 'updated_at' => now(),
             ]
         ]);
+
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms OFF');
+
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections ON');
 
         DB::table('evaluation_form_sections')->insert([
             [
@@ -39,6 +46,9 @@ class EvaluationC1Seeder extends Seeder
                 'updated_at' => now(),
             ]
         ]);
+
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections OFF');
+
 
         Questionnaire::insert([
             [
@@ -87,6 +97,8 @@ class EvaluationC1Seeder extends Seeder
         ]);
 
 
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections ON');
+
         DB::table('evaluation_form_sections')->insert([
             [
                 'id' => 2,
@@ -100,6 +112,10 @@ class EvaluationC1Seeder extends Seeder
             ]
         ]);
 
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections OFF');
+
+        DB::unprepared('SET IDENTITY_INSERT attendance_sections ON');
+
         AttendanceSection::insert([
             [
                 'id' => 1,
@@ -111,6 +127,8 @@ class EvaluationC1Seeder extends Seeder
                 'show_attendance_rating' => true,
             ]
         ]);
+
+        DB::unprepared('SET IDENTITY_INSERT attendance_sections OFF');
 
         AttendanceMeeting::insert([
             [

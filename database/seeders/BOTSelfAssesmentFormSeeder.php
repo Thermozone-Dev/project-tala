@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\AttendanceMeeting;
 use App\Models\AttendanceSection;
@@ -14,11 +13,11 @@ class BOTSelfAssesmentFormSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        // evaluation_forms
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms ON');
+
         DB::table('evaluation_forms')->insert([
             [
                 'id' => 9,
@@ -29,7 +28,12 @@ class BOTSelfAssesmentFormSeeder extends Seeder
                 'updated_at' => now(),
             ]
         ]);
-        // Evaluation Form Sections
+
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms OFF');
+
+        // evaluation_form_sections
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections ON');
+
         DB::table('evaluation_form_sections')->insert([
             [
                 'id' => 22,
@@ -103,7 +107,9 @@ class BOTSelfAssesmentFormSeeder extends Seeder
             ],
         ]);
 
-        // Questionnaires
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections OFF');
+
+        // Questionnaires (no ID specified, safe to insert)
         Questionnaire::insert([
             // PERFORMANCE AS ADVISORY COMMITTEE OF THE BOT (id = 22)
             ['section_id' => 22, 'name' => 'The Committee manifested accountability for the strategic decisions made by the Board based on its endorsement as an advisory Committee.'],
@@ -137,7 +143,5 @@ class BOTSelfAssesmentFormSeeder extends Seeder
             ['section_id' => 27, 'name' => 'The Committee carried out evaluation process that leads to further enhancement of its role in the organization.'],
             ['section_id' => 27, 'name' => 'The Committee understands its role as an Advisory Committee to the BOT and makes follow-through assessments through the Pres & CEO as head of the Management Team.'],
         ]);
-
-
     }
 }
