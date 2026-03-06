@@ -16,6 +16,9 @@ class EvaluationC5Seeder extends Seeder
      */
     public function run(): void
     {
+        // evaluation_forms
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms ON');
+
         DB::table('evaluation_forms')->insert([
             [
                 'id' => 5,
@@ -26,6 +29,12 @@ class EvaluationC5Seeder extends Seeder
                 'updated_at' => now(),
             ]
         ]);
+
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms OFF');
+
+
+        // evaluation_form_sections (performance section)
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections ON');
 
         DB::table('evaluation_form_sections')->insert([
             [
@@ -40,42 +49,23 @@ class EvaluationC5Seeder extends Seeder
             ]
         ]);
 
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections OFF');
+
+
         Questionnaire::insert([
-            [
-                'section_id' => 9,
-                'name' => 'Familiarity with past resolutions and matters of discussion by the Board on matters relating to fund and treasury management.'
-            ],
-            [
-                'section_id' => 9,
-                'name' => 'Quality of technical advice given to the Board / Committee as needed or solicited.'
-            ],
-            [
-                'section_id' => 9,
-                'name' => 'Familiarity with laws and regulations that govern the management of the treasury of AFPSLAI as an NSSLA.'
-            ],
-            [
-                'section_id' => 9,
-                'name' => 'Professionalism displayed during BOT / Committee discussions.'
-            ],
-            [
-                'section_id' => 9,
-                'name' => 'Level of competence and mastery of the treasury affairs of the Association.'
-            ],
-            [
-                'section_id' => 9,
-                'name' => 'Level of diligence manifested in preparing for BOT / Committee meetings.'
-            ],
-            [
-                'section_id' => 9,
-                'name' => 'Observance of proper protocol during Board / Committee meetings.'
-            ],
-            [
-                'section_id' => 9,
-                'name' => 'Level of clarity of understanding on the role of the Corporate Treasurer.'
-            ],
+            ['section_id' => 9, 'name' => 'Familiarity with past resolutions and matters of discussion by the Board on matters relating to fund and treasury management.'],
+            ['section_id' => 9, 'name' => 'Quality of technical advice given to the Board / Committee as needed or solicited.'],
+            ['section_id' => 9, 'name' => 'Familiarity with laws and regulations that govern the management of the treasury of AFPSLAI as an NSSLA.'],
+            ['section_id' => 9, 'name' => 'Professionalism displayed during BOT / Committee discussions.'],
+            ['section_id' => 9, 'name' => 'Level of competence and mastery of the treasury affairs of the Association.'],
+            ['section_id' => 9, 'name' => 'Level of diligence manifested in preparing for BOT / Committee meetings.'],
+            ['section_id' => 9, 'name' => 'Observance of proper protocol during Board / Committee meetings.'],
+            ['section_id' => 9, 'name' => 'Level of clarity of understanding on the role of the Corporate Treasurer.'],
         ]);
 
 
+        // evaluation_form_sections (attendance section)
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections ON');
 
         DB::table('evaluation_form_sections')->insert([
             [
@@ -90,6 +80,12 @@ class EvaluationC5Seeder extends Seeder
             ]
         ]);
 
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections OFF');
+
+
+        // attendance_sections
+        DB::unprepared('SET IDENTITY_INSERT attendance_sections ON');
+
         AttendanceSection::insert([
             [
                 'id' => 5,
@@ -102,44 +98,19 @@ class EvaluationC5Seeder extends Seeder
             ]
         ]);
 
-        AttendanceMeeting::insert([
-            [
-                'attendance_section_id' => 5,
-                'name' => 'Board Meetings (Regular & Special)',
-            ],
-            [
-                'attendance_section_id' => 5,
-                'name' => 'Governance Committee',
-            ],
-            [
-                'attendance_section_id' => 5,
-                'name' => 'Audit & Compliance',
-            ],
-            [
-                'attendance_section_id' => 5,
-                'name' => 'Risk Oversight',
-            ],
-            [
-                'attendance_section_id' => 5,
-                'name' => 'Membership',
-            ],
-            [
-                'attendance_section_id' => 5,
-                'name' => 'Credit & Collection',
-            ],
-            [
-                'attendance_section_id' => 5,
-                'name' => 'Amendment',
-            ],
-            [
-                'attendance_section_id' => 5,
-                'name' => 'Compensation',
-            ],
-            [
-                'attendance_section_id' => 5,
-                'name' => 'Planning Sessions & other related activities',
-            ],
-        ]);
+        DB::unprepared('SET IDENTITY_INSERT attendance_sections OFF');
 
+
+        AttendanceMeeting::insert([
+            ['attendance_section_id' => 5, 'name' => 'Board Meetings (Regular & Special)'],
+            ['attendance_section_id' => 5, 'name' => 'Governance Committee'],
+            ['attendance_section_id' => 5, 'name' => 'Audit & Compliance'],
+            ['attendance_section_id' => 5, 'name' => 'Risk Oversight'],
+            ['attendance_section_id' => 5, 'name' => 'Membership'],
+            ['attendance_section_id' => 5, 'name' => 'Credit & Collection'],
+            ['attendance_section_id' => 5, 'name' => 'Amendment'],
+            ['attendance_section_id' => 5, 'name' => 'Compensation'],
+            ['attendance_section_id' => 5, 'name' => 'Planning Sessions & other related activities'],
+        ]);
     }
 }
