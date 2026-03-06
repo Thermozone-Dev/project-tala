@@ -195,7 +195,6 @@ class ActivityLog extends Page implements HasActions, HasSchemas, HasTable
                     ->modalSubmitAction(false)
                     ->modalCancelAction(fn (Action $action) => $action->label('Close')->color('primary')),
             ])
-            ->defaultSort('created_at', 'desc')
             ->paginated([100]);
     }
 }
