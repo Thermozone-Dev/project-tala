@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\AttendanceMeeting;
 use App\Models\AttendanceSection;
@@ -14,11 +13,11 @@ class BOARDSelfAssesmentFormSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        // evaluation_forms
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms ON');
+
         DB::table('evaluation_forms')->insert([
             [
                 'id' => 8,
@@ -29,6 +28,11 @@ class BOARDSelfAssesmentFormSeeder extends Seeder
                 'updated_at' => now(),
             ]
         ]);
+
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms OFF');
+
+        // evaluation_form_sections
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections ON');
 
         DB::table('evaluation_form_sections')->insert([
             [
@@ -103,7 +107,9 @@ class BOARDSelfAssesmentFormSeeder extends Seeder
             ],
         ]);
 
-        // Questionnaires
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections OFF');
+
+        // Questionnaires (no ID specified, no need for IDENTITY_INSERT)
         Questionnaire::insert([
             // PERFORMANCE AS A GOVERNING BOARD (id = 15)
             ['section_id' => 15, 'name' => 'The Board Committee manifested accountability for the strategic decisions made and result of operations of the Association.'],
@@ -139,6 +145,5 @@ class BOARDSelfAssesmentFormSeeder extends Seeder
             ['section_id' => 20, 'name' => 'The Board carried out evaluation process leading to a clearer understanding of what it must to do to add value to the organization.'],
             ['section_id' => 20, 'name' => 'The Board conducted regular monitoring of the Association’s performance without breaching the authority lines set for management.'],
         ]);
-
     }
 }

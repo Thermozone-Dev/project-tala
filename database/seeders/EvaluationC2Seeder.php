@@ -16,6 +16,9 @@ class EvaluationC2Seeder extends Seeder
      */
     public function run(): void
     {
+        // evaluation_forms
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms ON');
+
         DB::table('evaluation_forms')->insert([
             [
                 'id' => 2,
@@ -26,6 +29,12 @@ class EvaluationC2Seeder extends Seeder
                 'updated_at' => now(),
             ]
         ]);
+
+        DB::unprepared('SET IDENTITY_INSERT evaluation_forms OFF');
+
+
+        // evaluation_form_sections
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections ON');
 
         DB::table('evaluation_form_sections')->insert([
             [
@@ -39,6 +48,9 @@ class EvaluationC2Seeder extends Seeder
                 'updated_at' => now(),
             ]
         ]);
+
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections OFF');
+
 
         Questionnaire::insert([
             [
@@ -89,8 +101,11 @@ class EvaluationC2Seeder extends Seeder
                 'section_id' => 3,
                 'name' => "Level of clarity of understanding on the role of each Committee (does not infringe on other committee’s functions).",
             ],
-
         ]);
+
+
+        // evaluation_form_sections again
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections ON');
 
         DB::table('evaluation_form_sections')->insert([
             [
@@ -105,6 +120,12 @@ class EvaluationC2Seeder extends Seeder
             ]
         ]);
 
+        DB::unprepared('SET IDENTITY_INSERT evaluation_form_sections OFF');
+
+
+        // attendance_sections
+        DB::unprepared('SET IDENTITY_INSERT attendance_sections ON');
+
         AttendanceSection::insert([
             [
                 'id' => 2,
@@ -117,44 +138,18 @@ class EvaluationC2Seeder extends Seeder
             ]
         ]);
 
-        AttendanceMeeting::insert([
-            [
-                'attendance_section_id' => 2,
-                'name' => 'BOT Meeting (Special & Regular)',
-            ],
-            [
-                'attendance_section_id' => 2,
-                'name' => 'Governance Committee',
-            ],
-            [
-                'attendance_section_id' => 2,
-                'name' => 'Audit & Compliance',
-            ],
-            [
-                'attendance_section_id' => 2,
-                'name' => 'Risk Oversight',
-            ],
-            [
-                'attendance_section_id' => 2,
-                'name' => 'Human Resource',
-            ],
-            [
-                'attendance_section_id' => 2,
-                'name' => 'Credit& Collection',
-            ],
-            [
-                'attendance_section_id' => 2,
-                'name' => 'Membership & Amendment',
-            ],
-            [
-                'attendance_section_id' => 2,
-                'name' => 'ITSC',
-            ],
-            [
-                'attendance_section_id' => 2,
-                'name' => 'Planning Sessions & other related activities',
-            ]
-        ]);
+        DB::unprepared('SET IDENTITY_INSERT attendance_sections OFF');
 
-    }
-}
+
+        AttendanceMeeting::insert([
+            ['attendance_section_id' => 2, 'name' => 'BOT Meeting (Special & Regular)'],
+            ['attendance_section_id' => 2, 'name' => 'Governance Committee'],
+            ['attendance_section_id' => 2, 'name' => 'Audit & Compliance'],
+            ['attendance_section_id' => 2, 'name' => 'Risk Oversight'],
+            ['attendance_section_id' => 2, 'name' => 'Human Resource'],
+            ['attendance_section_id' => 2, 'name' => 'Credit& Collection'],
+            ['attendance_section_id' => 2, 'name' => 'Membership & Amendment'],
+            ['attendance_section_id' => 2, 'name' => 'ITSC'],
+            ['attendance_section_id' => 2, 'name' => 'Planning Sessions & other related activities']
+        ]);
+    }}
