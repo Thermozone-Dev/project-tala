@@ -5,6 +5,9 @@ namespace App\Filament\Resources\Committees\Pages;
 use App\Actions\Form\AssessmentEvaluationFields;
 use App\Actions\Form\AttendanceEvaluationFields;
 use App\Actions\Form\OtherCommentsFields;
+use App\Actions\SaveAssessmentEvaluation;
+use App\Actions\SaveAttendanceEvaluation;
+use App\Actions\SaveOtherComments;
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\AttendanceAnswer;
 use App\Models\Committee;
@@ -93,19 +96,9 @@ class EvaluationMembers extends ListRecords
                                 })->toArray()]
                             )
                             ->action(function (array $data, Model $record){
-                                $data['trustee_evaluation_id'] = $record->evaluation_id;
-                                foreach($data['assesment_answer'] as $index => $answer){
-                                    QuestionaireAnswer::updateOrCreate(
-                                        [
-                                            'trustee_evaluation_id' => $record->id,
-                                            'questionnaire_id' => $index
-                                        ],
-                                        [
-                                            'rating_scale_values_id' => $answer['rating_scale_values_id'],
-                                            'remarks' => $answer['remarks'] ?? null
-                                        ]
-                                    );
-                                }
+
+                                SaveAssessmentEvaluation::run($data,$record);
+
                                 Notification::make()
                                     ->title('Attendance Evaluation Submitted')
                                     ->success()
@@ -132,16 +125,9 @@ class EvaluationMembers extends ListRecords
                                 })->toArray()]
                             )
                             ->action(function (array $data, Model $record){
-                                foreach($data['attendance_answer'] as $index => $answer){
-                                    $answer['attendance_rating_scale_values_id'] = $answer['attendance_rating'];
-                                    AttendanceAnswer::updateOrCreate(
-                                        [
-                                            'trustee_evaluation_id' => $record->id,
-                                            'meeting_id' => $index,
-                                        ],
-                                        $answer,
-                                    );
-                                }
+
+                                SaveAttendanceEvaluation::run($data,$record);
+
                                 Notification::make()
                                     ->title('Attendance Evaluation Submitted')
                                     ->success()
@@ -164,16 +150,8 @@ class EvaluationMembers extends ListRecords
                                 })->toArray()]
                             )
                             ->action(function (array $data, Model $record){
-                                foreach($data['other_comments_ans'] as $index => $answer){
-                                    OtherCommentAnswer::updateOrCreate(
-                                        [
-                                            'trustee_evaluation_id' => $record->id,
-                                            'comment_id' => $index,
-                                        ],
-                                        [
-                                            'comment' => $answer['comment'],                                        ]
-                                    );
-                                }
+
+                                SaveOtherComments::run($data,$record);
 
                                 Notification::make()
                                     ->title(' Evaluation Submitted')
