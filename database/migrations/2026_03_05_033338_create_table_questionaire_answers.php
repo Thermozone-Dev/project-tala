@@ -19,7 +19,7 @@ return new class extends Migration
             $table->mediumText('remarks')->nullable();
             $table->foreign(['questionnaire_id'], 'table_questionaire_answers_ibfk_1')->references(['id'])->on('questionnaires')->onUpdate('cascade')->onDelete('cascade');
             $table->foreign(['rating_scale_values_id'], 'table_questionaire_answers_ibfk_2')->references(['id'])->on('rating_scale_values')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreign(['trustee_evaluation_id'], 'table_questionaire_answers_ibfk_3')->references(['id'])->on('trustee_has_evaluation')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign(['trustee_evaluation_id'], 'table_questionaire_answers_ibfk_3')->references(['id'])->on('trustee_has_evaluation');
             $table->unique(['trustee_evaluation_id','questionnaire_id'], 'unique_answer_per_question');
         });
     }
