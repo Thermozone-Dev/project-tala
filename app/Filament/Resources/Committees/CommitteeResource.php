@@ -8,6 +8,7 @@ use App\Filament\Resources\Committees\Pages\EvaluationMembers;
 use App\Filament\Resources\Committees\Pages\EvaluationPeriods;
 use App\Filament\Resources\Committees\Pages\ListCommittees;
 use App\Filament\Resources\Committees\Pages\ViewCommittee;
+use App\Filament\Resources\Committees\Pages\ViewCommitteeEvaluation;
 use App\Filament\Resources\Committees\RelationManagers\MembersRelationManager;
 use App\Filament\Resources\Committees\Schemas\CommitteeForm;
 use App\Filament\Resources\Committees\Tables\CommitteesTable;
@@ -56,6 +57,7 @@ class CommitteeResource extends Resource
             'edit' => EditCommittee::route('/{record}/edit'),
             'evaluation-periods' => EvaluationPeriods::route('/{record}/{evaluator_id}/evaluation-periods'),
             'evaluation-members' => EvaluationMembers::route('/{record}/{evaluator_id}/{evaluation_id}/evaluation-periods/evaluation-members'),
+            'view-evaluation' => ViewCommitteeEvaluation::route('/{record}/{record_id}/evaluation-periods/evaluation-members/view-evaluation'),
         ];
     }
 }

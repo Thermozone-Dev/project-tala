@@ -18,7 +18,6 @@ use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
@@ -74,8 +73,8 @@ class EvaluationMembers extends ListRecords
             ->headerActions([
             ])
             ->recordActions([
-                ViewAction::make()->authorize(check_committee_permission($this->record,'View:Committee')),
-                EditAction::make()->authorize(check_committee_permission($this->record,'Update:Committee')),
+                ViewAction::make()->authorize(check_committee_permission($this->record,'View:Committee'))
+                    ->url(fn(Model $record): string => CommitteeResource::getUrl('view-evaluation', ['record' => $this->record,'record_id' => $record->id])),
                 DeleteAction::make()->authorize(check_committee_permission($this->record,'Delete:Committee')),
                 ActionGroup::make([
                         Action::make('Evaluate Assessment')
@@ -172,8 +171,7 @@ class EvaluationMembers extends ListRecords
                                             'comment_id' => $index,
                                         ],
                                         [
-                                            'comment' => $answer['other_comments'],
-                                        ]
+                                            'comment' => $answer['comment'],                                        ]
                                     );
                                 }
 
