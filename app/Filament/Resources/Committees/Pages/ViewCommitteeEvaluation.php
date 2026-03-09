@@ -5,6 +5,9 @@ namespace App\Filament\Resources\Committees\Pages;
 use App\Actions\Form\AssessmentEvaluationFields;
 use App\Actions\Form\AttendanceEvaluationFields;
 use App\Actions\Form\OtherCommentsFields;
+use App\Actions\SaveAssessmentEvaluation;
+use App\Actions\SaveAttendanceEvaluation;
+use App\Actions\SaveOtherComments;
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\AttendanceAnswer;
 use App\Models\Committee;
@@ -17,6 +20,7 @@ use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
 use Filament\Tables\Columns\TextColumn;
@@ -102,17 +106,46 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
         $view_record = TrusteeHasEvaluation::find($this->record_id);
 
         return [
-            Grid::make(1)
-                ->disabled()
-                ->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id)),
-            Grid::make(1)
-                ->disabled()
-                ->schema(AttendanceEvaluationFields::run($view_record->ef_id,$this->record_id)),
-            Grid::make(1)
-                ->disabled()
-                ->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id)),
-            ];
+            Grid::make(1)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id)),
+            Grid::make(1)->schema(AttendanceEvaluationFields::run($view_record->ef_id,$this->record_id)),
+            Grid::make(1)->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id)),
+        ];
     }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('Save Changes')->requiresConfirmation()
+                ->action(function (){
+
+                    $record = TrusteeHasEvaluation::find($this->record_id);
+
+                    $data = $this->form->getState();
+
+                    $data['trustee_evaluation_id'] = $record->evaluation_id;
+
+                    if(isset($data['assesment_answer'])){
+                        SaveAssessmentEvaluation::run($data,$record);
+                    }
+
+                    if(isset($data['attendance_answer'])){
+                        SaveAttendanceEvaluation::run($data,$record);
+                    }
+
+                    if(isset($data['other_comments_ans'])){
+                        SaveOtherComments::run($data,$record);
+                    }
+
+                    Notification::make()
+                        ->title('Changes Saved')
+                        ->success()
+                        ->body('Evaluation answers have been updated successfully.')
+                        ->send();
+                }),
+        ];
+    }
+
+
 
     public function table(Table $table): Table
     {
