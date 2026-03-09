@@ -17,17 +17,25 @@ class CustomPermissionSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $permissionName = 'FullAccess:Committee';
+        $permissionNames = [
+            'FullAccess:Committee',
+            'PrintEvaluation:Committee',
+            'AttendanceEvaluation:Committee',
+            'AssessmentEvaluation:Committee',
+            'OtherComments:Committee',
+        ];
 
-        $permission = Permission::firstOrCreate([
-            'name' => $permissionName,
-            'guard_name' => 'web'
-        ]);
+        foreach ($permissionNames as $permissionName) {
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => 'web'
+            ]);
 
-        $roles = Role::whereIn('name', ['Super Admin','Secretariat'])->get();
+            $roles = Role::whereIn('name', ['Super Admin','Secretariat'])->get();
 
-        foreach ($roles as $role) {
-            $role->givePermissionTo($permission);
+            foreach ($roles as $role) {
+                $role->givePermissionTo($permission);
+            }
         }
     }
 }

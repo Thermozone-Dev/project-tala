@@ -16,4 +16,12 @@ class ViewCommittee extends ViewRecord
             EditAction::make(),
         ];
     }
+
+    public function getBreadcrumbs(): array
+    {
+        $array = [
+            0 => $this->record->name,
+        ];
+        return $array;
+    }
 }

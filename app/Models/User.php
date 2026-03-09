@@ -99,6 +99,12 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
         return $this->avatar_url ? Storage::url($this->avatar_url) : null;
     }
 
+    public function getFullNameAttribute()
+    {
+        $middlename = $this->middle_name ? $this->middle_name . ' ' : '';
+        return $this->first_name . ' ' . $middlename . $this->last_name;
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

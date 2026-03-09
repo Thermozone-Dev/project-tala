@@ -16,4 +16,12 @@ class EditCommittee extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    public function getBreadcrumbs(): array
+    {
+        $array = [
+            0 => $this->record->name,
+        ];
+        return $array;
+    }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\EvaluationForms\Tables;
 
+use App\Models\EvaluationForm;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -18,13 +20,13 @@ class EvaluationFormsTable
     {
         return $table
             ->columns([
-                TextColumn::make('pdf_template_id')
-                    ->numeric()
-                    ->sortable(),
                 TextColumn::make('shortcode')
                     ->searchable(),
                 TextColumn::make('title')
                     ->searchable(),
+                TextColumn::make('pdfTemplate.name')
+                    ->label('PDF Template')
+                    ->sortable(),
                 TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
@@ -42,6 +44,14 @@ class EvaluationFormsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('view_pdf_preview')
+                    ->label('Preview')
+                    ->icon('heroicon-o-eye')
+                    ->button()
+                    ->openUrlInNewTab(true)
+                    ->url(fn (EvaluationForm $form): string => route('queues-call-next', ['formID' => $form->id]))
+                    ->color('warning'),
+
                 ViewAction::make(),
                 EditAction::make(),
             ])

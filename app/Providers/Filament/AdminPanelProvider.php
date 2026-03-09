@@ -82,7 +82,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -117,8 +116,8 @@ class AdminPanelProvider extends PanelProvider
                     ->icon(Heroicon::OutlinedUserGroup),
             ])
             ->navigationItems($navigation)
-            ->brandLogo(asset('images/AFPSLAI Logo.png'))
-            ->brandLogoHeight('3rem')
+            ->brandLogo(asset('image/logos/brand-logo-white-bg.jpeg'))
+            ->brandLogoHeight('6rem')
             ->sidebarCollapsibleOnDesktop();
     }
 }
