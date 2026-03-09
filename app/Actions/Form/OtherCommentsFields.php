@@ -26,7 +26,6 @@ class OtherCommentsFields
                     ->collapsible()
                     ->schema([
                         Textarea::make($prefix.'comment')
-                            ->required()
                             ->hiddenLabel()
                             ->rows(10)
                             ->validationMessages([
