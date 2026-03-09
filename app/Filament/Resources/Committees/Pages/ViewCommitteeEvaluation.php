@@ -148,6 +148,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
     public function table(Table $table): Table
     {
         return $table
+            ->heading('Activity Log')
             ->poll('30s')
             ->query(ActivityLogModel::query()->with(['causer', 'subject'])
                 ->whereHasMorph('subject', [
