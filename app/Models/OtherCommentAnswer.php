@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class OtherCommentAnswer extends Model
 {
-    use HasFactory;
+    use HasFactory,LogsActivity;
 
     protected $table = 'other_comments';
 
@@ -28,5 +30,13 @@ class OtherCommentAnswer extends Model
     public function trusteeEvaluation()
     {
         return $this->belongsTo(TrusteeHasEvaluation::class, 'trustee_evaluation_id');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'comment',
+            ]);
     }
 }

@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class QuestionaireAnswer extends Model
 {
     //
-    use HasFactory;
+    use HasFactory,LogsActivity;
 
     protected $table = 'questionnaire_answers';
 
@@ -40,5 +42,16 @@ class QuestionaireAnswer extends Model
     public function trusteeEvaluation()
     {
         return $this->belongsTo(TrusteeHasEvaluation::class, 'trustee_evaluation_id');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'questionnaire.name',
+                'ratingScaleValue.value',
+                'ratingScaleValue.qualitative',
+                'remarks',
+            ]);
     }
 }
