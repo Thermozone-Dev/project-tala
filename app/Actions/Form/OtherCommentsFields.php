@@ -17,7 +17,7 @@ class OtherCommentsFields
             ->where('section_type_id',3) // 3 = 'Other Comments'
             ->get();
 
-        if (!$eval_form_section) return [];
+        if ($eval_form_section->isEmpty()) return [];
 
         foreach ($eval_form_section as $other_comment) {
 
