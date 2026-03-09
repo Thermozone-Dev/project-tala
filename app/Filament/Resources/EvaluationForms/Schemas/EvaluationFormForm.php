@@ -53,7 +53,7 @@ class EvaluationFormForm
                             ->columnSpanFull()
                             ->schema([
                                 Select::make('rating_scale_id')
-                                    ->relationship('ratingScale', 'type')
+                                    ->relationship('ratingScale', 'name')
                                     ->required(),
 
                                 Select::make('section_type_id')

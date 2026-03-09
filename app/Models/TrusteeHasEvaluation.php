@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TrusteeHasEvaluation extends Model
 {
@@ -44,4 +45,17 @@ class TrusteeHasEvaluation extends Model
     {
         return $this->belongsTo(User::class, 'evaluator_id');
     }
+
+    public function assesment_answer()
+    {
+        return $this->hasMany(QuestionaireAnswer::class, 'trustee_evaluation_id');
+    }
+
+
+    public function attendance_answer()
+    {
+        return $this->hasMany(AttendanceAnswer::class, 'trustee_evaluation_id');
+    }
+
+
 }

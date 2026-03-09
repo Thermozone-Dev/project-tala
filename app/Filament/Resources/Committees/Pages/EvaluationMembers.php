@@ -6,8 +6,10 @@ use App\Actions\Form\AssessmentEvaluationFields;
 use App\Actions\Form\AttendanceEvaluationFields;
 use App\Actions\Form\OtherCommentsFields;
 use App\Filament\Resources\Committees\CommitteeResource;
+use App\Models\AttendanceAnswer;
 use App\Models\Committee;
 use App\Models\EvaluationPeriod;
+use App\Models\QuestionaireAnswer;
 use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
 use BackedEnum;
@@ -17,6 +19,7 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Size;
 use Filament\Support\Enums\Width;
@@ -78,29 +81,97 @@ class EvaluationMembers extends ListRecords
                             ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,1)) // 1 = Section Type: Assessment
                             ->closeModalByClickingAway(false)
                             ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
-                            ->schema(fn(Model $record) => AssessmentEvaluationFields::run($record->ef_id))
-                            ->action(function (array $data){
-                                dd($data);
+                            ->schema(fn(Model $record) =>  AssessmentEvaluationFields::run($record->ef_id, $record->id))
+                            ->fillForm(fn (Model $record) =>
+                                ['assesment_answer' => $record->assesment_answer->mapWithKeys(function ($item) {
+                                    return [
+                                        $item->questionnaire_id => [
+                                            'rating_scale_values_id' => $item->rating_scale_values_id,
+                                            'remarks' => $item->remarks
+                                        ]
+                                    ];
+                                })->toArray()]
+                            )
+                            ->action(function (array $data, Model $record){
+                                $data['trustee_evaluation_id'] = $record->evaluation_id;
+                                foreach($data['assesment_answer'] as $index => $answer){
+                                    QuestionaireAnswer::updateOrCreate(
+                                        [
+                                            'trustee_evaluation_id' => $record->id,
+                                            'questionnaire_id' => $index
+                                        ],
+                                        [
+                                            'rating_scale_values_id' => $answer['rating_scale_values_id'],
+                                            'remarks' => $answer['remarks'] ?? null
+                                        ]
+                                    );
+                                }
+                                Notification::make()
+                                    ->title('Attendance Evaluation Submitted')
+                                    ->success()
+                                    ->body('Your attendance evaluation has been successfully submitted.')
+                                    ->send();
                             })
                             ->authorize(check_committee_permission($this->record,'AssessmentEvaluation:Committee'))
                             ->icon(Heroicon::OutlinedClipboardDocumentCheck),
+
+
                         Action::make('Evaluate Attendance')
                             ->modalWidth(Width::SixExtraLarge)
                             ->closeModalByClickingAway(false)
                             ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
-                            ->schema(fn(Model $record) => AttendanceEvaluationFields::run($record->ef_id))
-                            ->action(function (array $data){
-                                dd($data);
+                            ->schema(fn(Model $record) => AttendanceEvaluationFields::run($record->ef_id,$record->id))
+                            ->fillForm(fn (Model $record) =>
+                                ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
+                                    $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
+                                    return [
+                                        $item->meeting_id => collect($item)->map(function ($value){
+                                            return $value ?? 0;
+                                        })
+                                    ];
+                                })->toArray()]
+                            )
+                            ->action(function (array $data, Model $record){
+                                foreach($data['attendance_answer'] as $index => $answer){
+                                    $answer['attendance_rating_scale_values_id'] = $answer['attendance_rating'];
+                                    AttendanceAnswer::updateOrCreate(
+                                        [
+                                            'trustee_evaluation_id' => $record->id,
+                                            'meeting_id' => $index,
+                                        ],
+                                        $answer,
+                                    );
+                                }
+                                Notification::make()
+                                    ->title('Attendance Evaluation Submitted')
+                                    ->success()
+                                    ->body('Your attendance evaluation has been successfully submitted.')
+                                    ->send();
                             })
                             ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,2)) // 2 = Section Type: Attendance
                             ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
                             ->icon(Heroicon::OutlinedClipboardDocumentList),
+
                         Action::make('Other Comments')
                             ->closeModalByClickingAway(false)
                             ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,3)) // 3 = Section Type: Other Comments
                             ->schema(fn(Model $record) => OtherCommentsFields::run($record->ef_id))
-                            ->action(function (array $data){
-                                dd($data);
+                            ->action(function (array $data, Model $record){
+                                dd($record);
+                                $data['trustee_evaluation_id'] = $record->evaluation_id;
+
+                                foreach($data['assesment_answer'] as $index => $answer){
+                                    QuestionaireAnswer::updateOrCreate(
+                                        [
+                                            'trustee_evaluation_id' => $record->id,
+                                            'questionnaire_id' => $index
+                                        ],
+                                        [
+                                            'rating_scale_values_id' => $answer['rating_scale_values_id'],
+                                            'remarks' => $answer['remarks'] ?? null
+                                        ]
+                                    );
+                                }
                             })
                             ->authorize(check_committee_permission($this->record,'OtherComments:Committee'))
                             ->icon(Heroicon::OutlinedChatBubbleLeft),

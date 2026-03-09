@@ -15,7 +15,7 @@ class AssessmentEvaluationFields
 {
     use AsAction;
 
-    public function handle($ef_id)
+    public function handle($ef_id, $trustee_id = null)
     {
         $eval_form_sections = EvaluationFormSection::where('evaluation_form_id',$ef_id)
             ->where('section_type_id',1) // 1 = 'Assessment'
@@ -39,34 +39,32 @@ class AssessmentEvaluationFields
 
                 $sections[] = Section::make('Rating Scale')->columns(count($rating_scale_values))->schema($rating_scales);
             }
-
-            foreach ($eval_form_section->questionnaires as $index2 => $question) {
-
+            foreach ($eval_form_section->questionnaires->sortBy('id') as $index2 => $question) {
+                $prefix = $trustee_id ? 'assesment_answer.' : '';
                 if($eval_form_section->add_remarks){
                     $fields[] = Grid::make(4)->schema([
                         Text::make($question->name)
                             ->columnSpan(2)
                             ->weight(FontWeight::Bold)
                             ->color('neutral'),
-                        Select::make($question->id)
-                            ->required()
+                        Select::make($prefix.$question->id.'.rating_scale_values_id')
+                            // ->required()
                             ->hiddenLabel()
                             ->validationMessages([
                                 'required' => 'This field is required.',
                             ])
                             ->options($rating_scale_values),
-                        Textarea::make('remarks_'.$index2)
+                        Textarea::make($prefix.$question->id.'.remarks')
                             ->placeholder('Remarks...')
                             ->hiddenLabel()
                     ]);
-
                 }else{
-                    $fields[] = Grid::make(3)->schema([
+                    $fields[] =  Grid::make(3)->schema([
                         Text::make($question->name)
                             ->columnSpan(2)
                             ->weight(FontWeight::Bold)
                             ->color('neutral'),
-                        Select::make($question->id)
+                        Select::make($prefix.$question->id.'.rating_scale_values_id')
                             ->required()
                             ->hiddenLabel()
                             ->validationMessages([

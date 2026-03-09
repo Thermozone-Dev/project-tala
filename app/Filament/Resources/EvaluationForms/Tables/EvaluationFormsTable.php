@@ -45,7 +45,7 @@ class EvaluationFormsTable
             ])
             ->recordActions([
                 Action::make('view_pdf_preview')
-                    ->label('EF PDF Preview')
+                    ->label('Preview')
                     ->icon('heroicon-o-eye')
                     ->button()
                     ->openUrlInNewTab(true)

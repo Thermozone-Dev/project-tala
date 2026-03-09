@@ -27,7 +27,7 @@ class OtherCommentsFields
                         ->required()
                         ->hiddenLabel()
                         ->rows(10)
-                        ->validationMessages([
+                        ->validationMessages([ 
                             'required' => 'This field is required.',
                         ])
                 ])

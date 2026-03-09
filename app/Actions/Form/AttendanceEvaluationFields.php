@@ -4,6 +4,7 @@ namespace App\Actions\Form;
 
 use App\Models\EvaluationFormSection;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\FontWeight;
@@ -16,7 +17,7 @@ class AttendanceEvaluationFields
 {
     use AsAction;
 
-    public function handle($ef_id)
+    public function handle($ef_id, $trustee_id = null)
     {
         $eval_form_section = EvaluationFormSection::where('evaluation_form_id',$ef_id)
             ->where('section_type_id',2) // 2 = 'Attendance'
@@ -59,22 +60,34 @@ class AttendanceEvaluationFields
         $heading[] = Text::make('')->columnSpan(2);
 
         foreach ($is_true_columns as $column) {
-                $heading[] = Text::make(Str::headline($column))->weight(FontWeight::Bold)->color('neutral');
+            $heading[] = Text::make(Str::headline($column))->weight(FontWeight::Bold)->color('neutral');
         }
 
         foreach ($eval_form_section->attendanceSection->meetings as $meeting) {
+            $prefix = ($trustee_id ? 'attendance_answer.' : '').$meeting->id.'.';
 
             $fields[] =  Text::make($meeting->name)->columnSpan(2)->weight(FontWeight::Bold)->color('neutral');
-
             foreach ($is_true_columns as $column) {
-
-                $fields[] = Select::make('meeting_'.$meeting->id.'_'.$column)
-                    ->required()
+                if($column == 'attendance_rating'){
+                    $fields[] = Select::make($prefix.$column)
+                    // ->required()
                     ->hiddenLabel()
                     ->validationMessages([
                         'required' => 'This field is required.',
                     ])
                     ->options($rating_scale_values->pluck('qualitative','id')->toArray());
+                    continue;
+                }
+                $fields[] = TextInput::make($prefix.$column)
+                    ->required()
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(300)
+                    ->nullable()
+                    ->hiddenLabel()
+                    ->validationMessages([
+                        'required' => 'This field is required.',
+                    ]);
             }
         }
 
