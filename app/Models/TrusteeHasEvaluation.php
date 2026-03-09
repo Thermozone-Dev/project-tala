@@ -58,4 +58,9 @@ class TrusteeHasEvaluation extends Model
     }
 
 
+    public function other_comments()
+    {
+        return $this->hasMany(OtherCommentAnswer::class, 'trustee_evaluation_id');
+    }
+
 }

@@ -11,26 +11,32 @@ class OtherCommentsFields
 {
     use AsAction;
 
-    public function handle($ef_id)
+    public function handle($ef_id, $trustee_id = null)
     {
         $eval_form_section = EvaluationFormSection::where('evaluation_form_id',$ef_id)
             ->where('section_type_id',3) // 3 = 'Other Comments'
-            ->first();
+            ->get();
 
         if (!$eval_form_section) return [];
 
-        return [
-            Section::make($eval_form_section->title)
-                ->collapsible()
-                ->schema([
-                    Textarea::make('other_comments')
-                        ->required()
-                        ->hiddenLabel()
-                        ->rows(10)
-                        ->validationMessages([ 
-                            'required' => 'This field is required.',
-                        ])
-                ])
-        ];
+        foreach ($eval_form_section as $other_comment) {
+
+            $prefix = ($trustee_id ? 'other_comments_ans.' : '').$other_comment->id.'.';
+            $fields[] = Section::make($other_comment->title)
+                    ->collapsible()
+                    ->schema([
+                        Textarea::make($prefix.'comment')
+                            ->required()
+                            ->hiddenLabel()
+                            ->rows(10)
+                            ->validationMessages([
+                                'required' => 'This field is required.',
+                            ])
+                    ]);
+        }
+
+
+        return $fields;
+
     }
 }

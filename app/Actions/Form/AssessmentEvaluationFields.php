@@ -65,7 +65,7 @@ class AssessmentEvaluationFields
                             ->weight(FontWeight::Bold)
                             ->color('neutral'),
                         Select::make($prefix.$question->id.'.rating_scale_values_id')
-                            ->required()
+                            // ->required()
                             ->hiddenLabel()
                             ->validationMessages([
                                 'required' => 'This field is required.',

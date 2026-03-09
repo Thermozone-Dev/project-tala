@@ -9,6 +9,7 @@ use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\AttendanceAnswer;
 use App\Models\Committee;
 use App\Models\EvaluationPeriod;
+use App\Models\OtherCommentAnswer;
 use App\Models\QuestionaireAnswer;
 use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
@@ -155,23 +156,32 @@ class EvaluationMembers extends ListRecords
                         Action::make('Other Comments')
                             ->closeModalByClickingAway(false)
                             ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,3)) // 3 = Section Type: Other Comments
-                            ->schema(fn(Model $record) => OtherCommentsFields::run($record->ef_id))
+                            ->schema(fn(Model $record) => OtherCommentsFields::run($record->ef_id, $record->id))
+                            ->fillForm(fn (Model $record) =>
+                                ['other_comments_ans' => $record->other_comments->mapWithKeys(function ($item) {
+                                    return [
+                                        $item->comment_id => $item
+                                    ];
+                                })->toArray()]
+                            )
                             ->action(function (array $data, Model $record){
-                                dd($record);
-                                $data['trustee_evaluation_id'] = $record->evaluation_id;
-
-                                foreach($data['assesment_answer'] as $index => $answer){
-                                    QuestionaireAnswer::updateOrCreate(
+                                foreach($data['other_comments_ans'] as $index => $answer){
+                                    OtherCommentAnswer::updateOrCreate(
                                         [
                                             'trustee_evaluation_id' => $record->id,
-                                            'questionnaire_id' => $index
+                                            'comment_id' => $index,
                                         ],
                                         [
-                                            'rating_scale_values_id' => $answer['rating_scale_values_id'],
-                                            'remarks' => $answer['remarks'] ?? null
+                                            'comment' => $answer['other_comments'],
                                         ]
                                     );
                                 }
+
+                                Notification::make()
+                                    ->title(' Evaluation Submitted')
+                                    ->success()
+                                    ->body('Your other comments recorded.')
+                                    ->send();
                             })
                             ->authorize(check_committee_permission($this->record,'OtherComments:Committee'))
                             ->icon(Heroicon::OutlinedChatBubbleLeft),
