@@ -44,10 +44,14 @@ class TrusteeForm
                         TextInput::make('mobile_number')
                             ->label('Mobile Number')
                             ->tel()
+                            ->telRegex('/^(?:\+63|0)9\d{9}$/')
+                            ->placeholder('e.g. 0917XXXXXXXX or +63917XXXXXXXX')
                             ->required(),
 
                         DatePicker::make('date_of_birth')
                             ->label('Date of Birth')
+                            ->minDate(now()->subYears(150))
+                            ->maxDate(now())
                             ->required(),
 
                         Select::make('gender')
