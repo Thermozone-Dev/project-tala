@@ -145,8 +145,6 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
         ];
     }
 
-
-
     public function table(Table $table): Table
     {
         return $table
@@ -158,24 +156,6 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     OtherCommentAnswer::class,
                 ], function ($query) {
                     $query->where('trustee_evaluation_id', $this->record_id);
-                })
-                ->where(function ($query) {
-                    $query->where('event', '!=', 'created')
-                        ->orWhere(function ($query) {
-                            $query->where('event', 'created')
-                                ->where(function ($query) {
-                                    $query->whereNot('subject_type', QuestionaireAnswer::class)
-                                        ->orWhereHasMorph('subject', [
-                                            QuestionaireAnswer::class,
-                                        ], function ($q) {
-                                            $q->where('trustee_evaluation_id', $this->record_id)
-                                                ->where(function ($q) {
-                                                    $q->whereNotNull('rating_scale_values_id')
-                                                        ->orWhereNotNull('remarks');
-                                                });
-                                        });
-                                });
-                        });
                 })
                 ->latest())
             ->columns([
@@ -259,15 +239,11 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
             ->filters([
                 SelectFilter::make('subject_type')
                     ->label('Subject Type')
-                    ->options(fn (): array => ActivityLogModel::query()
-                        ->whereNotNull('subject_type')
-                        ->select('subject_type')
-                        ->distinct()
-                        ->pluck('subject_type')
-                        ->filter()
-                        ->mapWithKeys(fn (string $type): array => [$type => class_basename($type)])
-                        ->toArray()
-                    )
+                    ->options([
+                        QuestionaireAnswer::class => Str::headline(class_basename(QuestionaireAnswer::class)),
+                        AttendanceAnswer::class => Str::headline(class_basename(AttendanceAnswer::class)),
+                        OtherCommentAnswer::class => Str::headline(class_basename(OtherCommentAnswer::class)),
+                    ])
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('causer_id')
@@ -276,18 +252,13 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                         ->whereIn('id', ActivityLogModel::query()
                             ->where('causer_type', \App\Models\User::class)
                             ->whereNotNull('causer_id')
-                            ->select('causer_id')
-                            ->distinct()
-                        )
-                        ->orderBy('first_name')
-                        ->get(['id', 'first_name', 'last_name'])
-                        ->pluck('name', 'id')
-                        ->toArray()
-                    )
-                    ->options(fn (): array => \App\Models\User::query()
-                        ->whereIn('id', ActivityLogModel::query()
-                            ->where('causer_type', \App\Models\User::class)
-                            ->whereNotNull('causer_id')
+                            ->whereHasMorph('subject', [
+                                QuestionaireAnswer::class,
+                                AttendanceAnswer::class,
+                                OtherCommentAnswer::class,
+                            ], function ($query) {
+                                $query->where('trustee_evaluation_id', $this->record_id);
+                            })
                             ->select('causer_id')
                             ->distinct()
                         )
