@@ -152,17 +152,31 @@ class EvaluationMembers extends ListRecords
                             ->action(function (array $data, Model $record){
 
                                 SaveOtherComments::run($data,$record);
+                                foreach($data['other_comments_ans'] as $index => $answer){
+                                    OtherCommentAnswer::updateOrCreate(
+                                        [
+                                            'trustee_evaluation_id' => $record->id,
+                                            'comment_id' => $index,
+                                        ],
+                                        [
+                                            'comment' => $answer['comment'],
+                                        ]
+                                    );
+                                }
 
                                 Notification::make()
-                                    ->title(' Evaluation Submitted')
+                                    ->title('Evaluation Submitted')
                                     ->success()
                                     ->body('Your other comments recorded.')
                                     ->send();
                             })
                             ->authorize(check_committee_permission($this->record,'OtherComments:Committee'))
                             ->icon(Heroicon::OutlinedChatBubbleLeft),
+
                         Action::make('Print')
                             ->authorize(check_committee_permission($this->record,'PrintEvaluation:Committee'))
+                            ->openUrlInNewTab()
+                            ->url(fn(Model $record) => route('queues-call-next', ['trustee_evaluation_id' => $record->id]))
                             ->icon(Heroicon::OutlinedPrinter),
                     ])
                     ->label('Evaluation actions')

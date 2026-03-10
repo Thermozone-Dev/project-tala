@@ -14,21 +14,25 @@
                     $criteria_count++;
                 @endphp
                 <th style="text-align:center">{{$criteria['name']}}</th>
-
             @endif
         @endforeach
     </thead>
     <tbody class="table-text">
         @foreach ($section['attendance']['meetings'] as $meeting)
             <tr>
-                <td style="font-weight: normal">{{$meeting}}</td>
-                @for ($i = 0; $i < $criteria_count; $i++)
-                    <td style="text-align:center">
-                        {{-- @if (isset($attendance['data'][$meeting][$i]) && $attendance['data'][$meeting][$i])
-                            &#10003;
-                        @endif --}}
-                    </td>
-                @endfor
+                <td style="font-weight: normal">{{$meeting['name']}}</td>
+                @foreach ($section['attendance']['criteria'] as $index => $column)
+                    {{-- @dd($column, $index) --}}
+                    @if ($column['show'] == true)
+                        <td style="text-align:center">
+                            @if (isset($meeting[$index]) && $meeting[$index])
+                                {{$meeting[$index]}}
+                            @else
+                                {{-- &#10003; --}}
+                            @endif
+                        </td>
+                    @endif
+                @endforeach
             </tr>
         @endforeach
     </tbody>

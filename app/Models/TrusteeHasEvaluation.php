@@ -23,7 +23,7 @@ class TrusteeHasEvaluation extends Model
 
     public function evaluationPeriod()
     {
-        return $this->belongsTo(EvaluationPeriod::class, 'evaluation_period_id');
+        return $this->belongsTo(EvaluationPeriod::class, 'evaluation_id');
     }
 
     public function form()
