@@ -24,7 +24,7 @@ return new class extends Migration
 
             $table->foreign(['attendance_rating_scale_values_id'], 'table_attendance_answer_ibfk_1')->references(['id'])->on('rating_scale_values')->onUpdate('cascade')->onDelete('cascade');
             $table->foreign(['trustee_evaluation_id'], 'table_attendance_answer_ibfk_2')->references(['id'])->on('trustee_has_evaluation')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreign(['meeting_id'], 'table_attendance_answer_ibfk_3')->references(['id'])->on('attendance_meetings')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign(['meeting_id'], 'table_attendance_answer_ibfk_3')->references(['id'])->on('attendance_meetings');
 
         });
 

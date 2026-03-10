@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class AttendanceAnswer extends Model
 {
-    use HasFactory;
+    use HasFactory,LogsActivity;
 
     protected $table = 'attendance_answer';
 
@@ -43,6 +45,20 @@ class AttendanceAnswer extends Model
     public function trusteeEvaluation()
     {
         return $this->belongsTo(TrusteeHasEvaluation::class, 'trustee_evaluation_id');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'total_meetings',
+                'physically_present',
+                'considered_present',
+                'total_present',
+                'ratingScaleValue.value',
+                'ratingScaleValue.qualitative',
+                'ratingScaleValue.name',
+            ]);
     }
 
 }

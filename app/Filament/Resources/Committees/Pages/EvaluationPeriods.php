@@ -45,7 +45,8 @@ class EvaluationPeriods extends ListRecords
         return EvaluationPeriod::query()
             ->whereHas('assignments', function ($query) {
                 $query->where('evaluator_id', $this->evaluator_id);
-            })->with('assignments');
+            })->with('assignments')
+            ->latest();
     }
 
 

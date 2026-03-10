@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('comment_id')->nullable();
             $table->unsignedBigInteger('trustee_evaluation_id')->nullable();
             $table->foreign(['trustee_evaluation_id'], 'table_other_comments_ibfk_1')->references(['id'])->on('trustee_has_evaluation')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreign(['comment_id'], 'table_other_comments_ibfk_2')->references(['id'])->on('evaluation_form_sections')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign(['comment_id'], 'table_other_comments_ibfk_2')->references(['id'])->on('evaluation_form_sections');
         });
     }
 
