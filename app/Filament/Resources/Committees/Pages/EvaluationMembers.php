@@ -172,21 +172,24 @@ class EvaluationMembers extends ListRecords
                                             'comment_id' => $index,
                                         ],
                                         [
-                                            'comment' => $answer['other_comments'],
+                                            'comment' => $answer['comment'],
                                         ]
                                     );
                                 }
 
                                 Notification::make()
-                                    ->title(' Evaluation Submitted')
+                                    ->title('Evaluation Submitted')
                                     ->success()
                                     ->body('Your other comments recorded.')
                                     ->send();
                             })
                             ->authorize(check_committee_permission($this->record,'OtherComments:Committee'))
                             ->icon(Heroicon::OutlinedChatBubbleLeft),
+
                         Action::make('Print')
                             ->authorize(check_committee_permission($this->record,'PrintEvaluation:Committee'))
+                            ->openUrlInNewTab()
+                            ->url(fn(Model $record) => route('queues-call-next', ['trustee_evaluation_id' => $record->id]))
                             ->icon(Heroicon::OutlinedPrinter),
                     ])
                     ->label('Evaluation actions')

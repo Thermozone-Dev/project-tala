@@ -37,7 +37,7 @@ class AttendanceAnswer extends Model
 
     public function ratingScaleValue()
     {
-        return $this->belongsTo(RatingScaleValue::class, 'rating_scale_values_id');
+        return $this->belongsTo(RatingScaleValue::class, 'attendance_rating_scale_values_id');
     }
 
     public function trusteeEvaluation()

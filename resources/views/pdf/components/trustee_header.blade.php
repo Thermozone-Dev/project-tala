@@ -26,50 +26,24 @@
     <tbody class="table-text">
         <tr class="text-uppercase">
             <td style="width: 30%">Name</td>
-            <td colspan="3" >MGEN ADRIANO S PEREZ JR PA (RET)</td>
+            <td colspan="3" >{{$header_data['name']}}</td>
         </tr>
         <tr>
-            <td rowspan="3" style="width: 30%">Committee Memberships</td>
-            <tr>
-                <td>
-                    <span class="checkbox {{ $isMember ? 'checked' : '' }}"></span>
-                    Governance
-                </td>
-                <td>
-                    <span class="checkbox {{ $isMember ? 'checked' : '' }}"></span>
-                    Audit & Compliance
-                </td>
-                <td>
-                    <span class="checkbox {{ $isMember ? 'checked' : '' }}"></span>
-                    Risk Oversight
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <span class="checkbox {{ $isMember ? 'checked' : '' }}"></span>
-                    Governance
-                </td>
-                <td>
-                    <span class="checkbox {{ $isMember ? 'checked' : '' }}"></span>
-                    Audit & Compliance
-                </td>
-                <td>
-                    <span class="checkbox {{ $isMember ? 'checked' : '' }}"></span>
-                    Risk Oversight
-                </td>
-            </tr>
+            <td rowspan="{{count($header_data['commitees']) + 1}}" style="width: 30%">Committee Memberships</td>
+            @foreach ($header_data['commitees'] as $commitee_chunk)
+                <tr>
+                    @foreach ($commitee_chunk as $commitee)
+                        <td style="white-space: nowrap">
+                            <span class="checkbox {{ $commitee['is_member'] ? 'checked' : '' }}"></span>
+                            {{$commitee['name']}}
+                        </td>
+                    @endforeach
+                </tr>
+            @endforeach
         </tr>
         <tr>
-            <td style="width: 20%">Covered Period</td>
-            <td colspan="3">JUNE 2025 TO APRIL 2026</td>
+            <td style="width: 30%">Covered Period</td>
+            <td colspan="3">{{$header_data['coverage_period']}}</td>
         </tr>
     </tbody>
 </table>
-    {{-- <div class="text-right" style="text-transform: uppercase; border:1px solid rgb(173, 167, 167); padding:8px">
-        <p><span style="margin-right: 10px">Subtotal</span>₱ {{number_format($sub_total)}}</p>
-        @if ($discount)
-            <p><span style="margin-right: 10px">Disc@ {{$discount}}</span>₱ {{number_format($discount_val,2)}}</p>
-
-        @endif
-        <p style="font-weight:bold"><span style="margin-right: 10px">Grand total</span>₱ {{number_format($grand_total,2)}}</p>
-    </div> --}}
