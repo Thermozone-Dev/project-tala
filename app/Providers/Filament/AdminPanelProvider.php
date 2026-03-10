@@ -29,6 +29,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
+use Illuminate\Support\Facades\Schema;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -36,19 +37,22 @@ class AdminPanelProvider extends PanelProvider
     {
 
         $navigation = [];
-        $committees = Committee::all();
-        foreach ($committees as $committee) {
 
-            $navigation[] = NavigationItem::make($committee->name)
-                ->group('Committees')
-                ->url(fn(): string => CommitteeResource::getUrl('view', ['record' => $committee->id]))
-                ->visible(function () use ($committee) {
-                    if(auth()->user()->hasRole('Super Admin')) return true;
-                    return CommitteeHasTrustee::where('user_id',auth()->user()->id)
-                        ->where('committee_id',$committee->id)->exists();
-                });
+        if (Schema::hasTable('committees')) {
+            $committees = Committee::all();
 
+            foreach ($committees as $committee) {
+                $navigation[] = NavigationItem::make($committee->name)
+                    ->group('Committees')
+                    ->url(fn (): string => CommitteeResource::getUrl('view', ['record' => $committee->id]))
+                    ->visible(function () use ($committee) {
+                        if (auth()->user()->hasRole('Super Admin')) return true;
 
+                        return CommitteeHasTrustee::where('user_id', auth()->id())
+                            ->where('committee_id', $committee->id)
+                            ->exists();
+                    });
+            }
         }
 
         $navigation[] = NavigationItem::make('Setup MFA')
