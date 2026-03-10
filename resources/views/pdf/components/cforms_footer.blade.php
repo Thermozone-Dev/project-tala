@@ -2,7 +2,7 @@
     <tbody class="table-text">
         <tr>
             <td style="width: 20%">Name & Signature of Rater:</td>
-            <td></td>
+            <td>{{$header_data['evaluated_by']}}</td>
         </tr>
         <tr>
             <td style="width: 20%">Date Accomplished: </td>

@@ -14,10 +14,10 @@
     <tbody class="table-text">
         @foreach ($section_data['questions'] as $question)
             <tr>
-                <td style="font-weight: normal">{{$question}}</td>
-                <td></td>
+                <td style="font-weight: normal">{{$question['name']}}</td>
+                <td style="font-pweight: normal; text-align:center"><b>{{$question['answer']}}</b></td>
                 @if (isset($section_data['add_remarks']) && $section_data['add_remarks'])
-                    <td></td>
+                    <td style="text-align:center">{{$question['remarks']}}</td>
                 @endif
             </tr>
         @endforeach

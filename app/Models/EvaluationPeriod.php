@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -37,5 +38,12 @@ class EvaluationPeriod extends Model
     public function assignments()
     {
         return $this->hasMany(TrusteeHasEvaluation::class, 'evaluation_id');
+    }
+
+
+
+    public function getFormattedCoverage()
+    {
+        return Carbon::parse($this->date_from)->format('M d, Y') . ' - ' . Carbon::parse($this->date_to)->format('M d, Y');
     }
 }
