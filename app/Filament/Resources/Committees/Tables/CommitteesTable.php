@@ -16,7 +16,7 @@ class CommitteesTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->description(fn (Committee $record): string => $record->description)
+                    ->description(fn (Committee $record): string => (!empty($record->description)) ? $record->description : '-')
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
