@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Committees\RelationManagers;
 
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\CommitteeHasTrustee;
-use App\Models\User;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -14,6 +13,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Models\Role;
 
@@ -39,16 +39,24 @@ class MembersRelationManager extends RelationManager
                     })
                     ->required(),
                 Select::make('user_id')
-                    ->label('Users')
-                    ->searchable()
-                    ->options(function (){
-                        $id = CommitteeHasTrustee::where('committee_id', $this->getOwnerRecord()->id)->pluck('user_id');
-                        $users = User::whereNotIn('id', $id)->pluck( 'name','id');
+                    ->preload()
+                    ->relationship('user','name', modifyQueryUsing: function (Builder $query,$state,$operation) {
 
-                        return $users;
+                        $query = $query->whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'));
+
+                        $committeeId = $this->getOwnerRecord()->id;
+
+                        $excludedIds = CommitteeHasTrustee::where('committee_id', $committeeId)->pluck('user_id');
+
+                        if ($operation === 'edit') {
+                            $currentUserId = $state;
+
+                            return $query->whereNotIn('id', $excludedIds)->orWhere('id', $currentUserId);
+                        }
+                        return $query->whereNotIn('id', $excludedIds);
                     })
+                    ->searchable()
                     ->required(),
-
             ]);
     }
 
@@ -66,14 +74,7 @@ class MembersRelationManager extends RelationManager
                 DeleteAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'Delete:Committee')),
             ])
             ->headerActions([
-                CreateAction::make()
-                    ->action(function (array $data){
-                        CommitteeHasTrustee::insert([
-                            'committee_id' => $this->getOwnerRecord()->id,
-                            'user_id' => $data['user_id'],
-                            'role_id' => $data['role_id'],
-                        ]);
-                    }),
+                CreateAction::make(),
             ]);
     }
 }
