@@ -4,6 +4,8 @@ namespace App\Filament\Resources\EvaluationPeriods\Pages;
 
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
 use App\Models\Committee;
+use App\Models\EvaluationPeriod;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,6 +13,18 @@ class CreateEvaluationPeriod extends CreateRecord
 {
     protected static string $resource = EvaluationPeriodResource::class;
 
+
+    public function mount(): void{
+        if(EvaluationPeriod::where('status_id', 1)->exists()){
+            Notification::make()
+                ->title('An active evaluation period already exists.')
+                ->body('Please end the current evaluation period before starting a new one.')
+                ->danger()
+                ->send();
+
+            redirect($this->getResource()::getUrl('index'));
+        }
+    }
     public function handleRecordCreation(array $data): Model
     {
 
@@ -71,6 +85,6 @@ class CreateEvaluationPeriod extends CreateRecord
             }
 
         });
-        
+
     }
 }

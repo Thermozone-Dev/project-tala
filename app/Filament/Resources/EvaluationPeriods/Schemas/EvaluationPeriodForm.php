@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EvaluationPeriods\Schemas;
 
+use App\Models\EvaluationPeriod;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -16,6 +17,7 @@ class EvaluationPeriodForm
             ->components([
                 DatePicker::make('date_from')
                     ->default('06/25/2024')
+                    ->minDate(fn () => EvaluationPeriod::orderBy('date_to', 'desc')->value('date_to') ?? now()->addDay())
                     ->required(),
                 DatePicker::make('date_to')
                     ->default('06/25/2026')
