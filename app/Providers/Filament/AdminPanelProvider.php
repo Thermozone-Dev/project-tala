@@ -50,6 +50,7 @@ class AdminPanelProvider extends PanelProvider
                         $total_eval = TrusteeHasEvaluation::query()
                             ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
                             ->where('committee_id', $committee->id)
+                            ->whereHas('evaluationPeriod', fn($q) => $q->where('status_id', 1)) // 1 = Active
                             ->count() ?: null;
                         
                         return $total_eval;
