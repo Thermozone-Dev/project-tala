@@ -21,6 +21,8 @@ class RolesSeeder extends Seeder
             'Trustee',
             'Corporate Officer',
             'Lead Resource Person',
+            'Corporate Treasurer',
+            'Corporate Comptroller',
         ];
 
         foreach ($roles as $role) {
