@@ -78,6 +78,7 @@ class MembersRelationManager extends RelationManager
                             ->whereHas('assignments', function ($query) use ($state) {
                                 $query->where('evaluator_id', $state);
                             })->with('assignments')
+                            ->where('status_id',1) // 1 = Active
                             ->pluck('id')
                             ->toArray();
 

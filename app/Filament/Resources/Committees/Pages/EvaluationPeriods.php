@@ -65,6 +65,7 @@ class EvaluationPeriods extends ListRecords
                     ->formatStateUsing(function (string $state){
                         return TrusteeHasEvaluation::query()
                             ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
+                            ->whereHas('evaluationPeriod', fn($q) => $q->where('status_id', 1)) // 1 = Active
                             ->where('committee_id', $this->record)
                             ->where('evaluator_id', $this->evaluator_id)
                             ->where('evaluation_id', $state)->count() ?: null;
