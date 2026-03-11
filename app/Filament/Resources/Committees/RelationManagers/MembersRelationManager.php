@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Committees\RelationManagers;
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\CommitteeHasTrustee;
 use App\Models\User;
+use App\Models\EvaluationPeriod;
+use App\Models\TrusteeHasEvaluation;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -58,6 +60,27 @@ class MembersRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('role.name')->label('Role'),
                 TextColumn::make('user.name')->label('Name'),
+                TextColumn::make('user_id')
+                    ->label('')
+                    ->badge()
+                    ->color('warning')
+                    ->formatStateUsing(function ($state) {
+                        $eval_period_ids = EvaluationPeriod::query()
+                            ->whereHas('assignments', function ($query) use ($state) {
+                                $query->where('evaluator_id', $state);
+                            })->with('assignments')
+                            ->pluck('id')
+                            ->toArray();
+
+                        $total_eval = TrusteeHasEvaluation::query()
+                            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
+                            ->where('committee_id', $this->getOwnerRecord()->id)
+                            ->where('evaluator_id', $state)
+                            ->whereIn('evaluation_id', $eval_period_ids)
+                            ->count() ?: null;
+
+                        return $total_eval;
+                    })
             ])
             ->recordActions([
                 ViewAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'View:Committee'))

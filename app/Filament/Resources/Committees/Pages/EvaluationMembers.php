@@ -69,6 +69,15 @@ class EvaluationMembers extends ListRecords
                 TextColumn::make('form.shortcode'),
                 TextColumn::make('evaluator.name'),
                 TextColumn::make('member.name'),
+                TextColumn::make('eval_status.name')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Draft' => 'primary',
+                        'Pending' => 'warning',
+                        'Locked' => 'success',
+                        'For Review' => 'info',
+                    }),
             ])
             ->filters([
                 //
