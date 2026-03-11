@@ -6,6 +6,7 @@ use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\Committee;
 use App\Models\CommitteeHasTrustee;
 use App\Models\EvaluationPeriod;
+use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\ViewAction;
@@ -54,10 +55,20 @@ class EvaluationPeriods extends ListRecords
     {
         return $table
             ->columns([
-                TextColumn::make('id'),
                 TextColumn::make('status.name'),
                 TextColumn::make('date_from')->dateTime(),
                 TextColumn::make('date_to')->dateTime(),
+                TextColumn::make('id')
+                    ->label('')
+                    ->badge()
+                    ->color('warning')
+                    ->formatStateUsing(function (string $state){
+                        return TrusteeHasEvaluation::query()
+                            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
+                            ->where('committee_id', $this->record)
+                            ->where('evaluator_id', $this->evaluator_id)
+                            ->where('evaluation_id', $state)->count() ?: null;
+                    })
             ])
             ->filters([
                 //

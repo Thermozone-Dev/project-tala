@@ -6,6 +6,8 @@ use App\Filament\Resources\Committees\CommitteeResource;
 use App\Livewire\CustomPersonalInfo;
 use App\Models\Committee;
 use App\Models\CommitteeHasTrustee;
+use App\Models\EvaluationPeriod;
+use App\Models\TrusteeHasEvaluation;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Auth\MultiFactor\Email\EmailAuthentication;
 use Filament\Http\Middleware\Authenticate;
@@ -44,6 +46,15 @@ class AdminPanelProvider extends PanelProvider
             foreach ($committees as $committee) {
                 $navigation[] = NavigationItem::make($committee->name)
                     ->group('Committees')
+                    ->badge(function () use ($committee) {
+                        $total_eval = TrusteeHasEvaluation::query()
+                            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
+                            ->where('committee_id', $committee->id)
+                            ->count() ?: null;
+                        
+                        return $total_eval;
+                    },'warning')
+                    ->isActiveWhen(fn() => request()->is('admin/committees/' . $committee->id . '*'))
                     ->url(fn (): string => CommitteeResource::getUrl('view', ['record' => $committee->id]))
                     ->visible(function () use ($committee) {
                         if (auth()->user()->hasRole('Super Admin')) return true;
