@@ -18,7 +18,8 @@ class TrusteeHasEvaluation extends Model
         'ef_id',
         'committee_id',
         'member_id',
-        'evaluator_id'
+        'evaluator_id',
+        'trustee_evaluation_statuses_id'
     ];
 
     public function evaluationPeriod()
@@ -62,5 +63,11 @@ class TrusteeHasEvaluation extends Model
     {
         return $this->hasMany(OtherCommentAnswer::class, 'trustee_evaluation_id');
     }
+
+    public function eval_status()
+    {
+        return $this->belongsTo(TrusteeEvaluationStatus::class, 'trustee_evaluation_statuses_id');
+    }
+
 
 }
