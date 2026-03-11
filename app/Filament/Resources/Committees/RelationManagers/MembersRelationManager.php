@@ -42,7 +42,7 @@ class MembersRelationManager extends RelationManager
                     ->preload()
                     ->relationship('user','name', modifyQueryUsing: function (Builder $query,$state,$operation) {
 
-                        $query = $query->whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'));
+                        $query = $query->whereDoesntHave('roles', fn ($q) => $q->whereIn('name', ['Super Admin','Secretariat']));
 
                         $committeeId = $this->getOwnerRecord()->id;
 
