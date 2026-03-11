@@ -53,21 +53,24 @@ class CreateEvaluationPeriod extends CreateRecord
 
                     }
                     else{
+                        $eval_form = get_eval_form_by_role($committeeHasTrustee->role->name);
+                        if(!$eval_form){
+                            return; // iterate to next if no evaluation form is found for the role
+                        }
                         $test = [
                             'evaluation_id' => $this->record->id,
-                            'ef_id' => get_eval_form_by_role($committeeHasTrustee->role->name),
+                            'ef_id' => $eval_form,
                             'committee_id' => $committee->id,
                             'member_id' => $committeeHasTrustee->user_id,
                             'evaluator_id' => $member->user_id,
                         ];
                         $this->record->assignments()->create($test);
                     }
-
                 });
 
             }
 
         });
-
+        
     }
 }

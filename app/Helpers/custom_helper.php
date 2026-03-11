@@ -29,6 +29,14 @@ if (! function_exists('get_eval_form_by_role')) {
                 $form =  $model->find(4);
                 break;
 
+            case 'corporate treasurer':
+                $form =  $model->find(5);
+                break;
+
+            case 'corporate comptroller':
+                $form =  $model->find(6);
+                break;
+
             case 'lead resource person':
                 $form =  $model->find(7);
                 break;
@@ -39,7 +47,7 @@ if (! function_exists('get_eval_form_by_role')) {
 
         }
         if(!$form){
-            dd('No form found for role: ' . $role);
+            return $form;
         }
         return $form->id;
 
