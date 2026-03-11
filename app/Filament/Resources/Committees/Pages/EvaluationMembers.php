@@ -93,6 +93,7 @@ class EvaluationMembers extends ListRecords
                             ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,1)) // 1 = Section Type: Assessment
                             ->closeModalByClickingAway(false)
                             ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
+                            ->disabled( fn (Model $record) =>  $this->editable_field_status($record) ? false : true)
                             ->schema(fn(Model $record) =>  AssessmentEvaluationFields::run($record->ef_id, $record->id))
                             ->fillForm(fn (Model $record) =>
                                 ['assesment_answer' => $record->assesment_answer->mapWithKeys(function ($item) {
@@ -121,6 +122,7 @@ class EvaluationMembers extends ListRecords
                         Action::make('Evaluate Attendance')
                             ->modalWidth(Width::SixExtraLarge)
                             ->closeModalByClickingAway(false)
+                            ->disabled( fn (Model $record) =>  $this->editable_field_status($record))
                             ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
                             ->schema(fn(Model $record) => AttendanceEvaluationFields::run($record->ef_id,$record->id))
                             ->fillForm(fn (Model $record) =>
@@ -149,6 +151,7 @@ class EvaluationMembers extends ListRecords
 
                         Action::make('Other Comments')
                             ->closeModalByClickingAway(false)
+                            ->disabled( fn (Model $record) =>  $this->editable_field_status($record) ? false : true)
                             ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,3)) // 3 = Section Type: Other Comments
                             ->schema(fn(Model $record) => OtherCommentsFields::run($record->ef_id, $record->id))
                             ->fillForm(fn (Model $record) =>
@@ -199,5 +202,16 @@ class EvaluationMembers extends ListRecords
 //                    DeleteBulkAction::make(),
 //                ]),
             ]);
+    }
+
+    public function editable_field_status(Model $record){
+        if($record->evaluationPeriod->status_id !== 1){
+            return false;
+        }
+        if($record->trustee_evaluation_statuses_id == 3){ // Pending status
+            return true;
+        }
+        return get_executive_role(auth()->user()->roles->first()->name) ? true : false;
+
     }
 }
