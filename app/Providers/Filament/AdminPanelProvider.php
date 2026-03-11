@@ -44,6 +44,7 @@ class AdminPanelProvider extends PanelProvider
             foreach ($committees as $committee) {
                 $navigation[] = NavigationItem::make($committee->name)
                     ->group('Committees')
+                    ->isActiveWhen(fn() => request()->is('admin/committees/' . $committee->id . '*'))
                     ->url(fn (): string => CommitteeResource::getUrl('view', ['record' => $committee->id]))
                     ->visible(function () use ($committee) {
                         if (auth()->user()->hasRole('Super Admin')) return true;
