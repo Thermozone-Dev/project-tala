@@ -105,18 +105,13 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
     public function getFormSchema(): array
     {
         $view_record = TrusteeHasEvaluation::find($this->record_id);
-
-        if($view_record->trustee_evaluation_statuses_id == 2 || $view_record->trustee_evaluation_statuses_id == 4 || $view_record->trustee_evaluation_statuses_id == 5) {
-            $disabled = true;
-        }else{
-            $disabled = false;
-        }
-
+        $eval_status = new EvaluationMembers();
+        $eval_status = $eval_status->editable_field_status($view_record);
 
         return [
-            Grid::make(1)->disabled($disabled)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id)),
-            Grid::make(1)->disabled($disabled)->schema(AttendanceEvaluationFields::run($view_record->ef_id,$this->record_id)),
-            Grid::make(1)->disabled($disabled)->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id)),
+            Grid::make(1)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id))->disabled(fn ($eval_status) => ($eval_status ) ? false : true),
+            Grid::make(1)->schema(AttendanceEvaluationFields::run($view_record->ef_id,$this->record_id))->disabled(fn ($eval_status) => ($eval_status ) ? false : true),
+            Grid::make(1)->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id))->disabled(fn ($eval_status) => ($eval_status ) ? false : true),
         ];
     }
 

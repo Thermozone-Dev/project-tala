@@ -76,3 +76,16 @@ if (! function_exists('check_eval_form_sections')) {
         ->first();
     }
 }
+
+if (! function_exists('get_executive_role')) {
+    function get_executive_role($role)
+    {
+        $executive_roles = ['super admin', 'secretariat'];
+
+        if(in_array(strtolower($role), $executive_roles)){
+            return true;
+        }
+        return false;
+    }
+}
+
