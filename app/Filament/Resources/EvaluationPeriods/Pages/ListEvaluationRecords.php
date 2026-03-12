@@ -59,6 +59,8 @@ class ListEvaluationRecords extends ListRecords
                         'Pending' => 'warning',
                         'Locked' => 'success',
                         'For Review' => 'info',
+                        'Reviewed' => 'info',
+                        
                     }),
             ])->recordActions([
                 Action::make('View Evaluation')
