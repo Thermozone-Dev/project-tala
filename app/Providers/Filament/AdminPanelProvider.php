@@ -52,13 +52,13 @@ class AdminPanelProvider extends PanelProvider
                             ->where('committee_id', $committee->id)
                             ->whereHas('evaluationPeriod', fn($q) => $q->where('status_id', 1)) // 1 = Active
                             ->count() ?: null;
-                        
+
                         return $total_eval;
                     },'warning')
                     ->isActiveWhen(fn() => request()->is('admin/committees/' . $committee->id . '*'))
                     ->url(fn (): string => CommitteeResource::getUrl('view', ['record' => $committee->id]))
                     ->visible(function () use ($committee) {
-                        if (auth()->user()->hasRole('Super Admin')) return true;
+                        if (get_executive_role(auth()->user()->getRoleNames()->first())) return true;
 
                         return CommitteeHasTrustee::where('user_id', auth()->id())
                             ->where('committee_id', $committee->id)

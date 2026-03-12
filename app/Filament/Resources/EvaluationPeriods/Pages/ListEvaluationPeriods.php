@@ -21,6 +21,7 @@ class ListEvaluationPeriods extends ListRecords
                 ->label('Start Evaluation Period')
                 ->visible(!EvaluationPeriod::where('status_id', 1)->exists())
                 ->icon('heroicon-o-plus')
+                ->authorize(auth()->user()->can('Create:EvaluationPeriod'))
                 ->action(function () {
                     return redirect(
                         EvaluationPeriodResource::getUrl('create')
@@ -31,6 +32,7 @@ class ListEvaluationPeriods extends ListRecords
                 ->label('Start Evaluation Period')
                 ->modalHeading('Start Evaluation Period')
                 ->icon('heroicon-o-plus')
+                ->authorize(auth()->user()->can('Create:EvaluationPeriod'))
                 ->modalContent(view('filament.modals.evaluation-warning'))
                 ->visible(EvaluationPeriod::where('status_id', 1)->exists())
                 ->form([

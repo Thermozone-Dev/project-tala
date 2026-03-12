@@ -12,7 +12,6 @@ class EvaluationPeriod extends Model
 
     use SoftDeletes;
 
-
     protected $fillable = [
         'date_from',
         'date_to',

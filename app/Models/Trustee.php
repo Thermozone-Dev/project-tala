@@ -59,6 +59,12 @@ class Trustee extends Model
 		return $this->belongsTo(User::class);
 	}
 
+
+    public function active_evaluation()
+	{
+		return $this->hasMany(TrusteeHasEvaluation::class,'evaluator_id','user_id');
+	}
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
