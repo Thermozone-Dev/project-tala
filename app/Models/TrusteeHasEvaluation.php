@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TrusteeHasEvaluation extends Model
 {
     //
-
+    use SoftDeletes;
     public $timestamps = false;
 
     protected $table = 'trustee_has_evaluation';
@@ -70,4 +72,8 @@ class TrusteeHasEvaluation extends Model
     }
 
 
+    protected function scopePending(Builder $query): void
+    {
+        $query->where('trustee_evaluation_statuses_id', 3);
+    }
 }

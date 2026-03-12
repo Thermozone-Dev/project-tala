@@ -118,11 +118,10 @@ class EvaluationMembers extends ListRecords
                             ->authorize(check_committee_permission($this->record,'AssessmentEvaluation:Committee'))
                             ->icon(Heroicon::OutlinedClipboardDocumentCheck),
 
-
                         Action::make('Evaluate Attendance')
                             ->modalWidth(Width::SixExtraLarge)
                             ->closeModalByClickingAway(false)
-                            ->disabled( fn (Model $record) =>  $this->editable_field_status($record))
+                            ->disabled( fn (Model $record) =>  $this->editable_field_status($record) ? false : true)
                             ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
                             ->schema(fn(Model $record) => AttendanceEvaluationFields::run($record->ef_id,$record->id))
                             ->fillForm(fn (Model $record) =>
@@ -211,7 +210,7 @@ class EvaluationMembers extends ListRecords
         if($record->trustee_evaluation_statuses_id == 3){ // Pending status
             return true;
         }
-        return get_executive_role(auth()->user()->roles->first()->name) ? true : false;
 
+        return get_executive_role(auth()->user()->roles->first()->name) ? true : false;
     }
 }

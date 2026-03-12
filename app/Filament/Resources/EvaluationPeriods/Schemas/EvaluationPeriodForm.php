@@ -17,7 +17,7 @@ class EvaluationPeriodForm
             ->components([
                 DatePicker::make('date_from')
                     ->default('06/25/2024')
-                    ->minDate(fn () => EvaluationPeriod::orderBy('date_to', 'desc')->value('date_to') ?? now()->addDay())
+                    ->minDate(fn () => EvaluationPeriod::orderBy('date_to', 'desc')->value('date_to') ?? null)
                     ->required(),
                 DatePicker::make('date_to')
                     ->default('06/25/2026')

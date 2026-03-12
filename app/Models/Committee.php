@@ -50,4 +50,6 @@ class Committee extends Model
 	{
 		return $this->hasMany(CommitteeHasTrustee::class);
 	}
+
+
 }
