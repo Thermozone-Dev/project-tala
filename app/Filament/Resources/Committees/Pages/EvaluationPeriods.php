@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Committees\Pages;
 
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\Committee;
-use App\Models\CommitteeHasTrustee;
 use App\Models\EvaluationPeriod;
 use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
@@ -17,7 +16,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Spatie\Permission\Models\Role;
 
 class EvaluationPeriods extends ListRecords
 {
@@ -53,6 +51,12 @@ class EvaluationPeriods extends ListRecords
 
     public function table(Table $table): Table
     {
+        $query = TrusteeHasEvaluation::query()
+            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
+            ->whereHas('evaluationPeriod', fn($q) => $q->where('status_id', 1)) // 1 = Active
+            ->where('committee_id', $this->record)
+            ->where('evaluator_id', $this->evaluator_id);
+
         return $table
             ->columns([
                 TextColumn::make('status.name'),
@@ -60,15 +64,10 @@ class EvaluationPeriods extends ListRecords
                 TextColumn::make('date_to')->dateTime(),
                 TextColumn::make('id')
                     ->label('')
-                    ->badge()
+                    ->badge(fn(string $state) => (bool) (clone $query)->where('evaluation_id', $state)->count())
                     ->color('warning')
-                    ->formatStateUsing(function (string $state){
-                        return TrusteeHasEvaluation::query()
-                            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
-                            ->whereHas('evaluationPeriod', fn($q) => $q->where('status_id', 1)) // 1 = Active
-                            ->where('committee_id', $this->record)
-                            ->where('evaluator_id', $this->evaluator_id)
-                            ->where('evaluation_id', $state)->count() ?: null;
+                    ->formatStateUsing(function (string $state) use ($query) {
+                        return (clone $query)->where('evaluation_id', $state)->count() ?: null;
                     })
             ])
             ->filters([

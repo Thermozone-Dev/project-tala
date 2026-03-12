@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Committees\Pages;
 
+use App\Actions\CheckEvaluationCompleted;
 use App\Actions\Form\AssessmentEvaluationFields;
 use App\Actions\Form\AttendanceEvaluationFields;
 use App\Actions\Form\OtherCommentsFields;
@@ -38,7 +39,6 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
     use InteractsWithForms;
     use InteractsWithTable;
     protected static string $resource = CommitteeResource::class;
-
     public $record,$record_id;
     protected $queryString = ['record','record_id'];
     protected string $view = 'filament.resources.committees.pages.view-committee-evaluation';
@@ -46,7 +46,8 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
     public function getTitle(): string|Htmlable
     {
         $view_record = TrusteeHasEvaluation::find($this->record_id);
-        return $view_record->form->title;
+
+        return new HtmlString($view_record->form->title."<br><br>Status: <i>".$view_record->eval_status->name."</i>");
     }
 
     public function getBreadcrumbs(): array
@@ -87,7 +88,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
                     return [
                         $item->meeting_id => collect($item)->map(function ($value){
-                            return $value ?? 0;
+                            return $value;
                         })
                     ];
                 })->toArray()],
@@ -105,18 +106,112 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
     {
         $view_record = TrusteeHasEvaluation::find($this->record_id);
 
+        if($view_record->trustee_evaluation_statuses_id == 2 || $view_record->trustee_evaluation_statuses_id == 4 || $view_record->trustee_evaluation_statuses_id == 5) {
+            $disabled = true;
+        }else{
+            $disabled = false;
+        }
+
+
         return [
-            Grid::make(1)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id)),
-            Grid::make(1)->schema(AttendanceEvaluationFields::run($view_record->ef_id,$this->record_id)),
-            Grid::make(1)->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id)),
+            Grid::make(1)->disabled($disabled)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id)),
+            Grid::make(1)->disabled($disabled)->schema(AttendanceEvaluationFields::run($view_record->ef_id,$this->record_id)),
+            Grid::make(1)->disabled($disabled)->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id)),
         ];
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('Save Changes')->requiresConfirmation()
+            Action::make('Mark as Reviewed')
+                ->requiresConfirmation()
+                ->visible(function (){
+                    $record = TrusteeHasEvaluation::find($this->record_id);
+                    if($record->trustee_evaluation_statuses_id == 4){ // 4 = For Review
+                        return true;
+                    }
+                    return false;
+                })
                 ->action(function (){
+                    $record = TrusteeHasEvaluation::find($this->record_id);
+
+                    $record->update([
+                        'trustee_evaluation_statuses_id' => 5 // 5 = Reviewed
+                    ]);
+
+                    Notification::make()
+                        ->success()
+                        ->title('Evaluation successfully marked as reviewed')
+                        ->send();
+                }),
+            Action::make('Mark as For Review')
+                ->requiresConfirmation()
+                ->visible(function (){
+                    $record = TrusteeHasEvaluation::find($this->record_id);
+                    if($record->trustee_evaluation_statuses_id == 2){ // 2 = Lock
+                        return true;
+                    }
+                    return false;
+                })
+                ->color('info')
+                ->action(function (){
+                    $record = TrusteeHasEvaluation::find($this->record_id);
+
+                    $record->update([
+                        'trustee_evaluation_statuses_id' => 4 // 4 = For Review
+                    ]);
+
+                    Notification::make()
+                        ->success()
+                        ->title('Evaluation successfully marked as for review')
+                        ->send();
+                }),
+            Action::make('Lock')
+                ->requiresConfirmation()
+                ->visible(function (){
+                    $record = TrusteeHasEvaluation::find($this->record_id);
+
+                    if($record->trustee_evaluation_statuses_id == 1 || $record->trustee_evaluation_statuses_id == 3){ // 1 = Draft | 3 = Pending
+                        return true;
+                    }
+
+                    return false;
+                })
+                ->action(function (){
+
+                    $record = TrusteeHasEvaluation::find($this->record_id);
+
+                    if(CheckEvaluationCompleted::run($record->ef_id,$record->id) ){
+
+                        $record->update([
+                            'trustee_evaluation_statuses_id' => 4 // 4 = For Review
+                        ]);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Evaluation successfully marked as locked')
+                            ->body('The evaluation has been successfully completed and locked.')
+                            ->send();
+                    }else{
+                        Notification::make()
+                            ->danger()
+                            ->title('Evaluation Incomplete')
+                            ->body('Please complete all evaluation fields before locking this record.')
+                            ->send();
+
+                    }
+                }),
+            Action::make('Save as Draft')
+                ->color('warning')
+                ->visible(function (){
+                    $record = TrusteeHasEvaluation::find($this->record_id);
+                    if($record->trustee_evaluation_statuses_id == 1 || $record->trustee_evaluation_statuses_id == 3){ // 1 = Draft | 3 = Pending
+                        return true;
+                    }
+                    return false;
+                })
+                ->requiresConfirmation()
+                ->action(function () {
 
                     $record = TrusteeHasEvaluation::find($this->record_id);
 
@@ -135,6 +230,10 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     if(isset($data['other_comments_ans'])){
                         SaveOtherComments::run($data,$record);
                     }
+
+                    $record->update([
+                        'trustee_evaluation_statuses_id' => 1 // 1 = Draft
+                    ]);
 
                     Notification::make()
                         ->title('Changes Saved')
