@@ -23,7 +23,7 @@ return new class extends Migration
             ['name' => 'Draft'],
             ['name' => 'Locked'],
             ['name' => 'Pending'],
-            ['name' => 'Reviewed'],
+            ['name' => 'For Review'],
         ]);
 
 
