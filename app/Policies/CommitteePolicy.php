@@ -11,7 +11,7 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 class CommitteePolicy
 {
     use HandlesAuthorization;
-
+    
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:Committee');
@@ -67,27 +67,29 @@ class CommitteePolicy
         return $authUser->can('Reorder:Committee');
     }
 
-    public function fullAccess(AuthUser $authUser): bool
-    {
-        return $authUser->can('FullAccess:Committee');
-    }
-
-    public function printEvaluation(AuthUser $authUser): bool
+    public function printEvaluation(AuthUser $authUser, Committee $committee): bool
     {
         return $authUser->can('PrintEvaluation:Committee');
     }
-    public function attendanceEvaluation(AuthUser $authUser): bool
+
+    public function attendanceEvaluation(AuthUser $authUser, Committee $committee): bool
     {
         return $authUser->can('AttendanceEvaluation:Committee');
     }
 
-    public function assessmentEvaluation(AuthUser $authUser): bool
+    public function assessmentEvaluation(AuthUser $authUser, Committee $committee): bool
     {
         return $authUser->can('AssessmentEvaluation:Committee');
     }
 
-    public function otherComments(AuthUser $authUser): bool
+    public function otherComments(AuthUser $authUser, Committee $committee): bool
     {
         return $authUser->can('OtherComments:Committee');
     }
+
+    public function fullAccess(AuthUser $authUser, Committee $committee): bool
+    {
+        return $authUser->can('FullAccess:Committee');
+    }
+
 }

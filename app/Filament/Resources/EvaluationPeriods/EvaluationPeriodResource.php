@@ -5,6 +5,7 @@ namespace App\Filament\Resources\EvaluationPeriods;
 use App\Filament\Resources\EvaluationPeriods\Pages\CreateEvaluationPeriod;
 use App\Filament\Resources\EvaluationPeriods\Pages\EditEvaluationPeriod;
 use App\Filament\Resources\EvaluationPeriods\Pages\ListEvaluationPeriods;
+use App\Filament\Resources\EvaluationPeriods\Pages\ListEvaluationRecords;
 use App\Filament\Resources\EvaluationPeriods\Pages\ViewEvaluationPeriod;
 use App\Filament\Resources\EvaluationPeriods\Schemas\EvaluationPeriodForm;
 use App\Filament\Resources\EvaluationPeriods\Schemas\EvaluationPeriodInfolist;
@@ -23,7 +24,7 @@ class EvaluationPeriodResource extends Resource
     protected static ?string $model = EvaluationPeriod::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
-    
+
     public static function form(Schema $schema): Schema
     {
         return EvaluationPeriodForm::configure($schema);
@@ -53,6 +54,7 @@ class EvaluationPeriodResource extends Resource
             'create' => CreateEvaluationPeriod::route('/create'),
             'view' => ViewEvaluationPeriod::route('/{record}'),
             'edit' => EditEvaluationPeriod::route('/{record}/edit'),
+            'evaluation-trustee' => ListEvaluationRecords::route('/{record}/evaluator/{evaluator_id}'),
         ];
     }
 

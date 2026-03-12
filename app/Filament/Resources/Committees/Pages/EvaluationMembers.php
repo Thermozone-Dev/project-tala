@@ -136,7 +136,6 @@ class EvaluationMembers extends ListRecords
                             ->authorize(check_committee_permission($this->record,'AssessmentEvaluation:Committee'))
                             ->icon(Heroicon::OutlinedClipboardDocumentCheck),
 
-
                         Action::make('Evaluate Attendance')
                             ->modalWidth(Width::SixExtraLarge)
                             ->closeModalByClickingAway(false)
@@ -261,7 +260,7 @@ class EvaluationMembers extends ListRecords
         if($record->trustee_evaluation_statuses_id == 3){ // Pending status
             return true;
         }
-        return get_executive_role(auth()->user()->roles->first()->name) ? true : false;
 
+        return get_executive_role(auth()->user()->roles->first()->name) ? true : false;
     }
 }
