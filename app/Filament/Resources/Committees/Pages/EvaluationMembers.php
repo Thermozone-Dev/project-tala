@@ -95,7 +95,7 @@ class EvaluationMembers extends ListRecords
                             ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,1)) // 1 = Section Type: Assessment
                             ->closeModalByClickingAway(false)
                             ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
-                            ->disabled( fn (Model $record) =>  $this->editable_field_status($record) ? false : true)
+                            ->disabled( fn (Model $record) =>  !$this->editable_field_status($record))
                             ->schema(function (Model $record){
                                 if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5) {
                                     $disabled = true;
@@ -140,7 +140,7 @@ class EvaluationMembers extends ListRecords
                         Action::make('Evaluate Attendance')
                             ->modalWidth(Width::SixExtraLarge)
                             ->closeModalByClickingAway(false)
-                            ->disabled( fn (Model $record) =>  $this->editable_field_status($record))
+                            ->disabled( fn (Model $record) =>  !$this->editable_field_status($record))
                             ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
                             ->schema(function (Model $record){
                                 if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5) {
@@ -254,8 +254,8 @@ class EvaluationMembers extends ListRecords
             ]);
     }
 
-    public function editable_field_status(Model $record){
-        if($record->evaluationPeriod->status_id !== 1){
+    public function editable_field_status($record){
+        if($record->evaluationPeriod->status_id != 1){
             return false;
         }
         if($record->trustee_evaluation_statuses_id == 3){ // Pending status
