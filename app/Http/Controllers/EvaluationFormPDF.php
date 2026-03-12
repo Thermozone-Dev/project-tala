@@ -239,9 +239,9 @@ class EvaluationFormPDF extends Controller
             }
 
             if($eval_sec->section_type_id == 3){ // other comments
-                $other_comments = $this->eval_result ? $this->eval_result->other_comments->first() : [];
+                $other_comments = $this->eval_result ? $this->eval_result->other_comments->first()?->comment : '';
 
-                $sec_data['other_comments'] = $other_comments?->comment;
+                $sec_data['other_comments'] = $other_comments;
             }
             if($eval_sec->rating_scale_id == 1 || $eval_sec->rating_scale_id == 3){
                 $ass_rating = $eval_sec->ratingScale->values
