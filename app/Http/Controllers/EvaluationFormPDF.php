@@ -237,6 +237,12 @@ class EvaluationFormPDF extends Controller
                 // dd($meetings);
                 $sec_data['attendance'] = ['criteria' => $attendance_criteria, 'meetings' => $meetings];
             }
+
+            if($eval_sec->section_type_id == 3){ // other comments
+                $other_comments = $this->eval_result ? $this->eval_result->other_comments->first() : [];
+
+                $sec_data['other_comments'] = $other_comments?->comment;
+            }
             if($eval_sec->rating_scale_id == 1 || $eval_sec->rating_scale_id == 3){
                 $ass_rating = $eval_sec->ratingScale->values
                                 ->map(function ($item) {
