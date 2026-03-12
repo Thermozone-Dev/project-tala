@@ -30,6 +30,8 @@ class SaveAttendanceEvaluation
                 continue;
             }
 
+            $answer['attendance_rating_scale_values_id'] =  $attendance_rating;
+
             AttendanceAnswer::updateOrCreate(
                 [
                     'trustee_evaluation_id' => $record->id,

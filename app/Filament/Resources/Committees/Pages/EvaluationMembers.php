@@ -24,6 +24,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Grid;
 use Filament\Support\Enums\Size;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
@@ -77,6 +78,7 @@ class EvaluationMembers extends ListRecords
                         'Pending' => 'warning',
                         'Locked' => 'success',
                         'For Review' => 'info',
+                        'Reviewed' => 'success',
                     }),
             ])
             ->filters([
@@ -93,8 +95,17 @@ class EvaluationMembers extends ListRecords
                             ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,1)) // 1 = Section Type: Assessment
                             ->closeModalByClickingAway(false)
                             ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
-                            ->disabled( fn (Model $record) =>  $this->editable_field_status($record) ? false : true)
-                            ->schema(fn(Model $record) =>  AssessmentEvaluationFields::run($record->ef_id, $record->id))
+                            ->disabled( fn (Model $record) =>  !$this->editable_field_status($record))
+                            ->schema(function (Model $record){
+                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5) {
+                                    $disabled = true;
+                                }else{
+                                    $disabled = false;
+                                }
+                                return [
+                                    Grid::make(1)->disabled($disabled)->schema(AssessmentEvaluationFields::run($record->ef_id,$record->id))
+                                ];
+                            })
                             ->fillForm(fn (Model $record) =>
                                 ['assesment_answer' => $record->assesment_answer->mapWithKeys(function ($item) {
                                     return [
@@ -115,21 +126,44 @@ class EvaluationMembers extends ListRecords
                                     ->body('Your attendance evaluation has been successfully submitted.')
                                     ->send();
                             })
+                            ->modalSubmitAction(function (Model $record) {
+                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
+                                    // 2 = Lock | 4 = For Review | 5 = Review
+                                    return false;
+                                }
+
+                            })
                             ->authorize(check_committee_permission($this->record,'AssessmentEvaluation:Committee'))
                             ->icon(Heroicon::OutlinedClipboardDocumentCheck),
 
                         Action::make('Evaluate Attendance')
                             ->modalWidth(Width::SixExtraLarge)
                             ->closeModalByClickingAway(false)
-                            ->disabled( fn (Model $record) =>  $this->editable_field_status($record) ? false : true)
+                            ->disabled( fn (Model $record) =>  !$this->editable_field_status($record))
                             ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
-                            ->schema(fn(Model $record) => AttendanceEvaluationFields::run($record->ef_id,$record->id))
+                            ->schema(function (Model $record){
+                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5) {
+                                    $disabled = true;
+                                }else{
+                                    $disabled = false;
+                                }
+                                    return [
+                                        Grid::make(1)->disabled($disabled)->schema(AttendanceEvaluationFields::run($record->ef_id,$record->id))
+                                    ];
+                            })
+                            ->modalSubmitAction(function (Model $record) {
+                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
+                                    // 2 = Lock | 4 = For Review | 5 = Review
+                                    return false;
+                                }
+
+                            })
                             ->fillForm(fn (Model $record) =>
                                 ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
                                     $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
                                     return [
                                         $item->meeting_id => collect($item)->map(function ($value){
-                                            return $value ?? 0;
+                                            return $value;
                                         })
                                     ];
                                 })->toArray()]
@@ -152,7 +186,23 @@ class EvaluationMembers extends ListRecords
                             ->closeModalByClickingAway(false)
                             ->disabled( fn (Model $record) =>  $this->editable_field_status($record) ? false : true)
                             ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,3)) // 3 = Section Type: Other Comments
-                            ->schema(fn(Model $record) => OtherCommentsFields::run($record->ef_id, $record->id))
+                            ->schema(function (Model $record){
+                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5) {
+                                    $disabled = true;
+                                }else{
+                                    $disabled = false;
+                                }
+                                return [
+                                    Grid::make(1)->disabled($disabled)->schema(OtherCommentsFields::run($record->ef_id,$record->id))
+                                ];
+                            })
+                            ->modalSubmitAction(function (Model $record) {
+                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
+                                    // 2 = Lock | 4 = For Review | 5 = Review
+                                    return false;
+                                }
+
+                            })
                             ->fillForm(fn (Model $record) =>
                                 ['other_comments_ans' => $record->other_comments->mapWithKeys(function ($item) {
                                     return [
@@ -203,8 +253,8 @@ class EvaluationMembers extends ListRecords
             ]);
     }
 
-    public function editable_field_status(Model $record){
-        if($record->evaluationPeriod->status_id !== 1){
+    public function editable_field_status($record){
+        if($record->evaluationPeriod->status_id != 1){
             return false;
         }
         if($record->trustee_evaluation_statuses_id == 3){ // Pending status

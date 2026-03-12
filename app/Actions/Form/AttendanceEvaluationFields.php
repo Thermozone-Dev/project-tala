@@ -82,6 +82,7 @@ class AttendanceEvaluationFields
                     ->required()
                     ->numeric()
                     ->minValue(0)
+                    ->extraInputAttributes(['min' => 0])
                     ->maxValue(300)
                     ->nullable()
                     ->hiddenLabel()
