@@ -269,36 +269,11 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                 TextColumn::make('subject_name')
                     ->label('Subject')
                     ->getStateUsing(function (ActivityLogModel $record): ?string {
-                        if (! $record->subject_type) {
-                            return null;
-                        }
 
                         $subjectType = Str::headline(class_basename($record->subject_type));
 
-                        if (! $record->subject) {
-                            return "{$subjectType} ID {$record->subject_id}";
-                        }
-
-                        // Resolve the field name from protected/public $activitySubjectName
-                        // and show its attribute
-                        if (property_exists($record->subject, 'activitySubjectName')) {
-                            $fieldName = (function () {
-                                return $this->activitySubjectName;
-                            })->call($record->subject);
-
-                            $value = $record->subject->getAttribute($fieldName);
-                            if (filled($value)) {
-                                return "{$subjectType}: {$value}";
-                            }
-                        }
-
-                        // Fallback to checking for 'name' property
-                        if (isset($record->subject->name)) {
-                            return "{$subjectType}: {$record->subject->name}";
-                        }
-
                         // Final fallback
-                        return "{$subjectType} ID {$record->subject_id}";
+                        return "{$subjectType}";
                     })
                     ->placeholder('N/A'),
                 TextColumn::make('causer_name')
@@ -318,17 +293,6 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     })
                     ->placeholder('System')
                     ->sortable(),
-                TextColumn::make('description')
-                    ->limit(50)
-                    ->tooltip(function (TextColumn $column): ?string {
-                        $state = $column->getState();
-
-                        if (strlen($state) <= $column->getCharacterLimit()) {
-                            return null;
-                        }
-
-                        return $state;
-                    }),
             ])
             ->filters([
                 SelectFilter::make('subject_type')
@@ -379,19 +343,105 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     ->modalHeading('Properties')
                     ->modalContent(function (ActivityLogModel $record): HtmlString {
                         $state = $record->properties;
-
                         if (empty($state)) {
-                            return new HtmlString('<div class="text-gray-500">N/A</div>');
+                            return new HtmlString('<div class="text-gray-500 p-4">No changes recorded.</div>');
                         }
 
-                        $properties = is_string($state) ? json_decode($state, true) : $state;
-                        if ($properties === null && json_last_error() !== JSON_ERROR_NONE) {
-                            $properties = $state;
+                        // Handle Collection, array, or string
+                        if ($state instanceof \Illuminate\Support\Collection) {
+                            $properties = $state->toArray();
+                        } elseif (is_string($state)) {
+                            $properties = json_decode($state, true);
+                        } else {
+                            $properties = (array) $state;
                         }
 
-                        $json = json_encode($properties, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                        if (!is_array($properties)) {
+                            return new HtmlString('<div class="text-gray-500 p-4">Unable to display changes.</div>');
+                        }
 
-                        return new HtmlString('<div class="text-sm whitespace-pre-wrap font-mono">'.e((string) $json).'</div>');
+                        $labelMap = [
+                            'questionnaire.name'                => 'Questionnaire',
+                            'ratingScaleValue.value'            => 'Rating Value',
+                            'ratingScaleValue.qualitative'      => 'Qualitative Rating',
+                            'ratingScaleValue.name'             => 'Rating Name',
+                            'remarks'                           => 'Remarks',
+                            'comment'                           => 'Comment',
+                            'attendance_rating_scale_values_id' => 'Attendance Rating',
+                            'total_meetings'                    => 'Total Meetings',
+                            'physically_present'                => 'Physically Present',
+                            'considered_present'                => 'Considered Present',
+                            'total_present'                     => 'Total Present',
+                        ];
+
+                        $formatValue = fn($value) => is_null($value)
+                            ? '<span class="text-gray-400 italic">Empty</span>'
+                            : e($value);
+
+                        $html = '<div class="p-4 space-y-4 text-sm">';
+
+                        // Show updated attributes (old vs new)
+                        if (!empty($properties['old']) && !empty($properties['attributes'])) {
+                            $html .= '<div>';
+                            $html .= '<p class="font-semibold text-gray-700 mb-2">Changes Made:</p>';
+                            $html .= '<table class="w-full border-collapse">';
+                            $html .= '<thead><tr>
+                    <td class="text-left py-1 px-2 bg-gray-100 text-gray-600 font-medium w-1/3">Field</td>
+                    <td class="text-left py-1 px-2 bg-gray-100 text-gray-600 font-medium w-1/3">Old Value</td>
+                    <td class="text-left py-1 px-2 bg-gray-100 text-gray-600 font-medium w-1/3">New Value</td>
+                  </tr></thead>';
+                            $html .= '<tbody>';
+
+                            foreach ($properties['attributes'] as $key => $newValue) {
+                                $oldValue = $properties['old'][$key] ?? null;
+
+                                // Skip if both old and new values are the same
+                                if ($oldValue === $newValue) {
+                                    continue;
+                                }
+
+                                $label = $labelMap[$key] ?? str($key)->replace('_', ' ')->replace('.', ' ')->title();
+                                $html .= '<tr class="border-t border-gray-100">';
+                                $html .= '<td class="py-1 px-2 font-medium text-gray-700">' . e($label) . '</td>';
+                                $html .= '<td class="py-1 px-2 text-red-500">' . $formatValue($oldValue) . '</td>';
+                                $html .= '<td class="py-1 px-2 text-green-600">' . $formatValue($newValue) . '</td>';
+                                $html .= '</tr>';
+                            }
+
+                            $html .= '</tbody></table>';
+                            $html .= '</div>';
+                        }
+
+                        // Show created attributes
+                        elseif (!empty($properties['attributes'])) {
+                            $html .= '<div>';
+                            $html .= '<p class="font-semibold text-gray-700 mb-2">Created With:</p>';
+                            $html .= '<table class="w-full border-collapse">';
+                            $html .= '<thead><tr>
+                    <th class="text-left py-1 px-2 bg-gray-100 text-gray-600 font-medium w-1/2">Field</th>
+                    <th class="text-left py-1 px-2 bg-gray-100 text-gray-600 font-medium w-1/2">Value</th>
+                  </tr></thead>';
+                            $html .= '<tbody>';
+
+                            foreach ($properties['attributes'] as $key => $value) {
+                                $label = $labelMap[$key] ?? str($key)->replace('_', ' ')->replace('.', ' ')->title();
+                                $html .= '<tr class="border-t border-gray-100">';
+                                $html .= '<td class="py-1 px-2 font-medium text-gray-700">' . e($label) . '</td>';
+                                $html .= '<td class="py-1 px-2 text-gray-800">' . $formatValue($value) . '</td>';
+                                $html .= '</tr>';
+                            }
+
+                            $html .= '</tbody></table>';
+                            $html .= '</div>';
+                        }
+
+                        else {
+                            $html .= '<div class="text-gray-500">No changes recorded.</div>';
+                        }
+
+                        $html .= '</div>';
+
+                        return new HtmlString($html);
                     })
                     ->modalSubmitAction(false)
                     ->modalCancelAction(fn (Action $action) => $action->label('Close')->color('primary')),
