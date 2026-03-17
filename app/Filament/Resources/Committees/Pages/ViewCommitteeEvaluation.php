@@ -460,5 +460,4 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
             ])
             ->paginated([10]);
     }
-
 }
