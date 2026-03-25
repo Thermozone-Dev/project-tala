@@ -67,8 +67,10 @@ class MembersRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                TextColumn::make('role.name')->label('Role')->searchable()->sortable(),
                 TextColumn::make('user.name')->label('Name')->searchable()->sortable(),
+                TextColumn::make('user.email')->label('Email')->searchable()->sortable(),
+                TextColumn::make('role.name')->label('Role')->searchable()->sortable(),
+
                 TextColumn::make('user_id')
                     ->label('')
                     ->badge()

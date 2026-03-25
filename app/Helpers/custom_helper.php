@@ -89,3 +89,16 @@ if (! function_exists('get_executive_role')) {
     }
 }
 
+
+if (! function_exists('getname_suffix')) {
+    function getname_suffix($user)
+    {
+        if($user){
+            $name = $user?->name;
+            $suffix = $user?->suffix;
+            return $name.' '.$suffix;
+        }
+        return 'No Name';
+    }
+}
+
