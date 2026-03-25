@@ -139,7 +139,7 @@ class EvaluationListTable extends TableWidget
                 Action::make('view_evaluation')
                     ->label('View Evaluations')
                     ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => EvaluationPeriodResource::getUrl('evaluation-trustee',['record' => $record->active_evaluation->sortByDesc('id')->first()->evaluation_id, 'evaluator_id' => $record->user_id]) ),
+                    ->url(fn ($record) => EvaluationPeriodResource::getUrl('evaluation-trustee',['record' => $this->evaluation_period_id, 'evaluator_id' => $record->user_id]) ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
