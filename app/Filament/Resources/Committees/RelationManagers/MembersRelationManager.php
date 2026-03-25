@@ -36,7 +36,7 @@ class MembersRelationManager extends RelationManager
                     ->searchable()
                     ->preload()
                     ->options(function () {
-                        $roles = Role::whereNotIn('name', ['Super Admin','Secretariat','Trustee'])->orderBy('id', 'asc')->pluck('name', 'id')->toArray();
+                        $roles = Role::whereNotIn('name', ['Super Admin','Secretariat'])->orderBy('id', 'asc')->pluck('name', 'id')->toArray();
 
                         return $roles;
                     })
@@ -67,8 +67,8 @@ class MembersRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                TextColumn::make('role.name')->label('Role'),
-                TextColumn::make('user.name')->label('Name'),
+                TextColumn::make('role.name')->label('Role')->searchable()->sortable(),
+                TextColumn::make('user.name')->label('Name')->searchable()->sortable(),
                 TextColumn::make('user_id')
                     ->label('')
                     ->badge()
