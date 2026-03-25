@@ -47,7 +47,9 @@ class ListEvaluationRecords extends ListRecords
         return $table
             ->columns([
                 TextColumn::make('form.shortcode'),
-                TextColumn::make('evaluator.name'),
+                TextColumn::make('evaluator.name')->formatStateUsing( function($record, $state){
+                    return $state. ' '.$record->evaluator?->suffix ?? null;
+                }),
                 TextColumn::make('member.name')->label('Evaluated'),
 
                 TextColumn::make('committee.name')->badge(),
@@ -60,7 +62,7 @@ class ListEvaluationRecords extends ListRecords
                         'Locked' => 'success',
                         'For Review' => 'info',
                         'Reviewed' => 'info',
-                        
+
                     }),
             ])->recordActions([
                 Action::make('View Evaluation')

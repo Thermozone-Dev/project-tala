@@ -54,7 +54,7 @@ class EvaluationFormPDF extends Controller
 
 
         $header_data = [
-            'name' => ($trustee_evaluation) ? $trustee_evaluation?->member?->getFullNameAttribute() ?? null : "Juan Dela Cruz (Preview)",
+            'name' => ($trustee_evaluation) ? getname_suffix($trustee_evaluation?->member) ?? null : "Juan Dela Cruz (Preview)",
             'commitees' => $commitees->map(function ($item) use ($trustee_evaluation){
                 $is_member = false;
                 if($trustee_evaluation){
