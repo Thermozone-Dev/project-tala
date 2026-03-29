@@ -31,10 +31,7 @@ class SaveAssessmentEvaluation
                     'trustee_evaluation_id' => $record->id,
                     'questionnaire_id' => $index
                 ],
-                [
-                    'rating_scale_values_id' => $ratingScaleValuesId,
-                    'remarks' => $remarks
-                ]
+                $answer
             );
         }
     }

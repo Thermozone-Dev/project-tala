@@ -30,9 +30,7 @@ class SaveOtherComments
                     'trustee_evaluation_id' => $record->id,
                     'comment_id' => $index,
                 ],
-                [
-                    'comment' => $answer['comment'],
-                ]
+                $answer
             );
         }
     }
