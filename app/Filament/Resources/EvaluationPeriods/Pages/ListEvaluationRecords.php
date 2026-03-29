@@ -59,7 +59,7 @@ class ListEvaluationRecords extends ListRecords
                     ->color(fn (string $state): string => match ($state) {
                         'Draft' => 'primary',
                         'Pending' => 'warning',
-                        'Locked' => 'success',
+                        'Submitted' => 'success',
                         'For Review' => 'info',
                         'Reviewed' => 'info',
 
