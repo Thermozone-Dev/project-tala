@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Filament\Resources\Reports\Schemas;
+
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Schema;
+
+class ReportInfolist
+{
+    public static function configure(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                TextEntry::make('evaluationPeriod.formatted_coverage')
+                    ->label('Evaluation period'),
+                TextEntry::make('reportType.name')
+                    ->label('Report type'),
+                TextEntry::make('generatedBy.full_name')
+                    ->numeric(),
+                TextEntry::make('generated_at')
+                    ->dateTime(),
+            ]);
+    }
+}
