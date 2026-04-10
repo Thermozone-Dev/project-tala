@@ -50,7 +50,10 @@ class ReportsController extends Controller
                     'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Committee Members' Rating and 30% attendance"
                 ],
             ]);
+        }else{
+            return;
         }
+
 
         $collections = $collections->map(function ($collection) use ($report) {
             $collection['members'] = $this->get_data($report, $collection['ef_id'], $collection['group_by_committee']);
