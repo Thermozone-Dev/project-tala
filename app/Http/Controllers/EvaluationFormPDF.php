@@ -54,7 +54,7 @@ class EvaluationFormPDF extends Controller
 
 
         $header_data = [
-            'name' => ($trustee_evaluation) ? getname_suffix($trustee_evaluation?->member) ?? null : "Juan Dela Cruz (Preview)",
+            'name' => ($trustee_evaluation) ? $trustee_evaluation?->member?->full_name ?? null : "Juan Dela Cruz (Preview)",
             'commitees' => $commitees->map(function ($item) use ($trustee_evaluation){
                 $is_member = false;
                 if($trustee_evaluation){
@@ -65,7 +65,7 @@ class EvaluationFormPDF extends Controller
                     'is_member' => $is_member,
                 ];
             })->chunk(3),
-            'coverage_period' => ($trustee_evaluation) ? $trustee_evaluation->evaluationPeriod->getFormattedCoverage() : "-",
+            'coverage_period' => ($trustee_evaluation) ? $trustee_evaluation->evaluationPeriod->formatted_coverage : "-",
             'evaluated_by' => ($trustee_evaluation) ? $trustee_evaluation->evaluator->getFullNameAttribute() : "John Doe (Preview)",
         ];
         $this->pdfData = [
@@ -158,7 +158,7 @@ class EvaluationFormPDF extends Controller
     public function bot_selfassement(){
         $data = $this->pdfData;
         $data['show_bot_self_instruction'] = true;
-        $data['period_covered'] = ($this->eval_result) ? $this->eval_result->evaluationPeriod->getFormattedCoverage() : null;
+        $data['period_covered'] = ($this->eval_result) ? $this->eval_result->evaluationPeriod->formatted_coverage : null;
         $data['committee'] = ($this->eval_result) ? $this->eval_result?->committee?->name ?? null : null;
         $filename = 'BOT Self Assesment Questionaire';
         return $this->exportPDF('pdf.evaluation_results.selfassesment', $data, $filename);
@@ -166,7 +166,7 @@ class EvaluationFormPDF extends Controller
 
     public function committee_selfassement(){
         $data = $this->pdfData;
-        $data['period_covered'] = ($this->eval_result) ? $this->eval_result->evaluationPeriod->getFormattedCoverage() : null;
+        $data['period_covered'] = ($this->eval_result) ? $this->eval_result->evaluationPeriod->formatted_coverage : null;
         $data['show_bot_self_instruction'] = true;
         $filename = 'BOARD Self Assesment Questionaire';
         return $this->exportPDF('pdf.evaluation_results.selfassesment', $data, $filename);

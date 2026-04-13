@@ -102,7 +102,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
     public function getFullNameAttribute()
     {
         $middlename = $this->middle_name ? $this->middle_name . ' ' : '';
-        return $this->first_name . ' ' . $middlename . $this->last_name;
+        return $this->first_name . ' ' . $middlename . $this->last_name. ' '. $this->suffix;
     }
 
     public function getActivitylogOptions(): LogOptions

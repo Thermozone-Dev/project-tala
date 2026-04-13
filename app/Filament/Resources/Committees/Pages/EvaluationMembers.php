@@ -68,8 +68,8 @@ class EvaluationMembers extends ListRecords
         return $table
             ->columns([
                 TextColumn::make('form.shortcode'),
-                TextColumn::make('evaluator.name'),
-                TextColumn::make('member.name'),
+                TextColumn::make('evaluator.full_name'),
+                TextColumn::make('member.full_name'),
                 TextColumn::make('eval_status.name')
                     ->label('Status')
                     ->badge()
