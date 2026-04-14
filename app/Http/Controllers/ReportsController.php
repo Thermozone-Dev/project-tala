@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AttendanceAnswer;
 use App\Models\Report;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -129,7 +130,9 @@ class ReportsController extends Controller
         $assessment_qualitative  = $assessment_quantitative ? $assessment_scores->last()?->ratingScaleValue?->qualitative : null;
 
         // Average of attendance answers
-        $attendance_scores       = $assignments->flatMap->attendance_answer;
+        $attendance_scores       = $assignments->flatMap(function ($assignment2) {
+            return AttendanceAnswer::where('trustee_id',$assignment2->evaluator_id)->where('committee_id',$assignment2->committee_id)->where('evaluation_period_id',$assignment2->evaluation_id)->get();
+        });
         $attendance_quantitative = $attendance_scores->avg(fn($a) => $a->ratingScaleValue?->value);
         $attendance_qualitative  = $attendance_quantitative ? $attendance_scores->last()?->ratingScaleValue?->qualitative : null;
 

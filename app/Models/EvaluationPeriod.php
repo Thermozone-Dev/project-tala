@@ -57,9 +57,4 @@ class EvaluationPeriod extends Model
     {
         return Carbon::parse($this->date_from)->format('M d, Y') . ' - ' . Carbon::parse($this->date_to)->format('M d, Y');
     }
-
-    public function getFormattedCoverageAttribute()
-    {
-        return Carbon::parse($this->date_from)->format('M d, Y') . ' - ' . Carbon::parse($this->date_to)->format('M d, Y');
-    }
 }
