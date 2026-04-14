@@ -70,21 +70,20 @@ class AttendanceEvaluationFields
             foreach ($is_true_columns as $column) {
                 if($column == 'attendance_rating'){
                     $fields[] = Select::make($prefix.$column)
-                    // ->required()
-                    ->hiddenLabel()
-                    ->validationMessages([
-                        'required' => 'This field is required.',
-                    ])
-                    ->options($rating_scale_values->pluck('qualitative','id')->toArray());
-                    continue;
+                        ->debounce(1000)
+                        ->hiddenLabel()
+                        ->validationMessages([
+                            'required' => 'This field is required.',
+                        ])
+                        ->options($rating_scale_values->pluck('qualitative','id')->toArray());
+                        continue;
                 }
                 $fields[] = TextInput::make($prefix.$column)
-                    ->required()
                     ->numeric()
+                    ->debounce(1000)
                     ->minValue(0)
                     ->extraInputAttributes(['min' => 0])
                     ->maxValue(300)
-                    ->nullable()
                     ->hiddenLabel()
                     ->validationMessages([
                         'required' => 'This field is required.',
