@@ -40,6 +40,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
     use InteractsWithTable;
     protected static string $resource = CommitteeResource::class;
     public $record,$record_id;
+    public bool $requiresValidation = false;
     protected $queryString = ['record','record_id'];
     protected string $view = 'filament.resources.committees.pages.view-committee-evaluation';
 
@@ -84,14 +85,14 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                         ]
                     ];
                 })->toArray()],
-            ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
-                    $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
-                    return [
-                        $item->meeting_id => collect($item)->map(function ($value){
-                            return $value;
-                        })
-                    ];
-                })->toArray()],
+            // ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
+            //         $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
+            //         return [
+            //             $item->meeting_id => collect($item)->map(function ($value){
+            //                 return $value;
+            //             })
+            //         ];
+            //     })->toArray()],
             ['other_comments_ans' => $record->other_comments->mapWithKeys(function ($item) {
                     return [
                         $item->comment_id => $item
@@ -102,13 +103,36 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
         $this->form->fill($data);
     }
 
-    public function getFormSchema(): array
+    public function updated() : void
+    {
+        $this->requiresValidation = false;
+
+        $data = $this->form->getState();
+
+        $record = TrusteeHasEvaluation::find($this->record_id);
+
+        $data['trustee_evaluation_id'] = $record->evaluation_id;
+
+        if(isset($data['assesment_answer'])){
+            SaveAssessmentEvaluation::run($data,$record);
+        }
+
+        if(isset($data['attendance_answer'])){
+            SaveAttendanceEvaluation::run($data,$record);
+        }
+
+        if(isset($data['other_comments_ans'])){
+            SaveOtherComments::run($data,$record);
+        }
+    }
+
+        public function getFormSchema(): array
     {
         $view_record = TrusteeHasEvaluation::find($this->record_id);
         $eval_status = new EvaluationMembers();
         $eval_status = $eval_status->editable_field_status($view_record);
         return [
-            Grid::make(1)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id))->disabled(fn () => ($eval_status ) ? false : true),
+            Grid::make(1)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id,$this))->disabled(fn () => ($eval_status ) ? false : true),
             Grid::make(1)->schema(AttendanceEvaluationFields::run($view_record->ef_id,$this->record_id))->disabled(fn () => ($eval_status ) ? false : true),
             Grid::make(1)->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id))->disabled(fn () => ($eval_status ) ? false : true),
         ];
@@ -142,7 +166,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                 ->requiresConfirmation()
                 ->visible(function (){
                     $record = TrusteeHasEvaluation::find($this->record_id);
-                    if($record->trustee_evaluation_statuses_id == 2){ // 2 = Lock
+                    if($record->trustee_evaluation_statuses_id == 2){ // 2 = Submitted
                         return true;
                     }
                     return false;
@@ -160,7 +184,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                         ->title('Evaluation successfully marked as for review')
                         ->send();
                 }),
-            Action::make('Lock')
+            Action::make('Submit')
                 ->requiresConfirmation()
                 ->visible(function (){
                     $record = TrusteeHasEvaluation::find($this->record_id);
@@ -178,62 +202,27 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     if(CheckEvaluationCompleted::run($record->ef_id,$record->id) ){
 
                         $record->update([
-                            'trustee_evaluation_statuses_id' => 4 // 4 = For Review
+                            'trustee_evaluation_statuses_id' => 2 // 2 = Submitted
                         ]);
 
                         Notification::make()
                             ->success()
-                            ->title('Evaluation successfully marked as locked')
-                            ->body('The evaluation has been successfully completed and locked.')
+                            ->title('Evaluation successfully marked as submitted')
+                            ->body('The evaluation has been successfully completed and submitted.')
                             ->send();
                     }else{
                         Notification::make()
                             ->danger()
                             ->title('Evaluation Incomplete')
-                            ->body('Please complete all evaluation fields before locking this record.')
+                            ->body('Please complete all evaluation fields before submitting this record.')
                             ->send();
 
+                        $this->requiresValidation = true;
+
+                        $this->unmountAction();
+
+                        $this->form->validate();
                     }
-                }),
-            Action::make('Save as Draft')
-                ->color('warning')
-                ->visible(function (){
-                    $record = TrusteeHasEvaluation::find($this->record_id);
-                    if($record->trustee_evaluation_statuses_id == 1 || $record->trustee_evaluation_statuses_id == 3){ // 1 = Draft | 3 = Pending
-                        return true;
-                    }
-                    return false;
-                })
-                ->requiresConfirmation()
-                ->action(function () {
-
-                    $record = TrusteeHasEvaluation::find($this->record_id);
-
-                    $data = $this->form->getState();
-
-                    $data['trustee_evaluation_id'] = $record->evaluation_id;
-
-                    if(isset($data['assesment_answer'])){
-                        SaveAssessmentEvaluation::run($data,$record);
-                    }
-
-                    if(isset($data['attendance_answer'])){
-                        SaveAttendanceEvaluation::run($data,$record);
-                    }
-
-                    if(isset($data['other_comments_ans'])){
-                        SaveOtherComments::run($data,$record);
-                    }
-
-                    $record->update([
-                        'trustee_evaluation_statuses_id' => 1 // 1 = Draft
-                    ]);
-
-                    Notification::make()
-                        ->title('Changes Saved')
-                        ->success()
-                        ->body('Evaluation answers have been updated successfully.')
-                        ->send();
                 }),
         ];
     }
@@ -246,10 +235,15 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
             ->query(ActivityLogModel::query()->with(['causer', 'subject'])
                 ->whereHasMorph('subject', [
                     QuestionaireAnswer::class,
-                    AttendanceAnswer::class,
+                    // AttendanceAnswer::class,
                     OtherCommentAnswer::class,
                 ], function ($query) {
                     $query->where('trustee_evaluation_id', $this->record_id);
+                })
+                ->orWhereHasMorph('subject', [
+                    TrusteeHasEvaluation::class,
+                ], function ($query) {
+                    $query->where('id', $this->record_id);
                 })
                 ->latest())
             ->columns([
@@ -270,7 +264,13 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     ->label('Subject')
                     ->getStateUsing(function (ActivityLogModel $record): ?string {
 
-                        $subjectType = Str::headline(class_basename($record->subject_type));
+                        $labelMap = [
+                            'TrusteeHasEvaluation' => 'Evaluation Status',
+                            'OtherCommentAnswer' => 'Other Comments',
+                            'QuestionaireAnswer' => 'Assessment Evaluation',
+                            'AttendanceAnswer' => 'Attendance Evaluation',
+                        ];
+                        $subjectType = Str::headline($labelMap[class_basename($record->subject_type)]);
 
                         // Final fallback
                         return "{$subjectType}";
@@ -299,7 +299,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     ->label('Subject Type')
                     ->options([
                         QuestionaireAnswer::class => Str::headline(class_basename(QuestionaireAnswer::class)),
-                        AttendanceAnswer::class => Str::headline(class_basename(AttendanceAnswer::class)),
+                        // AttendanceAnswer::class => Str::headline(class_basename(AttendanceAnswer::class)),
                         OtherCommentAnswer::class => Str::headline(class_basename(OtherCommentAnswer::class)),
                     ])
                     ->searchable()
@@ -312,7 +312,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                             ->whereNotNull('causer_id')
                             ->whereHasMorph('subject', [
                                 QuestionaireAnswer::class,
-                                AttendanceAnswer::class,
+                                // AttendanceAnswer::class,
                                 OtherCommentAnswer::class,
                             ], function ($query) {
                                 $query->where('trustee_evaluation_id', $this->record_id);
@@ -361,17 +361,18 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                         }
 
                         $labelMap = [
+                            'eval_status.name'                => 'Evaluation Status',
                             'questionnaire.name'                => 'Questionnaire',
                             'ratingScaleValue.value'            => 'Rating Value',
                             'ratingScaleValue.qualitative'      => 'Qualitative Rating',
                             'ratingScaleValue.name'             => 'Rating Name',
                             'remarks'                           => 'Remarks',
                             'comment'                           => 'Comment',
-                            'attendance_rating_scale_values_id' => 'Attendance Rating',
-                            'total_meetings'                    => 'Total Meetings',
-                            'physically_present'                => 'Physically Present',
-                            'considered_present'                => 'Considered Present',
-                            'total_present'                     => 'Total Present',
+                            // 'attendance_rating_scale_values_id' => 'Attendance Rating',
+                            // 'total_meetings'                    => 'Total Meetings',
+                            // 'physically_present'                => 'Physically Present',
+                            // 'considered_present'                => 'Considered Present',
+                            // 'total_present'                     => 'Total Present',
                         ];
 
                         $formatValue = fn($value) => is_null($value)
@@ -448,5 +449,4 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
             ])
             ->paginated([10]);
     }
-
 }

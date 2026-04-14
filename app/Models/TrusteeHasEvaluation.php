@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class TrusteeHasEvaluation extends Model
 {
     //
-    use SoftDeletes;
+    use SoftDeletes, LogsActivity;
     public $timestamps = false;
 
     protected $table = 'trustee_has_evaluation';
@@ -75,5 +76,13 @@ class TrusteeHasEvaluation extends Model
     protected function scopePending(Builder $query): void
     {
         $query->where('trustee_evaluation_statuses_id', 3);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'eval_status.name',
+            ]);
     }
 }

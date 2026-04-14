@@ -4,7 +4,6 @@ namespace App\Actions\Form;
 
 use App\Models\EvaluationFormSection;
 use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -16,7 +15,7 @@ class AssessmentEvaluationFields
 {
     use AsAction;
 
-    public function handle($ef_id, $trustee_id = null)
+    public function handle($ef_id, $trustee_id = null, $page = false)
     {
         $eval_form_sections = EvaluationFormSection::where('evaluation_form_id',$ef_id)
             ->where('section_type_id',1) // 1 = 'Assessment'
@@ -43,30 +42,38 @@ class AssessmentEvaluationFields
             foreach ($eval_form_section->questionnaires->sortBy('id') as $index2 => $question) {
                 $prefix = $trustee_id ? 'assesment_answer.' : '';
                 if($eval_form_section->add_remarks){
-                    $fields[] = Grid::make(4)->schema([
+                    $fields[] = Grid::make()->schema([
                         Text::make($question->name)
-                            ->columnSpan(2)
+                            ->columnSpanFull()
                             ->weight(FontWeight::Bold)
                             ->color('neutral'),
                         Radio::make($prefix.$question->id.'.rating_scale_values_id')
-                            // ->required()
+                            ->required(fn() => $page->requiresValidation)
+                            ->columnSpanFull()
+                            ->inline()
+                            ->debounce(1000)
                             ->hiddenLabel()
                             ->validationMessages([
                                 'required' => 'This field is required.',
                             ])
                             ->options($rating_scale_values),
                         Textarea::make($prefix.$question->id.'.remarks')
+                            ->columnSpanFull()
+                            ->debounce(1000)
                             ->placeholder('Remarks...')
                             ->hiddenLabel()
                     ]);
                 }else{
-                    $fields[] =  Grid::make(3)->schema([
+                    $fields[] =  Grid::make()->schema([
                         Text::make($question->name)
-                            ->columnSpan(2)
+                            ->columnSpanFull()
                             ->weight(FontWeight::Bold)
                             ->color('neutral'),
                         Radio::make($prefix.$question->id.'.rating_scale_values_id')
-                            // ->required()
+                            ->required(fn() => $page->requiresValidation)
+                            ->columnSpanFull()
+                            ->inline()
+                            ->debounce(1000)
                             ->hiddenLabel()
                             ->validationMessages([
                                 'required' => 'This field is required.',

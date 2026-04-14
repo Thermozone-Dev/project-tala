@@ -9,11 +9,9 @@ use App\Actions\SaveAssessmentEvaluation;
 use App\Actions\SaveAttendanceEvaluation;
 use App\Actions\SaveOtherComments;
 use App\Filament\Resources\Committees\CommitteeResource;
-use App\Models\AttendanceAnswer;
 use App\Models\Committee;
 use App\Models\EvaluationPeriod;
 use App\Models\OtherCommentAnswer;
-use App\Models\QuestionaireAnswer;
 use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
 use BackedEnum;
@@ -39,6 +37,7 @@ class EvaluationMembers extends ListRecords
     protected static string $resource = CommitteeResource::class;
 
     public $record,$evaluator_id,$evaluation_id;
+    public bool $requiresValidation = false;
     protected $queryString = ['record','evaluator_id','evaluation_id'];
     protected static ?string $title = 'Evaluation Members';
 
@@ -68,15 +67,15 @@ class EvaluationMembers extends ListRecords
         return $table
             ->columns([
                 TextColumn::make('form.shortcode'),
-                TextColumn::make('evaluator.name'),
-                TextColumn::make('member.name'),
+                TextColumn::make('evaluator.full_name'),
+                TextColumn::make('member.full_name'),
                 TextColumn::make('eval_status.name')
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'Draft' => 'primary',
                         'Pending' => 'warning',
-                        'Locked' => 'success',
+                        'Submitted' => 'success',
                         'For Review' => 'info',
                         'Reviewed' => 'success',
                     }),
@@ -103,7 +102,7 @@ class EvaluationMembers extends ListRecords
                                     $disabled = false;
                                 }
                                 return [
-                                    Grid::make(1)->disabled($disabled)->schema(AssessmentEvaluationFields::run($record->ef_id,$record->id))
+                                    Grid::make(1)->disabled($disabled)->schema(AssessmentEvaluationFields::run($record->ef_id,$record->id,$this))
                                 ];
                             })
                             ->fillForm(fn (Model $record) =>
@@ -116,19 +115,45 @@ class EvaluationMembers extends ListRecords
                                     ];
                                 })->toArray()]
                             )
+                            ->extraModalFooterActions([
+                                Action::make('save_changes')
+                                    ->visible(fn(Model $record) => $record->trustee_evaluation_statuses_id == 3 ) // 3 = Pending
+                                    ->label('Save Changes')
+                                    ->color('warning')
+                                    ->action(function (array $mountedActions, Model $record){
+
+                                        $data = $mountedActions[0]->getRawData();
+
+                                        SaveAssessmentEvaluation::run($data,$record);
+
+                                        Notification::make()
+                                            ->title('Assessment Evaluation Saved')
+                                            ->success()
+                                            ->send();
+                                    })->overlayParentActions(),
+                            ])
+                            ->beforeFormValidated(function (){
+                                $this->requiresValidation = true;
+                            })
                             ->action(function (array $data, Model $record){
 
                                 SaveAssessmentEvaluation::run($data,$record);
 
+                                $record->update([
+                                    'trustee_evaluation_statuses_id' => 2 // 2 = Submitted
+                                ]);
+
                                 Notification::make()
-                                    ->title('Attendance Evaluation Submitted')
+                                    ->title('Assessment Evaluation Submitted')
                                     ->success()
-                                    ->body('Your attendance evaluation has been successfully submitted.')
+                                    ->body('Your assessment evaluation has been successfully submitted.')
                                     ->send();
+
+                                $this->unmountAction();
                             })
                             ->modalSubmitAction(function (Model $record) {
                                 if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
-                                    // 2 = Lock | 4 = For Review | 5 = Review
+                                    // 2 = Submitted | 4 = For Review | 5 = Review
                                     return false;
                                 }
 
@@ -153,34 +178,34 @@ class EvaluationMembers extends ListRecords
                             })
                             ->modalSubmitAction(function (Model $record) {
                                 if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
-                                    // 2 = Lock | 4 = For Review | 5 = Review
+                                    // 2 = Submitted | 4 = For Review | 5 = Review
                                     return false;
                                 }
 
-                            })
-                            ->fillForm(fn (Model $record) =>
-                                ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
-                                    $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
-                                    return [
-                                        $item->meeting_id => collect($item)->map(function ($value){
-                                            return $value;
-                                        })
-                                    ];
-                                })->toArray()]
-                            )
-                            ->action(function (array $data, Model $record){
+                        //     })
+                        //     ->fillForm(fn (Model $record) =>
+                        //         ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
+                        //             $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
+                        //             return [
+                        //                 $item->meeting_id => collect($item)->map(function ($value){
+                        //                     return $value;
+                        //                 })
+                        //             ];
+                        //         })->toArray()]
+                        //     )
+                        //     ->action(function (array $data, Model $record){
 
-                                SaveAttendanceEvaluation::run($data,$record);
+                        //         SaveAttendanceEvaluation::run($data,$record);
 
-                                Notification::make()
-                                    ->title('Attendance Evaluation Submitted')
-                                    ->success()
-                                    ->body('Your attendance evaluation has been successfully submitted.')
-                                    ->send();
-                            })
-                            ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,2)) // 2 = Section Type: Attendance
-                            ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
-                            ->icon(Heroicon::OutlinedClipboardDocumentList),
+                        //         Notification::make()
+                        //             ->title('Attendance Evaluation Submitted')
+                        //             ->success()
+                        //             ->body('Your attendance evaluation has been successfully submitted.')
+                        //             ->send();
+                        //     })
+                        //     ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,2)) // 2 = Section Type: Attendance
+                        //     ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
+                        //     ->icon(Heroicon::OutlinedClipboardDocumentList),
 
                         Action::make('Other Comments')
                             ->closeModalByClickingAway(false)
