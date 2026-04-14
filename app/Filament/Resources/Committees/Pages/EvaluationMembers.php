@@ -136,51 +136,51 @@ class EvaluationMembers extends ListRecords
                             ->authorize(check_committee_permission($this->record,'AssessmentEvaluation:Committee'))
                             ->icon(Heroicon::OutlinedClipboardDocumentCheck),
 
-                        Action::make('Evaluate Attendance')
-                            ->modalWidth(Width::SixExtraLarge)
-                            ->closeModalByClickingAway(false)
-                            ->disabled( fn (Model $record) =>  !$this->editable_field_status($record))
-                            ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
-                            ->schema(function (Model $record){
-                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5) {
-                                    $disabled = true;
-                                }else{
-                                    $disabled = false;
-                                }
-                                    return [
-                                        Grid::make(1)->disabled($disabled)->schema(AttendanceEvaluationFields::run($record->ef_id,$record->id))
-                                    ];
-                            })
-                            ->modalSubmitAction(function (Model $record) {
-                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
-                                    // 2 = Lock | 4 = For Review | 5 = Review
-                                    return false;
-                                }
+                        // Action::make('Evaluate Attendance')
+                        //     ->modalWidth(Width::SixExtraLarge)
+                        //     ->closeModalByClickingAway(false)
+                        //     ->disabled( fn (Model $record) =>  !$this->editable_field_status($record))
+                        //     ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
+                        //     ->schema(function (Model $record){
+                        //         if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5) {
+                        //             $disabled = true;
+                        //         }else{
+                        //             $disabled = false;
+                        //         }
+                        //             return [
+                        //                 Grid::make(1)->disabled($disabled)->schema(AttendanceEvaluationFields::run($record->ef_id,$record->id))
+                        //             ];
+                        //     })
+                        //     ->modalSubmitAction(function (Model $record) {
+                        //         if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
+                        //             // 2 = Lock | 4 = For Review | 5 = Review
+                        //             return false;
+                        //         }
 
-                            })
-                            ->fillForm(fn (Model $record) =>
-                                ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
-                                    $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
-                                    return [
-                                        $item->meeting_id => collect($item)->map(function ($value){
-                                            return $value;
-                                        })
-                                    ];
-                                })->toArray()]
-                            )
-                            ->action(function (array $data, Model $record){
+                        //     })
+                        //     ->fillForm(fn (Model $record) =>
+                        //         ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
+                        //             $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
+                        //             return [
+                        //                 $item->meeting_id => collect($item)->map(function ($value){
+                        //                     return $value;
+                        //                 })
+                        //             ];
+                        //         })->toArray()]
+                        //     )
+                        //     ->action(function (array $data, Model $record){
 
-                                SaveAttendanceEvaluation::run($data,$record);
+                        //         SaveAttendanceEvaluation::run($data,$record);
 
-                                Notification::make()
-                                    ->title('Attendance Evaluation Submitted')
-                                    ->success()
-                                    ->body('Your attendance evaluation has been successfully submitted.')
-                                    ->send();
-                            })
-                            ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,2)) // 2 = Section Type: Attendance
-                            ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
-                            ->icon(Heroicon::OutlinedClipboardDocumentList),
+                        //         Notification::make()
+                        //             ->title('Attendance Evaluation Submitted')
+                        //             ->success()
+                        //             ->body('Your attendance evaluation has been successfully submitted.')
+                        //             ->send();
+                        //     })
+                        //     ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,2)) // 2 = Section Type: Attendance
+                        //     ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
+                        //     ->icon(Heroicon::OutlinedClipboardDocumentList),
 
                         Action::make('Other Comments')
                             ->closeModalByClickingAway(false)

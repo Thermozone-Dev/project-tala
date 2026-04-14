@@ -198,44 +198,58 @@ class EvaluationFormPDF extends Controller
             }
 
             if($eval_sec->section_type_id == 2){ //attendance
-                $attendance_answer = $this->eval_result ? $this->eval_result->attendance_answer : collect();
-                $attendance = $eval_sec->attendanceSection;
-
+                $trustee_attendance = $this->eval_result?->evaluationPeriod?->attendance ?? null;
                 $attendance_criteria = [
                     'show_total_meetings' => [
                         'name' => 'Total Number of meetings',
-                        'show' => $attendance->show_total_meetings
+                        'show' => true
                     ],
                     'show_physically_present' => [
                         'name' => 'Physically Present ',
-                        'show' => $attendance->show_physically_present
+                        'show' => true
                     ],
                     'show_considered_present' => [
                         'name' => 'Considered as present',
-                        'show' => $attendance->show_considered_present
+                        'show' => true
                     ],
                     'show_total_present' => [
                         'name' => 'Total Meetings Present',
-                        'show' => $attendance->show_total_present
+                        'show' => true
                     ],
                     'show_attendance_rating' => [
                         'name' => 'Attendance Rating',
-                        'show' => $attendance->show_attendance_rating
+                        'show' => true
                     ],
                 ];
-                $meetings =   $attendance->meetings->map(function ($item) use ($attendance_answer, $attendance){
-                    $answer = $attendance_answer->where('meeting_id',$item->id)->first();
-                    return [
-                        'name' => $item->name,
-                        'show_total_meetings' => ($attendance->show_total_meetings) ? $answer?->total_meetings ?? null : null,
-                        'show_physically_present' => ($attendance->show_physically_present) ? $answer?->physically_present ?? null : null,
-                        'show_considered_present' => ($attendance->show_considered_present) ? $answer?->considered_present ?? null : null,
-                        'show_total_present' => ($attendance->show_total_present) ? $answer?->total_present ?? null : null,
-                        'show_attendance_rating' => ($attendance->show_attendance_rating) ? $answer?->ratingScaleValue?->value ?? null : null,
-                    ];
-                });
-                // dd($meetings);
+                if(!$trustee_attendance){
+                    $meetings =  Committee::take(3)->get()->map(function ($item) use ($attendance_criteria) {
+                        return [
+                            'name' => $item->name,
+                            'show_total_meetings' => ($attendance_criteria['show_total_meetings']['show']) ? $item?->total_meetings ?? 0 : 0,
+                            'show_physically_present' => ($attendance_criteria['show_physically_present']['show']) ? $item?->physically_present ?? 0 : 0,
+                            'show_considered_present' => ($attendance_criteria['show_considered_present']['show']) ? $item?->considered_present ?? 0 : 0,
+                            'show_total_present' => ($attendance_criteria['show_total_present']['show']) ? $item?->total_present ?? 0 : 0,
+                            'show_attendance_rating' => ($attendance_criteria['show_attendance_rating']['show']) ? $item?->ratingScaleValue?->name ?? 'N/A' : 0,
+                        ];
+                    });
+
+                }
+                else{
+                    $trustee_attendance = $trustee_attendance->where('trustee_id',$this->eval_result->evaluator_id);
+                    // use ($attendance_answer, $attendance)
+                    $meetings =   $trustee_attendance->map(function ($item) use ($attendance_criteria) {
+                        return [
+                            'name' => $item->commitee->name,
+                            'show_total_meetings' => ($attendance_criteria['show_total_meetings']['show']) ? $item?->total_meetings ?? 0 : 0,
+                            'show_physically_present' => ($attendance_criteria['show_physically_present']['show']) ? $item?->physically_present ?? 0 : 0,
+                            'show_considered_present' => ($attendance_criteria['show_considered_present']['show']) ? $item?->considered_present ?? 0 : 0,
+                            'show_total_present' => ($attendance_criteria['show_total_present']['show']) ? $item?->total_present ?? 0 : 0,
+                            'show_attendance_rating' => ($attendance_criteria['show_attendance_rating']['show']) ? $item?->ratingScaleValue?->name ?? 'N/A' : 0,
+                        ];
+                    });
+                }
                 $sec_data['attendance'] = ['criteria' => $attendance_criteria, 'meetings' => $meetings];
+
             }
 
             if($eval_sec->section_type_id == 3){ // other comments
