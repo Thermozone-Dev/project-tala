@@ -84,14 +84,14 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                         ]
                     ];
                 })->toArray()],
-            ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
-                    $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
-                    return [
-                        $item->meeting_id => collect($item)->map(function ($value){
-                            return $value;
-                        })
-                    ];
-                })->toArray()],
+            // ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
+            //         $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
+            //         return [
+            //             $item->meeting_id => collect($item)->map(function ($value){
+            //                 return $value;
+            //             })
+            //         ];
+            //     })->toArray()],
             ['other_comments_ans' => $record->other_comments->mapWithKeys(function ($item) {
                     return [
                         $item->comment_id => $item
@@ -246,7 +246,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
             ->query(ActivityLogModel::query()->with(['causer', 'subject'])
                 ->whereHasMorph('subject', [
                     QuestionaireAnswer::class,
-                    AttendanceAnswer::class,
+                    // AttendanceAnswer::class,
                     OtherCommentAnswer::class,
                 ], function ($query) {
                     $query->where('trustee_evaluation_id', $this->record_id);
@@ -299,7 +299,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     ->label('Subject Type')
                     ->options([
                         QuestionaireAnswer::class => Str::headline(class_basename(QuestionaireAnswer::class)),
-                        AttendanceAnswer::class => Str::headline(class_basename(AttendanceAnswer::class)),
+                        // AttendanceAnswer::class => Str::headline(class_basename(AttendanceAnswer::class)),
                         OtherCommentAnswer::class => Str::headline(class_basename(OtherCommentAnswer::class)),
                     ])
                     ->searchable()
@@ -312,7 +312,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                             ->whereNotNull('causer_id')
                             ->whereHasMorph('subject', [
                                 QuestionaireAnswer::class,
-                                AttendanceAnswer::class,
+                                // AttendanceAnswer::class,
                                 OtherCommentAnswer::class,
                             ], function ($query) {
                                 $query->where('trustee_evaluation_id', $this->record_id);
@@ -367,11 +367,11 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                             'ratingScaleValue.name'             => 'Rating Name',
                             'remarks'                           => 'Remarks',
                             'comment'                           => 'Comment',
-                            'attendance_rating_scale_values_id' => 'Attendance Rating',
-                            'total_meetings'                    => 'Total Meetings',
-                            'physically_present'                => 'Physically Present',
-                            'considered_present'                => 'Considered Present',
-                            'total_present'                     => 'Total Present',
+                            // 'attendance_rating_scale_values_id' => 'Attendance Rating',
+                            // 'total_meetings'                    => 'Total Meetings',
+                            // 'physically_present'                => 'Physically Present',
+                            // 'considered_present'                => 'Considered Present',
+                            // 'total_present'                     => 'Total Present',
                         ];
 
                         $formatValue = fn($value) => is_null($value)

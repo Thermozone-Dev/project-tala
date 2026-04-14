@@ -3,19 +3,21 @@
 namespace App\Livewire;
 
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
-use App\Models\Committee;
-use App\Models\EvaluationPeriod;
 use App\Models\Trustee;
 use App\Models\TrusteeHasEvaluation;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Grid;
+use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Contracts\View\View;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class EvaluationListTable extends TableWidget
@@ -26,7 +28,7 @@ class EvaluationListTable extends TableWidget
 
     protected function getTableHeading(): string|Htmlable|null
     {
-        return 'Trustee Evaluator(s) Lists';
+        return 'Trustee Evaluators';
     }
 
     protected function getDefaultTableSortColumn(): ?string
@@ -120,7 +122,6 @@ class EvaluationListTable extends TableWidget
                     ->sortable(),
                 TextColumn::make('total_count')
                     ->label('Evaluation Count')
-
                     ->sortable(),
 
 

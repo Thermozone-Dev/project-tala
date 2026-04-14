@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -40,8 +41,19 @@ class EvaluationPeriod extends Model
     }
 
 
+    public function attendance()
+    {
+        return $this->hasMany(AttendanceAnswer::class, 'evaluation_period_id');
+    }
 
-    public function getFormattedCoverage()
+
+    protected function scopeActive(Builder $query): void
+    {
+        $query->where('status_id', 1)->where('deleted_at', null);
+    }
+
+
+    public function getFormattedCoverageAttribute()
     {
         return Carbon::parse($this->date_from)->format('M d, Y') . ' - ' . Carbon::parse($this->date_to)->format('M d, Y');
     }

@@ -26,6 +26,7 @@ class EvaluationFormForm
                             ->required(),
                         TextInput::make('shortcode')
                             ->columnSpan(1)
+                            ->unique(column:'shortcode', ignoreRecord: true)
                             ->required(),
 
                         Select::make('pdf_template_id')
@@ -52,13 +53,21 @@ class EvaluationFormForm
                         Grid::make(3)
                             ->columnSpanFull()
                             ->schema([
-                                Select::make('rating_scale_id')
-                                    ->relationship('ratingScale', 'name')
-                                    ->required(),
-
                                 Select::make('section_type_id')
                                     ->relationship('sectionType', 'name')
                                     ->live(true)
+                                    ->reactive()
+                                    ->afterStateUpdated(function ($state, callable $get, callable $set){
+                                        if($state == 2){
+                                            return $set('rating_scale_id', 2);
+                                        }
+                                        return $set('rating_scale_id', null);
+                                    })
+                                    ->required(),
+
+                                Select::make('rating_scale_id')
+                                    ->relationship('ratingScale', 'name')
+                                    ->dehydrated(true)
                                     ->required(),
 
                                 Checkbox::make('add_remarks')
@@ -88,7 +97,7 @@ class EvaluationFormForm
 
 
                         Section::make('Attendance Matrix')
-                            ->visible(fn ($get) => $get('section_type_id') == 2)
+                            ->visible(false)
                             ->relationship('attendanceSection')
                             ->columnSpanFull()
                             ->columns(2)
