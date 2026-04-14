@@ -88,4 +88,3 @@ if (! function_exists('get_executive_role')) {
         return false;
     }
 }
-

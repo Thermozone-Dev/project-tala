@@ -3,6 +3,7 @@
 namespace App\Actions\Form;
 
 use App\Models\EvaluationFormSection;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Grid;
@@ -47,7 +48,7 @@ class AssessmentEvaluationFields
                             ->columnSpan(2)
                             ->weight(FontWeight::Bold)
                             ->color('neutral'),
-                        Select::make($prefix.$question->id.'.rating_scale_values_id')
+                        Radio::make($prefix.$question->id.'.rating_scale_values_id')
                             // ->required()
                             ->hiddenLabel()
                             ->validationMessages([
@@ -64,7 +65,7 @@ class AssessmentEvaluationFields
                             ->columnSpan(2)
                             ->weight(FontWeight::Bold)
                             ->color('neutral'),
-                        Select::make($prefix.$question->id.'.rating_scale_values_id')
+                        Radio::make($prefix.$question->id.'.rating_scale_values_id')
                             // ->required()
                             ->hiddenLabel()
                             ->validationMessages([

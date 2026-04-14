@@ -17,6 +17,9 @@ class TrusteesTable
             ->columns([
                 IconColumn::make('user.is_active')->label('Active')->boolean(),
                 TextColumn::make('user.name')
+                    ->formatStateUsing(function ($state, $record){
+                        return $state.' '. $record?->user?->suffix ?? null;
+                    })
                     ->searchable(),
                 TextColumn::make('user.email')
                     ->label('Email address')

@@ -37,6 +37,9 @@ class Committee extends Model
 
 	public function committee_has_trustees()
 	{
+        if(!get_executive_role(auth()->user()->getRoleNames()->first())){
+            return $this->hasMany(CommitteeHasTrustee::class)->where('user_id',auth()->user()->id);
+        }
 		return $this->hasMany(CommitteeHasTrustee::class);
 	}
 

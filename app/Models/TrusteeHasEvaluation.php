@@ -27,7 +27,7 @@ class TrusteeHasEvaluation extends Model
 
     public function evaluationPeriod()
     {
-        return $this->belongsTo(EvaluationPeriod::class, 'evaluation_id');
+        return $this->belongsTo(EvaluationPeriod::class, 'evaluation_id')->whereNull('deleted_at');
     }
 
     public function form()

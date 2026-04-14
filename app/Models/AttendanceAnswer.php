@@ -21,8 +21,9 @@ class AttendanceAnswer extends Model
         'considered_present',
         'total_present',
         'attendance_rating_scale_values_id',
-        'meeting_id',
-        'trustee_evaluation_id',
+        'committee_id',
+        'trustee_id',
+        'evaluation_period_id',
     ];
 
     /*
@@ -31,21 +32,37 @@ class AttendanceAnswer extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function meeting()
+    // public function meeting()
+    // {
+    //     return $this->belongsTo(AttendanceMeeting::class, 'meeting_id');
+    // }
+
+
+
+    public function evaluationPeriod()
     {
-        return $this->belongsTo(AttendanceMeeting::class, 'meeting_id');
+        return $this->belongsTo(EvaluationPeriod::class, 'evaluation_period_id');
     }
 
+    public function commitee()
+    {
+        return $this->belongsTo(Committee::class, 'committee_id');
+    }
+
+    public function trustee()
+    {
+        return $this->belongsTo(User::class, 'trustee_id');
+    }
 
     public function ratingScaleValue()
     {
         return $this->belongsTo(RatingScaleValue::class, 'attendance_rating_scale_values_id');
     }
 
-    public function trusteeEvaluation()
-    {
-        return $this->belongsTo(TrusteeHasEvaluation::class, 'trustee_evaluation_id');
-    }
+    // public function trusteeEvaluation()
+    // {
+    //     return $this->belongsTo(TrusteeHasEvaluation::class, 'trustee_evaluation_id');
+    // }
 
     public function getActivitylogOptions(): LogOptions
     {
