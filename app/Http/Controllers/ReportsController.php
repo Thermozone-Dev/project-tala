@@ -58,9 +58,29 @@ class ReportsController extends Controller
 
 
         $collections = $collections->map(function ($collection) use ($report) {
-            $collection['members'] = $this->get_data($report, $collection['ef_id'], $collection['group_by_committee']);
+            $collection['members'] = collect(
+                $this->get_data($report, $collection['ef_id'], $collection['group_by_committee'])
+                )->map(function ($item) use ($report) {
+
+                    if (isset($item['member_id'])) {
+                        return $this->enrichMember($item, $report);
+                    }
+
+
+                    if (isset($item['members'])) {
+                        $item['members'] = collect($item['members'])
+                            ->map(fn ($member) => $this->enrichMember($member, $report))
+                            ->values();
+
+                        return $item;
+                    }
+
+                    return $item;
+
+                })->values();
             return $collection;
         });
+        // dd($collections);
 
         $evaluation_period = Carbon::parse($report->evaluationPeriod->date_from)->format('F d, Y') . ' TO ' . Carbon::parse($report->evaluationPeriod->date_to)->format('F d, Y');
         $data = [
@@ -69,7 +89,6 @@ class ReportsController extends Controller
             'report_type'       => $report->reportType->name,
             'collections'       => $collections,
         ];
-
         $file_name = 'BOT Performance Summary ('.$evaluation_period.').pdf';
 
         $footer = view('pdf.reports.footer')->render();
@@ -85,6 +104,26 @@ class ReportsController extends Controller
             return $pdf->download($file_name);
         }
         return $pdf->inline($file_name);
+    }
+
+    private function enrichMember($member, $report)
+    {
+        $attendance = AssesmentComputation::calculate_attendance_rating_per_member(
+            $member['member_id'],
+            $report->evaluationPeriod->id
+        );
+
+        $performance_summary = AssesmentComputation::calculate_performance_summary(
+            $attendance['average_grade'],
+            $member['assessment_quantitative']
+        );
+
+        $member['attendance_quantitative'] = $attendance['average_grade'];
+        $member['attendance_qualitative'] = $attendance['rating'];
+        $member['total_quantitative'] = $performance_summary['quantitative'];
+        $member['total_qualitative'] = $performance_summary['qualitative'];
+
+        return $member;
     }
 
     public function download_bot_performance_summary(Request $request){
@@ -117,42 +156,22 @@ class ReportsController extends Controller
                     ->map(fn ($assignments) => $this->map_member_data($assignments))
                     ->values()
             );
-
         return $members;
     }
 
     private function map_member_data($assignments): array
     {
         $member = $assignments->first()->member;
-
         // Average of questionnaire answers
         $assessment_scores       = $assignments->flatMap->assesment_answer;
         $assessment_quantitative = $assessment_scores->avg(fn($a) => $a->ratingScaleValue?->value);
         $assessment_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($assessment_quantitative);
 
-        // Average of attendance answers
-        $attendance_scores       = $assignments->flatMap(function ($assignment2) {
-            return AttendanceAnswer::where('trustee_id',$assignment2->evaluator_id)->where('committee_id',$assignment2->committee_id)->where('evaluation_period_id',$assignment2->evaluation_id)->get();
-        });
-        $attendance_quantitative = $attendance_scores->avg(fn($a) => $a->ratingScaleValue?->value );
-        // dd($attendance_scores,$attendance_quantitative);
-
-        $attendance_qualitative  = $attendance_quantitative ? $attendance_scores->last()?->ratingScaleValue?->qualitative : null;
-        // Total: 70% assessment + 30% attendance
-        $total_quantitative = null;
-        if ($assessment_quantitative !== null && $attendance_quantitative !== null) {
-            $total_quantitative = ($assessment_quantitative * 0.70) + ($attendance_quantitative * 0.30);
-        }
-        $total_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($total_quantitative);
-
         return [
+            'member_id' => $member->id,
             'name' => $member?->name,
             'assessment_quantitative' => $assessment_quantitative,
             'assessment_qualitative' => $assessment_qualitative,
-            'attendance_quantitative' => $attendance_quantitative,
-            'attendance_qualitative' => $attendance_qualitative,
-            'total_quantitative' => $total_quantitative,
-            'total_qualitative' => $total_qualitative,
         ];
     }
 
