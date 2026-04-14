@@ -46,7 +46,7 @@ class EvaluationPeriodOverview extends StatsOverviewWidget
     {
 
         $evaluation_period = EvaluationPeriod::find($this->evaluation_period_id);
-        $heading = 'Evaluation Overview: '. (($evaluation_period) ? $evaluation_period->getFormattedCoverage() : 'Overall');
+        $heading = 'Evaluation Overview: '. (($evaluation_period) ? $evaluation_period->formatted_coverage : 'Overall');
         return $heading;
     }
 

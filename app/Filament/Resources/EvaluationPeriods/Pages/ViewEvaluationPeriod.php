@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EvaluationPeriods\Pages;
 
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
+use App\Livewire\AttendanceEvaluation;
 use App\Livewire\EvaluationListTable;
 use App\Livewire\EvaluationPeriodOverview;
 use App\Models\Trustee;
@@ -31,6 +32,7 @@ class ViewEvaluationPeriod extends ViewRecord
     protected function getFooterWidgets(): array
     {
         return [
+            AttendanceEvaluation::make(['evaluation_period_id' => $this->record->id]),
             EvaluationListTable::make(['evaluation_period_id' => $this->record->id]),
         ];
     }

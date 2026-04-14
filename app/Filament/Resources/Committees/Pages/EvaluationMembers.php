@@ -67,8 +67,8 @@ class EvaluationMembers extends ListRecords
         return $table
             ->columns([
                 TextColumn::make('form.shortcode'),
-                TextColumn::make('evaluator.name'),
-                TextColumn::make('member.name'),
+                TextColumn::make('evaluator.full_name'),
+                TextColumn::make('member.full_name'),
                 TextColumn::make('eval_status.name')
                     ->label('Status')
                     ->badge()
@@ -182,30 +182,30 @@ class EvaluationMembers extends ListRecords
                                     return false;
                                 }
 
-                            })
-                            ->fillForm(fn (Model $record) =>
-                                ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
-                                    $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
-                                    return [
-                                        $item->meeting_id => collect($item)->map(function ($value){
-                                            return $value;
-                                        })
-                                    ];
-                                })->toArray()]
-                            )
-                            ->action(function (array $data, Model $record){
+                        //     })
+                        //     ->fillForm(fn (Model $record) =>
+                        //         ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
+                        //             $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
+                        //             return [
+                        //                 $item->meeting_id => collect($item)->map(function ($value){
+                        //                     return $value;
+                        //                 })
+                        //             ];
+                        //         })->toArray()]
+                        //     )
+                        //     ->action(function (array $data, Model $record){
 
-                                SaveAttendanceEvaluation::run($data,$record);
+                        //         SaveAttendanceEvaluation::run($data,$record);
 
-                                Notification::make()
-                                    ->title('Attendance Evaluation Submitted')
-                                    ->success()
-                                    ->body('Your attendance evaluation has been successfully submitted.')
-                                    ->send();
-                            })
-                            ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,2)) // 2 = Section Type: Attendance
-                            ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
-                            ->icon(Heroicon::OutlinedClipboardDocumentList),
+                        //         Notification::make()
+                        //             ->title('Attendance Evaluation Submitted')
+                        //             ->success()
+                        //             ->body('Your attendance evaluation has been successfully submitted.')
+                        //             ->send();
+                        //     })
+                        //     ->visible(fn(Model $record) => check_eval_form_sections($record->ef_id,2)) // 2 = Section Type: Attendance
+                        //     ->authorize(check_committee_permission($this->record,'AttendanceEvaluation:Committee'))
+                        //     ->icon(Heroicon::OutlinedClipboardDocumentList),
 
                         Action::make('Other Comments')
                             ->closeModalByClickingAway(false)
