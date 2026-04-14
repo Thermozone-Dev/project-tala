@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\AssesmentComputation;
 use App\Models\AttendanceAnswer;
 use App\Models\Report;
 use Carbon\Carbon;
@@ -127,20 +128,22 @@ class ReportsController extends Controller
         // Average of questionnaire answers
         $assessment_scores       = $assignments->flatMap->assesment_answer;
         $assessment_quantitative = $assessment_scores->avg(fn($a) => $a->ratingScaleValue?->value);
-        $assessment_qualitative  = $assessment_quantitative ? $assessment_scores->last()?->ratingScaleValue?->qualitative : null;
+        $assessment_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($assessment_quantitative);
 
         // Average of attendance answers
         $attendance_scores       = $assignments->flatMap(function ($assignment2) {
             return AttendanceAnswer::where('trustee_id',$assignment2->evaluator_id)->where('committee_id',$assignment2->committee_id)->where('evaluation_period_id',$assignment2->evaluation_id)->get();
         });
-        $attendance_quantitative = $attendance_scores->avg(fn($a) => $a->ratingScaleValue?->value);
-        $attendance_qualitative  = $attendance_quantitative ? $attendance_scores->last()?->ratingScaleValue?->qualitative : null;
+        $attendance_quantitative = $attendance_scores->avg(fn($a) => $a->ratingScaleValue?->value );
+        // dd($attendance_scores,$attendance_quantitative);
 
+        $attendance_qualitative  = $attendance_quantitative ? $attendance_scores->last()?->ratingScaleValue?->qualitative : null;
         // Total: 70% assessment + 30% attendance
         $total_quantitative = null;
         if ($assessment_quantitative !== null && $attendance_quantitative !== null) {
             $total_quantitative = ($assessment_quantitative * 0.70) + ($attendance_quantitative * 0.30);
         }
+        $total_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($total_quantitative);
 
         return [
             'name' => $member?->name,
@@ -149,7 +152,7 @@ class ReportsController extends Controller
             'attendance_quantitative' => $attendance_quantitative,
             'attendance_qualitative' => $attendance_qualitative,
             'total_quantitative' => $total_quantitative,
-            'total_qualitative' => $total_quantitative ? $assessment_scores->last()?->ratingScaleValue?->qualitative : null,
+            'total_qualitative' => $total_qualitative,
         ];
     }
 

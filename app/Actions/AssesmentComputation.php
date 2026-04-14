@@ -55,4 +55,31 @@ class AssesmentComputation
     }
 
 
+
+    public static function get_assesment_rating_bot_summary($value)
+    {
+        // dd($percentage);
+        // $percentage = max(0, min(100, (int) $rating));
+
+        $rating = [
+            'Excellent' => [4.50, 5.00],
+            'Superior' => [3.50, 4.49],
+            'Very Good' => [2.50, 3.49],
+            'Good' => [1.50, 2.49],
+            'Satisfactory' =>[0, 1.49]
+        ];
+
+        foreach ($rating as $index => [$min, $max]) {
+            if ($value >= $min && $value <= $max) {
+                return $index;
+            }
+        }
+
+        return 'No Qualitative Found';
+
+    }
+
+
+
+
 }
