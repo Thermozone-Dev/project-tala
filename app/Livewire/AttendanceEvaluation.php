@@ -16,10 +16,16 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Actions\AssesmentComputation;
 use App\Actions\Form\AttendanceForm;
 use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Text;
+use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
+use Filament\Support\RawJs;
 use Filament\Tables\Filters\SelectFilter;
 
 use function PHPUnit\Framework\isEmpty;
@@ -93,8 +99,6 @@ class AttendanceEvaluation extends TableWidget
                     ->searchable()
                     ->preload()
                     ->relationship('trustee', 'name'),
-
-                //
             ])
             ->headerActions([
                 Action::make('evaluate_attendance')
@@ -185,7 +189,78 @@ class AttendanceEvaluation extends TableWidget
                 //
             ])
             ->recordActions([
-                
+                EditAction::make()
+                ->mutateDataUsing(function (array $data): array {
+
+                    $percentage = AssesmentComputation::get_attendance_percentage($data['total_meetings'], $data['total_present']);
+                    $rating = AssesmentComputation::get_attendance_rating($percentage);
+                    $data['attendance_rating_scale_values_id'] = $rating->id;
+
+                    return $data;
+                })
+                ->schema([
+                    Placeholder::make('trustee.full_name')->weight(FontWeight::Bold),
+                    Placeholder::make('commitee.name')->label('Committee')->weight(FontWeight::Bold),
+                    TextInput::make('total_meetings')
+                        ->minValue(0)
+                        ->required()
+                        ->default(0)
+                        ->label('Total Meetings')
+                        ->numeric(),
+                    TextInput::make('physically_present')
+                        ->numeric()
+                        ->minValue(0)
+                        ->label('Physically Present')
+                        ->reactive()
+                        ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
+                        ->afterStateUpdated(function ($state, callable $get, callable $set){
+                            $physical = (int) $get('physically_present');
+                            $considered = (int) $get('considered_present');
+                            $set('total_present', $physical + $considered);
+                        }),
+                    TextInput::make('considered_present')
+                        ->numeric()
+                        ->minValue(0)
+                        ->label('Considered Present')
+                        ->reactive()
+                        ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
+                        ->afterStateUpdated(function ($state, callable $get, callable $set){
+                            $physical = (int) $get('physically_present');
+                            $considered = (int) $get('considered_present');
+                            $set('total_present', $physical + $considered);
+                        }),
+                    TextInput::make('total_present')
+                        ->numeric()
+                        ->label('Total Number of Attendance')
+                        ->readOnly()
+                        ->default(0)
+                        ->rules([
+                            function (callable $get){
+                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+
+                                    $physical = (int) $get('physically_present');
+                                    $considered = (int) $get('considered_present');
+                                    $totalMeetings = (int) $get('total_meetings');
+
+                                    $totalPresent = $physical + $considered;
+
+                                    if ($totalPresent > $totalMeetings) {
+                                        $fail('Total present cannot exceed total meetings.');
+                                    }
+
+                                    if ($physical > $totalMeetings) {
+                                        $fail('Physically present cannot exceed total meetings.');
+                                    }
+
+                                    if ($considered > $totalMeetings) {
+                                        $fail('Considered present cannot exceed total meetings.');
+                                    }
+                                };
+                            }
+                        ])
+                        ->dehydrated(true)
+                ]),
+
                 //
             ])
             ->toolbarActions([
