@@ -161,26 +161,26 @@ class EvaluationMembers extends ListRecords
                             ->authorize(check_committee_permission($this->record,'AssessmentEvaluation:Committee'))
                             ->icon(Heroicon::OutlinedClipboardDocumentCheck),
 
-                        Action::make('Evaluate Attendance')
-                            ->modalWidth(Width::SixExtraLarge)
-                            ->closeModalByClickingAway(false)
-                            ->disabled( fn (Model $record) =>  !$this->editable_field_status($record))
-                            ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
-                            ->schema(function (Model $record){
-                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5) {
-                                    $disabled = true;
-                                }else{
-                                    $disabled = false;
-                                }
-                                    return [
-                                        Grid::make(1)->disabled($disabled)->schema(AttendanceEvaluationFields::run($record->ef_id,$record->id))
-                                    ];
-                            })
-                            ->modalSubmitAction(function (Model $record) {
-                                if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
-                                    // 2 = Submitted | 4 = For Review | 5 = Review
-                                    return false;
-                                }
+                        // Action::make('Evaluate Attendance')
+                        //     ->modalWidth(Width::SixExtraLarge)
+                        //     ->closeModalByClickingAway(false)
+                        //     ->disabled( fn (Model $record) =>  !$this->editable_field_status($record))
+                        //     ->modalheading(fn(Model $record): string => $record->member ? 'Person being evaluated: '.strtoupper($record->member->fullname) : 'Evaluate Assessment')
+                        //     ->schema(function (Model $record){
+                        //         if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5) {
+                        //             $disabled = true;
+                        //         }else{
+                        //             $disabled = false;
+                        //         }
+                        //             return [
+                        //                 Grid::make(1)->disabled($disabled)->schema(AttendanceEvaluationFields::run($record->ef_id,$record->id))
+                        //             ];
+                        //     })
+                        //     ->modalSubmitAction(function (Model $record) {
+                        //         if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
+                        //             // 2 = Submitted | 4 = For Review | 5 = Review
+                        //             return false;
+                        //         }
 
                         //     })
                         //     ->fillForm(fn (Model $record) =>
