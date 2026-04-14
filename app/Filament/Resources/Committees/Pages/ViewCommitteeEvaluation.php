@@ -178,7 +178,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     if(CheckEvaluationCompleted::run($record->ef_id,$record->id) ){
 
                         $record->update([
-                            'trustee_evaluation_statuses_id' => 4 // 4 = For Review
+                            'trustee_evaluation_statuses_id' => 2 // 2 = Locked
                         ]);
 
                         Notification::make()
@@ -251,6 +251,11 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                 ], function ($query) {
                     $query->where('trustee_evaluation_id', $this->record_id);
                 })
+                ->orWhereHasMorph('subject', [
+                    TrusteeHasEvaluation::class,
+                ], function ($query) {
+                    $query->where('id', $this->record_id);
+                })
                 ->latest())
             ->columns([
                 TextColumn::make('created_at')
@@ -270,7 +275,13 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     ->label('Subject')
                     ->getStateUsing(function (ActivityLogModel $record): ?string {
 
-                        $subjectType = Str::headline(class_basename($record->subject_type));
+                        $labelMap = [
+                            'TrusteeHasEvaluation' => 'Evaluation Status',
+                            'OtherCommentAnswer' => 'Other Comments',
+                            'QuestionaireAnswer' => 'Assessment Evaluation',
+                            'AttendanceAnswer' => 'Attendance Evaluation',
+                        ];
+                        $subjectType = Str::headline($labelMap[class_basename($record->subject_type)]);
 
                         // Final fallback
                         return "{$subjectType}";
@@ -361,6 +372,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                         }
 
                         $labelMap = [
+                            'eval_status.name'                => 'Evaluation Status',
                             'questionnaire.name'                => 'Questionnaire',
                             'ratingScaleValue.value'            => 'Rating Value',
                             'ratingScaleValue.qualitative'      => 'Qualitative Rating',
@@ -448,5 +460,4 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
             ])
             ->paginated([10]);
     }
-
 }
