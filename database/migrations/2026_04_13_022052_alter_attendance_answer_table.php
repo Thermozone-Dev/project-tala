@@ -12,16 +12,16 @@ return new class extends Migration
     public function up(): void
     {
          Schema::table('attendance_answer', function (Blueprint $table) {
-            // $table->dropForeign('table_attendance_answer_ibfk_2');
-            // $table->dropForeign('table_attendance_answer_ibfk_3');
-            // $table->unsignedBigInteger('evaluation_period_id')->nullable();
-            // $table->unsignedBigInteger('committee_id')->nullable();
-            // $table->unsignedBigInteger('trustee_id')->nullable();
-            // $table->dropColumn('meeting_id');
-            // $table->dropColumn('trustee_evaluation_id');
+            $table->dropForeign('table_attendance_answer_ibfk_2');
+            $table->dropForeign('table_attendance_answer_ibfk_3');
+            $table->unsignedBigInteger('evaluation_period_id')->nullable();
+            $table->unsignedBigInteger('committee_id')->nullable();
+            $table->unsignedBigInteger('trustee_id')->nullable();
+            $table->dropColumn('meeting_id');
+            $table->dropColumn('trustee_evaluation_id');
 
-            // $table->foreign(['evaluation_period_id'], 'table_attendance_answer_ibfk_2')->references(['id'])->on('evaluation_period')->onUpdate('cascade')->onDelete('cascade');
-            // $table->foreign(['committee_id'], 'table_attendance_answer_ibfk_3')->references(['id'])->on('committees')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign(['evaluation_period_id'], 'table_attendance_answer_ibfk_2')->references(['id'])->on('evaluation_period')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign(['committee_id'], 'table_attendance_answer_ibfk_3')->references(['id'])->on('committees')->onUpdate('cascade')->onDelete('cascade');
             $table->foreign(['trustee_id'], 'table_attendance_answer_ibfk_4')->references(['id'])->on('users');
 
         });
