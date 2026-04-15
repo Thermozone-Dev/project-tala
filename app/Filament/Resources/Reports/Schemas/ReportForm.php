@@ -30,6 +30,7 @@ class ReportForm
                         Select::make('report_type_id')
                             ->relationship('reportType', 'name')
                             ->preload()
+                            ->disableOptionWhen(fn (string $value): bool => $value != 1)
                             ->searchable()
                             ->required(),
 

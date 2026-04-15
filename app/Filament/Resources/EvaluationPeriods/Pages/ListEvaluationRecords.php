@@ -81,7 +81,8 @@ class ListEvaluationRecords extends ListRecords
 
                     ->icon(Heroicon::OutlinedPrinter)
                     ->openUrlInNewTab(),
-            ]);
+            ])
+            ->recordUrl(fn ($record) => CommitteeResource::getUrl('view-evaluation',['record' => $record->committee_id, 'record_id' => $record->id]));
     }
     protected function getTableQuery(): Builder|Relation|null
     {
