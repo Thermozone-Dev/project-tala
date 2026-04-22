@@ -1,0 +1,50 @@
+h1 {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+h3, h4, h5 {
+    font-weight: bold;
+}
+
+.row {
+    margin-bottom: 5px;
+}
+
+table {
+    table-layout: fixed;
+
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td, th {
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+th {
+    border: 1px solid black;
+    text-align: center;
+}
+
+td {
+    border: 1px solid black;
+    text-align: left;
+    font-size: 11.5px;
+    padding: 2px;
+}
+
+.page {
+    page-break-after: always;
+    /*width: 100%;*/
+}
+
+.font-bold{
+    font-weight: bold;
+}
+
+.header-color{
+    background-color: #31859b;
+    color: #caf5fb;
+}
