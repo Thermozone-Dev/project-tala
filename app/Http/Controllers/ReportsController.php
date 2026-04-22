@@ -11,7 +11,7 @@ use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 
 class ReportsController extends Controller
 {
-    public function bot_performance_summary(Request $request)
+    public function preview_report(Request $request)
     {
         $report_id = $request->report;
         $download = $request->download;
@@ -19,83 +19,62 @@ class ReportsController extends Controller
 
         if (!$report) return abort(404);
 
-        if ($report->report_type_id == 1) { // BOT Performance Summary
-            $collections = collect([
-                [
-                    'id' => 1,
-                    'code' => 'BOT',
-                    'ef_id' => [2, 3],
-                    'group_by_committee' => false,
-                    'name' => 'Summary of BOT Evaluation',
-                    'header' => 'Member Board of Trustees',
-                    'header2' => 'Governance Committee<br>Rating(Form C.2 to C.3)<br>(70%)',
-                    'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Governance Rating and 30% attendance"
-                ],
-                [
-                    'id' => 2,
-                    'code' => 'CO',
-                    'ef_id' => [4, 5, 6],
-                    'group_by_committee' => false,
-                    'name' => 'Summary of Corporate Evaluation',
-                    'header' => 'Corporate Officers',
-                    'header2' => 'Governance Committee<br>Rating(Form C.4 to C.6)<br>(70%)',
-                    'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Governance Rating and 30% attendance"
-                ],
-                [
-                    'id' => 3,
-                    'code' => 'LRP',
-                    'ef_id' => [7],
-                    'group_by_committee' => true, // toggle here
-                    'name' => 'Summary of Lead Resource Persons Evaluation',
-                    'header' => 'Lead Resource Person',
-                    'header2' => 'Committee Members<br>Rating(Form C.7)(70%)',
-                    'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Committee Members' Rating and 30% attendance"
-                ],
-            ]);
-        }else{
-            return;
+        switch ($report->report_type_id) {
+            case 1: // BOT Performance Summary
+
+                $pay_load = [
+                    'blade_path' => 'pdf.reports.bot-performance-summary',
+                    'page_orientation' => 'portrait',
+                    'collections' => $this->bot_performance_summary_collection($report),
+                ];
+
+                break;
+            case 2: // Individual Results of Rating - BOT
+
+                $pay_load = [
+                    'blade_path' => 'pdf.reports.individual-results-of-rating-bot',
+                    'page_orientation' => 'landscape',
+                    'collections' => $this->indiviual_results_of_rating_bot_collection($report),
+                ];
+
+                break;
+            case 3: // Individual Results of Rating - CO & LRPs
+
+                $pay_load = [
+                    'blade_path' => 'pdf.reports.individual-results-of-rating-CO-and-LRPs',
+                    'page_orientation' => 'landscape',
+                    'collections' => $this->indiviual_results_of_rating_co_and_lrps_collection($report),
+                ];
+
+                break;
+            case 4: // Summary Results of Committee Assessment
+
+                $pay_load = [
+                    'blade_path' => 'pdf.reports.summary-results-of-committee-assessment',
+                    'page_orientation' => 'landscape',
+                    'collections' => $this->summary_results_of_committee_assessment_collection($report),
+                ];
+
+                break;
+            default:
+                return;
         }
-
-
-        $collections = $collections->map(function ($collection) use ($report) {
-            $collection['members'] = collect(
-                $this->get_data($report, $collection['ef_id'], $collection['group_by_committee'])
-                )->map(function ($item) use ($report) {
-
-                    if (isset($item['member_id'])) {
-                        return $this->enrichMember($item, $report);
-                    }
-
-
-                    if (isset($item['members'])) {
-                        $item['members'] = collect($item['members'])
-                            ->map(fn ($member) => $this->enrichMember($member, $report))
-                            ->values();
-
-                        return $item;
-                    }
-
-                    return $item;
-
-                })->values();
-            return $collection;
-        });
-        // dd($collections);
 
         $evaluation_period = Carbon::parse($report->evaluationPeriod->date_from)->format('F d, Y') . ' TO ' . Carbon::parse($report->evaluationPeriod->date_to)->format('F d, Y');
         $data = [
             'evaluation_period' => $evaluation_period,
             'rating_scales'     => $this->get_rating_scale(),
             'report_type'       => $report->reportType->name,
-            'collections'       => $collections,
+            'collections'       => $pay_load['collections'],
         ];
-        $file_name = 'BOT Performance Summary ('.$evaluation_period.').pdf';
+        $file_name = $report->reportType->name.' ('.$evaluation_period.').pdf';
 
         $footer = view('pdf.reports.footer')->render();
 
-        $pdf = PDF::loadView('pdf.reports.bot-performance-summary', compact('data'))
+        $pdf = PDF::loadView($pay_load['blade_path'], compact('data'))
             ->setOption('encoding', 'UTF-8')
             ->setOptions(['margin-bottom' => 10])
+            ->setOrientation($pay_load['page_orientation'])
             ->setOption('footer-html', $footer)
             ->setOption('enable-local-file-access', true)
             ->setOption('images', true);
@@ -106,6 +85,77 @@ class ReportsController extends Controller
         return $pdf->inline($file_name);
     }
 
+    public function bot_performance_summary_collection($report){
+
+        $collections = collect([
+            [
+                'id' => 1,
+                'code' => 'BOT',
+                'ef_id' => [2, 3],
+                'group_by_committee' => false,
+                'name' => 'Summary of BOT Evaluation',
+                'header' => 'Member Board of Trustees',
+                'header2' => 'Governance Committee<br>Rating(Form C.2 to C.3)<br>(70%)',
+                'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Governance Rating and 30% attendance"
+            ],
+            [
+                'id' => 2,
+                'code' => 'CO',
+                'ef_id' => [4, 5, 6],
+                'group_by_committee' => false,
+                'name' => 'Summary of Corporate Evaluation',
+                'header' => 'Corporate Officers',
+                'header2' => 'Governance Committee<br>Rating(Form C.4 to C.6)<br>(70%)',
+                'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Governance Rating and 30% attendance"
+            ],
+            [
+                'id' => 3,
+                'code' => 'LRP',
+                'ef_id' => [7],
+                'group_by_committee' => true, // toggle here
+                'name' => 'Summary of Lead Resource Persons Evaluation',
+                'header' => 'Lead Resource Person',
+                'header2' => 'Committee Members<br>Rating(Form C.7)(70%)',
+                'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Committee Members' Rating and 30% attendance"
+            ],
+        ]);
+
+        $collections = $collections->map(function ($collection) use ($report) {
+            $collection['members'] = collect(
+                $this->get_data($report, $collection['ef_id'], $collection['group_by_committee'])
+            )->map(function ($item) use ($report) {
+
+                if (isset($item['member_id'])) {
+                    return $this->enrichMember($item, $report);
+                }
+
+
+                if (isset($item['members'])) {
+                    $item['members'] = collect($item['members'])
+                        ->map(fn ($member) => $this->enrichMember($member, $report))
+                        ->values();
+
+                    return $item;
+                }
+
+                return $item;
+
+            })->values();
+            return $collection;
+        });
+
+        return $collections;
+    }
+
+    public function indiviual_results_of_rating_bot_collection($report){
+        return null;
+    }
+    public function indiviual_results_of_rating_co_and_lrps_collection($report){
+        return null;
+    }
+    public function summary_results_of_committee_assessment_collection($report){
+        return null;
+    }
     private function enrichMember($member, $report)
     {
         $attendance = AssesmentComputation::calculate_attendance_rating_per_member(
@@ -126,12 +176,6 @@ class ReportsController extends Controller
         return $member;
     }
 
-    public function download_bot_performance_summary(Request $request){
-
-        $pdf = $this->bot_performance_summary($request);
-
-        return $pdf->download('BOT Performance Summary.pdf');
-    }
     public function get_data($report, $ef_id, $group_by_committee = false)
     {
         $members = $report->evaluationPeriod->assignments
@@ -184,6 +228,7 @@ class ReportsController extends Controller
                 'attendance_name' => '90% to 100% of the time',
                 'attendance_quantitative' => 5,
                 'attendance_qualitative' => 'Excellent',
+                'scale' => ''
             ],
             [
                 'assessment_quantitative' => '3.50 to < 4.50',
@@ -191,6 +236,7 @@ class ReportsController extends Controller
                 'attendance_name' => '70 to < 90% of the time',
                 'attendance_quantitative' => 4,
                 'attendance_qualitative' => 'Superior',
+                'scale' => 'Strongly Agree'
             ],
             [
                 'assessment_quantitative' => '2.50 to < 3.50',
@@ -198,6 +244,7 @@ class ReportsController extends Controller
                 'attendance_name' => '50% to < 70% of the time',
                 'attendance_quantitative' => 3,
                 'attendance_qualitative' => 'Very Good',
+                'scale' => 'Somewhat Agree'
             ],
             [
                 'assessment_quantitative' => '1.50 to < 2.50',
@@ -205,6 +252,7 @@ class ReportsController extends Controller
                 'attendance_name' => '30% to < 50% of the time',
                 'attendance_quantitative' => 2,
                 'attendance_qualitative' => 'Good',
+                'scale' => 'Somewhat Disagree'
             ],
             [
                 'assessment_quantitative' => 'Below 1.50',
@@ -212,6 +260,7 @@ class ReportsController extends Controller
                 'attendance_name' => 'Below 30% of the time',
                 'attendance_quantitative' => 1,
                 'attendance_qualitative' => 'Satisfactory',
+                'scale' => 'Strongly Disagree'
             ],
         ];
     }
