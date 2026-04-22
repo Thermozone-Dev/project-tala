@@ -10,7 +10,7 @@
         </div>
 
         <iframe
-            src="{{ route('bot-performance-summary', ['report' => $this->record->id, 'type' => 'pdf']) }}"
+            src="{{ route('preview-report', ['report' => $this->record->id, 'type' => 'pdf']) }}"
             style="height: 100%; width: 100%;"
             onload="document.getElementById('pdf-loader').style.display='none'"
         ></iframe>
