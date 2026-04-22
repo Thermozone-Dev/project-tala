@@ -19,12 +19,12 @@ class ViewReport extends ViewRecord
         return [
             Action::make('open_in_new_tab')
                 ->label('Open PDF in new tab')
-                ->url(fn () => route('bot-performance-summary',['report' => $this->record->id]))
+                ->url(fn () => route('preview-report',['report' => $this->record->id]))
                 ->openUrlInNewTab()
                 ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                 ->iconPosition('after'),
             Action::make('download')
-                ->url(fn () => route('bot-performance-summary',['report' => $this->record->id,'download' => true]))
+                ->url(fn () => route('preview-report',['report' => $this->record->id,'download' => true]))
                 ->icon(Heroicon::OutlinedArrowDownTray),
             EditAction::make()
         ];
