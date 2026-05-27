@@ -44,6 +44,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
         'password',
         'has_email_authentication',
         'avatar_url',
+        'phone',
+        'birthdate',
+        'gender'
     ];
 
     /**
@@ -117,5 +120,10 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
                 'email',
                 'has_email_authentication'
             ]);
+    }
+
+    public function committees()
+    {
+        return $this->hasMany(CommitteeHasTrustee::class,'user_id');
     }
 }

@@ -2,13 +2,8 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
-use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
@@ -45,8 +40,7 @@ class UserForm
                             ->relationship('roles', 'name',   fn ($query) => auth()->user()?->hasRole('Super Admin') ? $query : $query->whereNotIn('name', ['Trustee', 'Super Admin'])->orderBy('id', 'asc'))
                             ->multiple()
                             ->preload()
-                            ->required()
-                            ->searchable(),
+                            ->required(),
                     ]),
                     Group::make([
                         TextInput::make('password')
