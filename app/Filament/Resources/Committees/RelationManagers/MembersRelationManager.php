@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Committees\RelationManagers;
 
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\CommitteeHasTrustee;
-use App\Models\User;
 use App\Models\EvaluationPeriod;
 use App\Models\TrusteeHasEvaluation;
 use Filament\Actions\CreateAction;

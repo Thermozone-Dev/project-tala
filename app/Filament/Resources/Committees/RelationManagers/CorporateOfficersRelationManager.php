@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Filament\Resources\Committees\RelationManagers;
+
+use App\Filament\Resources\Committees\CommitteeResource;
+use App\Models\User;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Group;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Spatie\Permission\Models\Role;
+
+class CorporateOfficersRelationManager extends RelationManager
+{
+
+    protected static ?string $title = 'Corporate Officers';
+
+    protected static ?string $label = 'Corporate Officers';
+    protected static string $relationship = 'committee_has_trustees';
+    protected static ?string $relatedResource = CommitteeResource::class;
+
+    public function roles()
+    {
+        return [
+            'Corporate Secretary',
+            'Treasurer',
+            'Comptroller',
+            'EVP-GM'
+        ];
+    }
+    public function table(Table $table): Table
+    {
+        return $table
+            ->modifyQueryUsing(fn ($query) => $query->whereIn('role_id', Role::whereIn('name', $this->roles())->pluck('id')->toArray()))
+            ->columns([
+                TextColumn::make('user.full_name')->label('Name')->searchable()->sortable(),
+                TextColumn::make('role.name')->label('Role')->searchable()->sortable(),
+                IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->trueIcon(Heroicon::OutlinedCheckCircle)
+                    ->falseIcon(Heroicon::OutlinedXCircle),
+            ])
+            ->recordActions([
+                Action::make('toggle_active')
+                    ->label(fn ($record) => $record->is_active ? 'Deactivate' : 'Activate')
+                    ->successNotificationTitle(fn ($record) => $record->is_active ? 'Deactivated' : 'Activated')
+                    ->color(fn ($record) => $record->is_active ? 'danger' : 'success')
+                    ->icon(fn ($record) => $record->is_active ? Heroicon::OutlinedXCircle : Heroicon::OutlinedCheckCircle)
+                    ->action(function ($record) {
+                        $record->update([
+                            'is_active' => !$record->is_active,
+                        ]);
+
+                        $record->save();
+                        return $record;
+                    })
+                    ->requiresConfirmation(),
+//                Action::make('Delete')
+//                    ->color('danger')
+//                    ->icon(Heroicon::OutlinedTrash)
+//                    ->action(fn ($record) => $record->delete())
+//                    ->successNotificationTitle('Deleted')
+//                    ->requiresConfirmation()
+            ])
+            ->headerActions([
+                Action::make('add_corporate')
+                    ->label('Add Corporate Officers')
+                    ->schema(function () {
+
+                        return [
+                            Group::make([
+                                Select::make('role_id')
+                                    ->label('Roles')
+                                    ->options(function () {
+                                        $roles = Role::whereIn('name', $this->roles())->orderBy('id', 'asc')->pluck('name', 'id')->toArray();
+
+                                        return $roles;
+                                    })
+                                    ->live()
+                                    ->afterStateUpdated(fn(callable $set) => $set('user_ids', null))
+                                    ->required(),
+                                Select::make('user_ids')
+                                    ->label('Corporate Officers')
+                                    ->multiple()
+                                    ->searchable()
+                                    ->preload()
+                                    ->required()
+                                    ->live()
+                                    ->options(function (callable $get) {
+
+                                        $committeeId = $this->getOwnerRecord()->id;
+
+                                        return User::query()
+                                            ->whereHas('roles', fn ($q) => $q->where('id', $get('role_id')))
+                                            ->whereDoesntHave('committees', fn ($q) => $q->where('committee_id', $committeeId))
+                                            ->get()
+                                            ->pluck('full_name', 'id');
+                                    }),
+                            ])->columns()
+                        ];
+                    })
+                    ->action(function (array $data) {
+
+                        $role_id = $data['role_id'];
+
+                        foreach ($data['user_ids'] as $user_id) {
+                            $this->getOwnerRecord()
+                                ->committee_has_trustees()
+                                ->create([
+                                    'user_id' => $user_id,
+                                    'role_id' => $role_id
+                                ]);
+                        }
+                    })
+                    ->successNotificationTitle('Corporate Officer Added'),
+            ]);
+    }
+}
