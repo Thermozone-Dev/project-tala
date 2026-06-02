@@ -18,11 +18,15 @@ if (! function_exists('get_eval_form_by_role')) {
                 $form =  $model->find(1);
                 break;
             case 'vice chairman':
-                $form =  $model->find(3);
+                $form =  $model->find(2);
                 break;
 
             case 'trustee':
                 $form =  $model->find(2);
+                break;
+
+            case 'evp-gm':
+                $form =  $model->find(3);
                 break;
 
             case 'corporate officer':
@@ -40,6 +44,7 @@ if (! function_exists('get_eval_form_by_role')) {
             case 'lead resource person':
                 $form =  $model->find(7);
                 break;
+
 
             default:
                 $form =  null;
@@ -86,5 +91,16 @@ if (! function_exists('get_executive_role')) {
             return true;
         }
         return false;
+    }
+}
+
+
+
+if (! function_exists('get_board_members')) {
+    function get_board_members()
+    {
+        $board_members = ['Chairman', 'Trustee', 'Vice Chairman'];
+
+        return $board_members;
     }
 }

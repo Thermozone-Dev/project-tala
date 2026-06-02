@@ -46,12 +46,15 @@ class UserForm
                         TextInput::make('password')
                             ->revealable()
                             ->password()
-                            ->required(),
+                            ->hint(fn (string $operation): string => $operation === 'edit' ? 'Leave blank to keep the current password' : '')
+                            ->hintColor('primary')
+                            ->required(fn (string $operation): bool => $operation === 'create'),
+
                         TextInput::make('confirm_password')
                             ->revealable()
                             ->same('password')
                             ->password()
-                            ->required(),
+                            ->required(fn (string $operation): bool => $operation === 'create'),
                     ])
                 ]),
             ]);

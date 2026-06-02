@@ -126,4 +126,10 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
     {
         return $this->hasMany(CommitteeHasTrustee::class,'user_id');
     }
+
+
+    public function evaluation()
+    {
+        return $this->hasMany(TrusteeHasEvaluation::class,'evaluator_id');
+    }
 }

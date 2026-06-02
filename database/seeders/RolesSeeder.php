@@ -48,5 +48,7 @@ class RolesSeeder extends Seeder
         $secretariat->syncPermissions(
             Permission::where('name', 'not like', '%role%')->get()
         );
+
+
     }
 }

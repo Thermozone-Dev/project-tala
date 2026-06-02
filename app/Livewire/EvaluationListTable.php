@@ -3,22 +3,15 @@
 namespace App\Livewire;
 
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
-use App\Models\Trustee;
-use App\Models\TrusteeHasEvaluation;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Notifications\Notification;
-use Filament\Schemas\Components\Grid;
-use Filament\Support\Enums\Width;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
-use Illuminate\Contracts\View\View;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class EvaluationListTable extends TableWidget
 {
@@ -33,7 +26,7 @@ class EvaluationListTable extends TableWidget
 
     protected function getDefaultTableSortColumn(): ?string
     {
-        return 'user_id';
+        return 'id';
     }
 
 
@@ -41,94 +34,73 @@ class EvaluationListTable extends TableWidget
 
     public function table(Table $table): Table
     {
-        $test = TrusteeHasEvaluation::query()
-            ->where('evaluation_id', $this->evaluation_period_id)
-            ->pluck('evaluator_id')->toArray();
+        // Get board member roles for filtering
+        $boardMemberRoles = get_board_members();
 
-        if(Trustee::where('user_id', auth()->user()->id)->first()){
+        // Build base query for board members
+        $query = User::query()
+            ->role($boardMemberRoles);
 
+        // If current user is a trustee, filter to show only their evaluations
+        if (auth()->user()->hasRole('trustee')) {
             Notification::make()
                 ->title('Lists Shortlisted')
                 ->success()
                 ->send();
 
-            $test = [auth()->user()->id];
-
+            $query->where('id', auth()->user()->id);
         }
 
-        $query = Trustee::query()
-        ->whereIn('user_id', array_unique($test))
-        ->select(['user_id','trustees.id' ,'user_id as evaluator_id'])
-
-        ->withCount([
-            'active_evaluation as pending_count' => function (Builder $query) {
-                $query->where('evaluation_id', $this->evaluation_period_id)
-                        ->where('trustee_evaluation_statuses_id', 1);
-            },
-
-            'active_evaluation as submitted_count' => function (Builder $query) {
-                $query->where('evaluation_id', $this->evaluation_period_id)
-                        ->where('trustee_evaluation_statuses_id', 2);
-            },
-
-            'active_evaluation as total_count' => function (Builder $query) {
-                $query->where('evaluation_id', $this->evaluation_period_id);
-            },
-        ])
-        ->selectRaw('
-            CASE
-                WHEN (
-                    SELECT COUNT(*)
-                    FROM trustee_has_evaluation
-                    WHERE evaluation_id = ?
-                    AND evaluator_id = trustees.user_id
-                ) > 0
-                THEN ROUND(
-                    (
-                        SELECT COUNT(*)
-                        FROM trustee_has_evaluation
-                        WHERE evaluation_id = ?
-                        AND evaluator_id = trustees.user_id
-                        AND trustee_evaluation_statuses_id = 2
-                    ) * 100.0 /
-                    (
-                        SELECT COUNT(*)
-                        FROM trustee_has_evaluation
-                        WHERE evaluation_id = ?
-                        AND evaluator_id = trustees.user_id
-                    ),
-                1)
-                ELSE 0
-            END as submitted_percentage
-        ', [
-            $this->evaluation_period_id,
-            $this->evaluation_period_id,
-            $this->evaluation_period_id
+        // Filter evaluations by current evaluation period
+        $query->with([
+            'evaluation' => function ($q) {
+                $q->where('evaluation_id', $this->evaluation_period_id);
+            }
         ]);
 
+
+        // Add evaluation counts using the relationship
+        $query->withCount([
+            'evaluation as pending_count' => function (Builder $q) {
+                $q->where('evaluation_id', $this->evaluation_period_id)
+                    ->where('trustee_evaluation_statuses_id', 1);
+            },
+            'evaluation as submitted_count' => function (Builder $q) {
+                $q->where('evaluation_id', $this->evaluation_period_id)
+                    ->where('trustee_evaluation_statuses_id', 2);
+            },
+            'evaluation as total_count' => function (Builder $q) {
+                $q->where('evaluation_id', $this->evaluation_period_id);
+            },
+        ]);
         return $table
             ->query(fn (): Builder => $query)
             ->columns([
-                TextColumn::make('user_id')
+                TextColumn::make('first_name')
                     ->label('Trustee Name')
-                    ->formatStateUsing(fn ($state) => Trustee::where('user_id', $state)->first()?->user?->getFullNameAttribute() ?? 'Unknown')
-                    ->sortable(),
+                    ->formatStateUsing(fn ($_, $record) => $record->getFullNameAttribute())
+                    ->sortable(false),
 
                 TextColumn::make('pending_count')
                     ->label('Pending')
-                    ->sortable(),
+                    ->sortable(false),
                 TextColumn::make('submitted_count')
                     ->label('Submitted')
-                    ->sortable(),
+                    ->sortable(false),
                 TextColumn::make('total_count')
                     ->label('Evaluation Count')
-                    ->sortable(),
+                    ->sortable(false),
 
-
-                TextColumn::make('submitted_percentage')
+                TextColumn::make('submitted_count')
                     ->label('Completion %')
-                    ->formatStateUsing(fn ($state) => $state . ' %')
-                    ->sortable(),
+                    ->formatStateUsing(function ($_, $record) {
+                        if ($record->total_count == 0) {
+                            return '0 %';
+                        }
+                        $percentage = round(($record->submitted_count / $record->total_count) * 100, 1);
+                        return $percentage . ' %';
+                    })
+                    ->sortable(false),
             ])
             ->filters([
                 //
@@ -140,7 +112,7 @@ class EvaluationListTable extends TableWidget
                 Action::make('view_evaluation')
                     ->label('View Evaluations')
                     ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => EvaluationPeriodResource::getUrl('evaluation-trustee',['record' => $this->evaluation_period_id, 'evaluator_id' => $record->user_id]) ),
+                    ->url(fn ($record) => EvaluationPeriodResource::getUrl('evaluation-trustee',['record' => $this->evaluation_period_id, 'evaluator_id' => $record->id]) ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
