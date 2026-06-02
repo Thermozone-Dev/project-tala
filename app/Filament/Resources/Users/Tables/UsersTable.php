@@ -17,7 +17,9 @@ class UsersTable
         return $table
             ->columns([
                 IconColumn::make('is_active')->label('Active')->boolean(),
-                TextColumn::make('name')
+                TextColumn::make('full_name')
+                    ->label('Full Name')
+                    ->sortable()
                     ->searchable(),
                 TextColumn::make('email')
                     ->label('Email address')

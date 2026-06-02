@@ -14,15 +14,12 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
-
-    // protected static ?string $recordTitleAttribute = 'Users';
 
     public static function form(Schema $schema): Schema
     {
@@ -44,14 +41,6 @@ class UserResource extends Resource
         return [
             //
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->whereDoesntHave('roles', function ($query) {
-                $query->where('name', 'Trustee');
-            });
     }
 
     public static function getPages(): array

@@ -9,7 +9,10 @@ use App\Filament\Resources\Committees\Pages\EvaluationPeriods;
 use App\Filament\Resources\Committees\Pages\ListCommittees;
 use App\Filament\Resources\Committees\Pages\ViewCommittee;
 use App\Filament\Resources\Committees\Pages\ViewCommitteeEvaluation;
-use App\Filament\Resources\Committees\RelationManagers\MembersRelationManager;
+use App\Filament\Resources\Committees\RelationManagers\AllMembersRelationManager;
+use App\Filament\Resources\Committees\RelationManagers\CorporateOfficersRelationManager;
+use App\Filament\Resources\Committees\RelationManagers\LRPsRelationManager;
+use App\Filament\Resources\Committees\RelationManagers\TrusteesRelationManager;
 use App\Filament\Resources\Committees\Schemas\CommitteeForm;
 use App\Filament\Resources\Committees\Tables\CommitteesTable;
 use App\Models\Committee;
@@ -44,7 +47,10 @@ class CommitteeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            MembersRelationManager::class
+            AllMembersRelationManager::class,
+            TrusteesRelationManager::class,
+            LRPsRelationManager::class,
+            CorporateOfficersRelationManager::class
         ];
     }
 

@@ -36,7 +36,8 @@ class CommitteeHasTrustee extends Model
 	protected $fillable = [
 		'role_id',
 		'committee_id',
-		'user_id'
+		'user_id',
+        'is_active'
 	];
 
 	public function committee()

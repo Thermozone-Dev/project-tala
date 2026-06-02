@@ -2,14 +2,15 @@
 
 namespace App\Livewire;
 
-use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Jeffgreco13\FilamentBreezy\Livewire\PersonalInfo;
 
 class CustomPersonalInfo extends PersonalInfo
 {
-    public array $only = ['first_name', 'middle_name', 'last_name', 'suffix', 'email'];
+    public array $only = ['first_name', 'middle_name', 'last_name', 'suffix', 'email','phone','birthdate','gender'];
 
     // You can override the default components by returning an array of components.
     protected function getProfileFormComponents(): array
@@ -20,6 +21,9 @@ class CustomPersonalInfo extends PersonalInfo
             $this->getLastNameComponent(),
             $this->getSuffixComponent(),
             $this->getEmailComponent(),
+            $this->getPhoneComponent(),
+            $this->getBirthdateComponent(),
+            $this->getGenderComponent(),
         ];
     }
 
@@ -48,6 +52,38 @@ class CustomPersonalInfo extends PersonalInfo
         return TextInput::make('suffix')
             ->label(__('Suffix'));
     }
+
+    protected function getPhoneComponent(): TextInput
+    {
+        return TextInput::make('phone')
+            ->required()
+            ->tel()
+            ->telRegex('/^(?:\+63|0)9\d{9}$/')
+            ->placeholder('e.g. 0917XXXXXXXX or +63917XXXXXXXX')
+            ->label(__('Phone'));
+    }
+
+    protected function getBirthdateComponent(): DatePicker
+    {
+        return DatePicker::make('birthdate')
+            ->required()
+            ->minDate(now()->subYears(150))
+            ->maxDate(now())
+            ->label(__('Birdate'));
+    }
+
+    protected function getGenderComponent(): Select
+    {
+        return Select::make('gender')
+             ->options([
+                 'Male' => 'Male',
+                 'Female' => 'Female',
+                 'Other' => 'Other',
+             ])
+            ->required()
+            ->label(__('Gender'));
+    }
+
 
     protected function sendNotification(): void
     {

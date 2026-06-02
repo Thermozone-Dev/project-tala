@@ -17,7 +17,10 @@ class EditUser extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+
 //    protected function mutateFormDataBeforeFill(array $data): array
+
 //    {
 //        $data['roles'] = $this->record
 //            ->roles()
@@ -26,4 +29,15 @@ class EditUser extends EditRecord
 //
 //        return $data;
 //    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $data['name'] = $data['first_name'];
+
+        if (blank($data['password'] ?? null)) {
+            unset($data['password']);
+        }
+
+        return parent::mutateFormDataBeforeSave($data);
+    }
 }

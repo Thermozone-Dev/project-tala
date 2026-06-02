@@ -4,9 +4,9 @@ namespace App\Providers\Filament;
 
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Livewire\CustomPersonalInfo;
+use App\Livewire\CustomUpdatePassword;
 use App\Models\Committee;
 use App\Models\CommitteeHasTrustee;
-use App\Models\EvaluationPeriod;
 use App\Models\TrusteeHasEvaluation;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Auth\MultiFactor\Email\EmailAuthentication;
@@ -23,7 +23,6 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -118,7 +117,9 @@ class AdminPanelProvider extends PanelProvider
                     ->navigationGroup('Settings'),
                 BreezyCore::make()
                     ->avatarUploadComponent(fn($fileUpload) => $fileUpload->disableLabel())
-                    ->myProfileComponents(['personal_info' => CustomPersonalInfo::class])
+                    ->myProfileComponents([
+                        'personal_info' => CustomPersonalInfo::class,
+                        'update_password' => CustomUpdatePassword::class])
                     ->myProfile(
                         shouldRegisterNavigation: true,
                         userMenuLabel: 'My Profile', // Customizes the 'account' link label in the panel User Menu (default = null)

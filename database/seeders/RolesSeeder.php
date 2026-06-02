@@ -19,10 +19,11 @@ class RolesSeeder extends Seeder
             'Chairman',
             'Vice Chairman',
             'Trustee',
-            'Corporate Officer',
+            'Corporate Secretary',
             'Lead Resource Person',
-            'Corporate Treasurer',
-            'Corporate Comptroller',
+            'Treasurer',
+            'Comptroller',
+            'EVP-GM'
         ];
 
         foreach ($roles as $role) {
@@ -47,5 +48,7 @@ class RolesSeeder extends Seeder
         $secretariat->syncPermissions(
             Permission::where('name', 'not like', '%role%')->get()
         );
+
+
     }
 }

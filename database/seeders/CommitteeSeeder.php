@@ -14,12 +14,6 @@ class CommitteeSeeder extends Seeder
 
         $committees = [
             [
-                'name' => 'Board of Trustees',
-                'description' => 'Oversees the overall governance and strategic direction of the organization.',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
                 'name' => 'Governance',
                 'description' => 'Ensures proper governance practices and compliance with bylaws.',
                 'created_at' => $now,
