@@ -28,7 +28,7 @@ class BoardOfTrusteeResource extends Resource
     {
         return parent::getEloquentQuery()
             ->whereHas('roles', function ($query) {
-                $query->whereNotIn('name', ['Super Admin','Secretariat','Lead Resource Person']);
+                $query->whereIn('name', ['Chairman','Trustee']);
             });
     }
 
