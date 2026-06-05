@@ -20,7 +20,7 @@ return new class extends Migration
         });
 
         DB::table('trustee_evaluation_statuses')->insert([
-            ['name' => 'Draft'],
+            ['name' => 'In Progress'],
             ['name' => 'Locked'],
             ['name' => 'Pending'],
             ['name' => 'For Review'],

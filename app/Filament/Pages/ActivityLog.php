@@ -39,7 +39,12 @@ class ActivityLog extends Page implements HasActions, HasSchemas, HasTable
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()->hasRole('Super Admin') ? true : false;
+        return auth()->user()->can('View:ActivityLog');
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->can('View:ActivityLog');
     }
 
     public function table(Table $table): Table

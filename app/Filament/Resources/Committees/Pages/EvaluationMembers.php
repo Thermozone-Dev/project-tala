@@ -73,7 +73,7 @@ class EvaluationMembers extends ListRecords
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Draft' => 'primary',
+                        'In Progress' => 'primary',
                         'Pending' => 'warning',
                         'Submitted' => 'success',
                         'For Review' => 'info',

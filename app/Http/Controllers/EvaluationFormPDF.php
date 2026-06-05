@@ -239,7 +239,7 @@ class EvaluationFormPDF extends Controller
                     // use ($attendance_answer, $attendance)
                     $meetings =   $trustee_attendance->map(function ($item) use ($attendance_criteria) {
                         return [
-                            'name' => $item->commitee->name,
+                            'name' => $item?->commitee?->name ?? 'BOT Meetings (Regular & Special Meetings)',
                             'show_total_meetings' => ($attendance_criteria['show_total_meetings']['show']) ? $item?->total_meetings ?? 0 : 0,
                             'show_physically_present' => ($attendance_criteria['show_physically_present']['show']) ? $item?->physically_present ?? 0 : 0,
                             'show_considered_present' => ($attendance_criteria['show_considered_present']['show']) ? $item?->considered_present ?? 0 : 0,

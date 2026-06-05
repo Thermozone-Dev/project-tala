@@ -46,6 +46,11 @@ class AttendanceEvaluation extends TableWidget
         return 'Attendance Evaluation';
     }
 
+    public static function canView(): bool
+    {
+        return auth()->user()->can("Attendance:EvaluationPeriod");
+    }
+
     public function table(Table $table): Table
     {
         $query = AttendanceAnswer::where('evaluation_period_id',$this->evaluation_period_id);
@@ -128,22 +133,32 @@ class AttendanceEvaluation extends TableWidget
 
                         })
                         ->fillForm(function () {
-                            $test = EvaluationPeriod::find($this->evaluation_period_id);
+                            $evaluation_period = EvaluationPeriod::find($this->evaluation_period_id);
                             $fillForm = [];
-                            foreach($test->attendance as $attendance){
-                                $fillForm['commitee'][$attendance->committee_id]['members'][$attendance->trustee_id]['total_meetings']['value'] =  $attendance->total_meetings;
-                                $fillForm['commitee'][$attendance->committee_id]['members'][$attendance->trustee_id]['physically_present']['value'] =  $attendance->physically_present;
-                                $fillForm['commitee'][$attendance->committee_id]['members'][$attendance->trustee_id]['considered_present']['value'] =  $attendance->considered_present;
-                                $fillForm['commitee'][$attendance->committee_id]['members'][$attendance->trustee_id]['total_present']['value'] =  $attendance->total_present;
+
+                            foreach($evaluation_period->attendance as $attendance){
+                                // Get the evaluator's role
+                                $evaluator = $attendance->trustee;
+                                $role = $evaluator->roles()->first()?->name ?? 'Other';
+
+                                // Structure: commitee.[role].members.[member_id].[field].value
+                                $fillForm['commitee'][$role]['members'][$attendance->trustee_id]['total_meetings']['value'] = $attendance->total_meetings;
+                                $fillForm['commitee'][$role]['members'][$attendance->trustee_id]['physically_present']['value'] = $attendance->physically_present;
+                                $fillForm['commitee'][$role]['members'][$attendance->trustee_id]['considered_present']['value'] = $attendance->considered_present;
+                                $fillForm['commitee'][$role]['members'][$attendance->trustee_id]['total_present']['value'] = $attendance->total_present;
                             }
                             return $fillForm;
                         })
                         ->action(function (array $data){
                             $evaluationPeriod = EvaluationPeriod::find($this->evaluation_period_id);
 
-                            foreach($data['commitee'] as $commitee_index=> $committee){
-                                foreach($committee['members'] as $member_index => $members ){
-                                    $percentage = AssesmentComputation::get_attendance_percentage($members['total_meetings']['value'], $members['total_present']['value']);
+                            // Data structure is now organized by role instead of committee
+                            foreach($data['commitee'] as $role => $role_data){
+                                foreach($role_data['members'] as $member_id => $member_data ){
+                                    $percentage = AssesmentComputation::get_attendance_percentage(
+                                        $member_data['total_meetings']['value'],
+                                        $member_data['total_present']['value']
+                                    );
                                     $rating = AssesmentComputation::get_attendance_rating($percentage);
 
                                     if(!$rating){
@@ -155,27 +170,29 @@ class AttendanceEvaluation extends TableWidget
                                         return;
                                     }
 
+                                    // Get the committee_id from the evaluation assignment if it exists
+                                    $assignment = $evaluationPeriod->assignments
+                                        ->where('evaluator_id', $member_id)
+                                        ->first();
 
                                     $answer = [
-                                        'total_meetings' => $members['total_meetings']['value'],
-                                        'physically_present' => $members['physically_present']['value'],
-                                        'considered_present' => $members['considered_present']['value'],
-                                        'total_present' => $members['total_present']['value'],
+                                        'total_meetings' => $member_data['total_meetings']['value'],
+                                        'physically_present' => $member_data['physically_present']['value'],
+                                        'considered_present' => $member_data['considered_present']['value'],
+                                        'total_present' => $member_data['total_present']['value'],
                                         'attendance_rating_scale_values_id' => $rating?->id ?? null,
-                                        'committee_id' => $commitee_index,
-                                        'trustee_id' => $member_index,
+                                        'committee_id' => $assignment->committee_id ?? null,
+                                        'trustee_id' => $member_id,
                                         'evaluation_period_id' => $evaluationPeriod->id
                                     ];
 
                                     AttendanceAnswer::updateOrCreate(
                                         [
-                                            'committee_id' => $commitee_index,
-                                            'trustee_id' => $member_index,
-                                            'evaluation_period_id' => $answer['evaluation_period_id'],
+                                            'trustee_id' => $member_id,
+                                            'evaluation_period_id' => $evaluationPeriod->id,
                                         ],
                                         $answer,
                                     );
-
                                 }
                             }
 

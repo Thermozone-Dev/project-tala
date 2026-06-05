@@ -1,17 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\Committees\Pages;
+namespace App\Filament\Resources\EvaluationPeriods\Pages;
 
 use App\Actions\CheckEvaluationCompleted;
 use App\Actions\Form\AssessmentEvaluationFields;
-use App\Actions\Form\AttendanceEvaluationFields;
 use App\Actions\Form\OtherCommentsFields;
 use App\Actions\SaveAssessmentEvaluation;
-use App\Actions\SaveAttendanceEvaluation;
 use App\Actions\SaveOtherComments;
-use App\Filament\Resources\Committees\CommitteeResource;
-use App\Models\AttendanceAnswer;
-use App\Models\Committee;
+use App\Filament\Resources\Committees\Pages\EvaluationMembers;
+use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
 use App\Models\EvaluationPeriod;
 use App\Models\OtherCommentAnswer;
 use App\Models\QuestionaireAnswer;
@@ -34,15 +31,23 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Activity as ActivityLogModel;
 
-class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
+class ViewEvaluation extends Page implements HasForms, HasTable
 {
+
+    protected static string $resource = EvaluationPeriodResource::class;
+
     use InteractsWithForms;
     use InteractsWithTable;
-    protected static string $resource = CommitteeResource::class;
-    public $record,$record_id;
+
+    public $evaluation_id, $record_id;
+
+    public $assesment_answer,$rating_scale_values_id,$remarks,$other_comments_ans;
+
     public bool $requiresValidation = false;
-    protected $queryString = ['record','record_id'];
-    protected string $view = 'filament.resources.committees.pages.view-committee-evaluation';
+
+    protected $queryString = ['evaluation_id', 'record_id', 'evaluator_id'];
+
+    protected string $view = 'filament.resources.evaluation-periods.pages.view-evaluation';
 
     public function getTitle(): string|Htmlable
     {
@@ -54,24 +59,18 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
     public function getBreadcrumbs(): array
     {
         $view_record = TrusteeHasEvaluation::find($this->record_id);
-
         $evaluator = User::find($view_record->evaluator_id);
-        $committee = Committee::find($this->record);
-
         $evaluation = EvaluationPeriod::find($view_record->evaluation_id);
         $evaluation_period = Carbon::parse($evaluation->date_from)->format('M d Y').' - '.Carbon::parse($evaluation->date_to)->format('M d Y');
 
         $array = [
-            $this->getResourceUrl().'/'.$committee->id => $committee->name,
-            $this->getResourceUrl().'/'.$committee->id.'/'.$view_record->evaluator_id.'/evaluation-periods' => $evaluator->fullname,
-            $this->getResourceUrl().'/'.$committee->id.'/'.$view_record->evaluator_id.'/'.$view_record->evaluation_id.'/evaluation-periods/evaluation-members' => $evaluation_period,
-            0 => $view_record->form->shortcode,
-
+            EvaluationPeriodResource::getUrl('index') => 'Evaluation Periods',
+            EvaluationPeriodResource::getUrl('view', ['record' => $evaluation->id]) => $evaluation_period,
+            0 => $evaluator->getFullNameAttribute() . ' - ' . $view_record->form->shortcode,
         ];
         return $array;
     }
 
-    public $assesment_answer,$rating_scale_values_id,$remarks,$other_comments_ans,$attendance_answer,$attendance_rating;
     public function mount(): void
     {
         $record = TrusteeHasEvaluation::find($this->record_id);
@@ -85,14 +84,6 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                         ]
                     ];
                 })->toArray()],
-            // ['attendance_answer' => $record->attendance_answer->mapWithKeys(function ($item) {
-            //         $item['attendance_rating'] = $item->attendance_rating_scale_values_id;
-            //         return [
-            //             $item->meeting_id => collect($item)->map(function ($value){
-            //                 return $value;
-            //             })
-            //         ];
-            //     })->toArray()],
             ['other_comments_ans' => $record->other_comments->mapWithKeys(function ($item) {
                     return [
                         $item->comment_id => $item
@@ -105,20 +96,20 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
 
     public function updated() : void
     {
+
         $this->requiresValidation = false;
 
         $data = $this->form->getState();
 
         $record = TrusteeHasEvaluation::find($this->record_id);
-
+        if($record->trustee_evaluation_statuses_id == 3){
+            $record->trustee_evaluation_statuses_id = 1;
+            $record->update();
+        }
         $data['trustee_evaluation_id'] = $record->evaluation_id;
 
         if(isset($data['assesment_answer'])){
             SaveAssessmentEvaluation::run($data,$record);
-        }
-
-        if(isset($data['attendance_answer'])){
-            SaveAttendanceEvaluation::run($data,$record);
         }
 
         if(isset($data['other_comments_ans'])){
@@ -126,14 +117,13 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
         }
     }
 
-        public function getFormSchema(): array
+    public function getFormSchema(): array
     {
         $view_record = TrusteeHasEvaluation::find($this->record_id);
         $eval_status = new EvaluationMembers();
         $eval_status = $eval_status->editable_field_status($view_record);
         return [
             Grid::make(1)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id,$this))->disabled(fn () => ($eval_status ) ? false : true),
-            // Grid::make(1)->schema(AttendanceEvaluationFields::run($view_record->ef_id,$this->record_id))->disabled(fn () => ($eval_status ) ? false : true),
             Grid::make(1)->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id))->disabled(fn () => ($eval_status ) ? false : true),
         ];
     }
@@ -196,7 +186,6 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     return false;
                 })
                 ->action(function (){
-
                     $record = TrusteeHasEvaluation::find($this->record_id);
 
                     if(CheckEvaluationCompleted::run($record->ef_id,$record->id) ){
@@ -230,13 +219,11 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->authorized(fn () => auth()->user()->can('View:ActivityLog'))
             ->heading('Activity Log')
             ->poll('30s')
             ->query(ActivityLogModel::query()->with(['causer', 'subject'])
                 ->whereHasMorph('subject', [
                     QuestionaireAnswer::class,
-                    // AttendanceAnswer::class,
                     OtherCommentAnswer::class,
                 ], function ($query) {
                     $query->where('trustee_evaluation_id', $this->record_id);
@@ -300,7 +287,6 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                     ->label('Subject Type')
                     ->options([
                         QuestionaireAnswer::class => Str::headline(class_basename(QuestionaireAnswer::class)),
-                        // AttendanceAnswer::class => Str::headline(class_basename(AttendanceAnswer::class)),
                         OtherCommentAnswer::class => Str::headline(class_basename(OtherCommentAnswer::class)),
                     ])
                     ->searchable()
@@ -313,7 +299,6 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                             ->whereNotNull('causer_id')
                             ->whereHasMorph('subject', [
                                 QuestionaireAnswer::class,
-                                // AttendanceAnswer::class,
                                 OtherCommentAnswer::class,
                             ], function ($query) {
                                 $query->where('trustee_evaluation_id', $this->record_id);
@@ -369,11 +354,6 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                             'ratingScaleValue.name'             => 'Rating Name',
                             'remarks'                           => 'Remarks',
                             'comment'                           => 'Comment',
-                            // 'attendance_rating_scale_values_id' => 'Attendance Rating',
-                            // 'total_meetings'                    => 'Total Meetings',
-                            // 'physically_present'                => 'Physically Present',
-                            // 'considered_present'                => 'Considered Present',
-                            // 'total_present'                     => 'Total Present',
                         ];
 
                         $formatValue = fn($value) => is_null($value)

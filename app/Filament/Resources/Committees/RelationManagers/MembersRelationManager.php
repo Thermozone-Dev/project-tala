@@ -84,7 +84,7 @@ class MembersRelationManager extends RelationManager
                             ->toArray();
 
                         $total_eval = TrusteeHasEvaluation::query()
-                            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
+                            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = In Progress and 3 = Pending
                             ->where('committee_id', $this->getOwnerRecord()->id)
                             ->where('evaluator_id', $state)
                             ->whereIn('evaluation_id', $eval_period_ids)

@@ -6,7 +6,6 @@ use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
@@ -41,14 +40,9 @@ class EvaluationListTable extends TableWidget
         $query = User::query()
             ->role($boardMemberRoles);
 
-        // If current user is a trustee, filter to show only their evaluations
-        if (auth()->user()->hasRole('trustee')) {
-            Notification::make()
-                ->title('Lists Shortlisted')
-                ->success()
-                ->send();
-
-            $query->where('id', auth()->user()->id);
+        // Filter by role: executives see all evaluators, non-executives see only themselves
+        if (!get_executive_role(auth()->user()->roles->first()?->name)) {
+            $query->where('id', auth()->id());
         }
 
         // Filter evaluations by current evaluation period
@@ -62,6 +56,10 @@ class EvaluationListTable extends TableWidget
         // Add evaluation counts using the relationship
         $query->withCount([
             'evaluation as pending_count' => function (Builder $q) {
+                $q->where('evaluation_id', $this->evaluation_period_id)
+                    ->where('trustee_evaluation_statuses_id', 3);
+            },
+             'evaluation as in_progress' => function (Builder $q) {
                 $q->where('evaluation_id', $this->evaluation_period_id)
                     ->where('trustee_evaluation_statuses_id', 1);
             },
@@ -79,19 +77,25 @@ class EvaluationListTable extends TableWidget
                 TextColumn::make('first_name')
                     ->label('Trustee Name')
                     ->formatStateUsing(fn ($_, $record) => $record->getFullNameAttribute())
-                    ->sortable(false),
+                    ->sortable(),
+
+                TextColumn::make('in_progress')
+                    ->label('In Progress')
+                    ->sortable(),
 
                 TextColumn::make('pending_count')
                     ->label('Pending')
-                    ->sortable(false),
-                TextColumn::make('submitted_count')
-                    ->label('Submitted')
-                    ->sortable(false),
-                TextColumn::make('total_count')
-                    ->label('Evaluation Count')
-                    ->sortable(false),
+                    ->sortable(),
 
                 TextColumn::make('submitted_count')
+                    ->label('Submitted')
+                    ->sortable(),
+
+                TextColumn::make('total_count')
+                    ->label('Evaluation Count')
+                    ->sortable(),
+
+                TextColumn::make('total_count')
                     ->label('Completion %')
                     ->formatStateUsing(function ($_, $record) {
                         if ($record->total_count == 0) {
