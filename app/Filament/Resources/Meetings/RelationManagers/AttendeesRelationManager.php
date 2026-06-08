@@ -3,18 +3,13 @@
 namespace App\Filament\Resources\Meetings\RelationManagers;
 
 use App\Filament\Resources\Meetings\MeetingResource;
-use App\Models\Meeting;
-use App\Models\MeetingAttendee;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class AttendeesRelationManager extends RelationManager
 {
