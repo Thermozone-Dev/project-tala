@@ -126,7 +126,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
         }
     }
 
-        public function getFormSchema(): array
+    public function getFormSchema(): array
     {
         $view_record = TrusteeHasEvaluation::find($this->record_id);
         $eval_status = new EvaluationMembers();

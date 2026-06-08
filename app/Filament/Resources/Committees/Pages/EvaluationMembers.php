@@ -279,11 +279,15 @@ class EvaluationMembers extends ListRecords
     }
 
     public function editable_field_status($record){
-        if($record->evaluationPeriod->status_id != 1){
+        // dd($record);
+        if($record->evaluationPeriod->status_id != 1){ //Inactive Evaluation Period
             return false;
         }
-        if($record->trustee_evaluation_statuses_id == 3){ // Pending status
+        if($record->trustee_evaluation_statuses_id == 1 || $record->trustee_evaluation_statuses_id == 3){
             return true;
+        }
+        else{
+            return false;
         }
 
         return get_executive_role(auth()->user()->roles->first()->name) ? true : false;

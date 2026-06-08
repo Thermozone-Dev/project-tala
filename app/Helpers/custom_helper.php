@@ -33,11 +33,20 @@ if (! function_exists('get_eval_form_by_role')) {
                 $form =  $model->find(4);
                 break;
 
+
             case 'corporate treasurer':
                 $form =  $model->find(5);
                 break;
 
+            case 'treasurer':
+                $form =  $model->find(5);
+                break;
+
             case 'corporate comptroller':
+                $form =  $model->find(6);
+                break;
+
+            case 'comptroller':
                 $form =  $model->find(6);
                 break;
 
