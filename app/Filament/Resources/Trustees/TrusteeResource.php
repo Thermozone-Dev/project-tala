@@ -19,6 +19,7 @@ class TrusteeResource extends Resource
 {
     protected static ?string $model = Trustee::class;
 
+    protected static bool $shouldRegisterNavigation = false;
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUser;
 
     public static function form(Schema $schema): Schema

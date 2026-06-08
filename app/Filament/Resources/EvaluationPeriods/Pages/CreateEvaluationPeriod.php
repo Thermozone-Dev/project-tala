@@ -5,9 +5,11 @@ namespace App\Filament\Resources\EvaluationPeriods\Pages;
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
 use App\Models\Committee;
 use App\Models\EvaluationPeriod;
+use App\Models\User;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class CreateEvaluationPeriod extends CreateRecord
 {
@@ -15,6 +17,9 @@ class CreateEvaluationPeriod extends CreateRecord
 
 
     public function mount(): void{
+
+
+
         if(EvaluationPeriod::where('status_id', 1)->exists()){
             Notification::make()
                 ->title('An active evaluation period already exists.')
@@ -25,6 +30,8 @@ class CreateEvaluationPeriod extends CreateRecord
             redirect($this->getResource()::getUrl('index'));
         }
     }
+
+
     public function handleRecordCreation(array $data): Model
     {
 
@@ -36,55 +43,144 @@ class CreateEvaluationPeriod extends CreateRecord
 
     protected function afterCreate(): void
     {
+        try {
+            DB::transaction(function () {
+                // 1. Form 8 (Self Assessment) for all board members
+                $board_members = User::role(get_board_members())->get();
+                foreach ($board_members as $member) {
+                    $this->record->assignments()->create([
+                        'ef_id' => 8,
+                        'committee_id' => null,
+                        'member_id' => null,
+                        'evaluator_id' => $member->id,
+                    ]);
+                }
 
-        Committee::all()->each(function ($committee) {
-            $committee->committee_has_trustees;
-            $commmitee_member = $committee->committee_has_trustees->groupBy('user_id')->map(function ($item, $key) {
-                return $item->first();
-            });
-            foreach( $commmitee_member as $member){
-                $committee->committee_has_trustees->each(function ($committeeHasTrustee) use ($committee, $member) {
-                    if($committeeHasTrustee->user_id == $member->user_id){
+                // 2. Committee assignments: Form 9 for all + Form 7 (C7) for evaluating LRPs
+                $committees = Committee::with('committee_has_trustees.role')->get();
+                foreach ($committees as $committee) {
+                    $committee_members = $committee->committee_has_trustees
+                        ->groupBy('user_id')
+                        ->map(fn($items) => $items->first());
 
-                        $test = [
-                            'evaluation_id' =>  $this->record->id,
-                            'ef_id' => 8,
-                            'committee_id' => $committee->id,
-                            'member_id' => null,
-                            'evaluator_id' => $member->user_id,
-                        ];
+                    // Find all LRPs in this committee
+                    $lrps = $committee->committee_has_trustees
+                        ->filter(fn($member) => strtolower($member->role->name) === 'lead resource person');
 
-                        $this->record->assignments()->create($test);
-
-                        $test = [
-                            'evaluation_id' => $this->record->id,
+                    foreach ($committee_members as $evaluator) {
+                        // Form 9: Committee Self Assessment for all members
+                        $this->record->assignments()->create([
                             'ef_id' => 9,
                             'committee_id' => $committee->id,
                             'member_id' => null,
-                            'evaluator_id' => $member->user_id,
-                        ];
-                        $this->record->assignments()->create($test);
+                            'evaluator_id' => $evaluator->user_id,
+                        ]);
 
-                    }
-                    else{
-                        $eval_form = get_eval_form_by_role($committeeHasTrustee->role->name);
-                        if(!$eval_form){
-                            return; // iterate to next if no evaluation form is found for the role
+                        // Form 7 (C7): Each member evaluates all LRPs in the committee
+                        foreach ($lrps as $lrp) {
+                            // Don't create self-evaluation
+                            if ($evaluator->user_id === $lrp->user_id) {
+                                continue;
+                            }
+
+                            $this->record->assignments()->create([
+                                'ef_id' => 7,
+                                'committee_id' => $committee->id,
+                                'member_id' => $lrp->user_id,
+                                'evaluator_id' => $evaluator->user_id,
+                            ]);
                         }
-                        $test = [
-                            'evaluation_id' => $this->record->id,
-                            'ef_id' => $eval_form,
-                            'committee_id' => $committee->id,
-                            'member_id' => $committeeHasTrustee->user_id,
-                            'evaluator_id' => $member->user_id,
-                        ];
-                        $this->record->assignments()->create($test);
                     }
-                });
+                }
 
-            }
+                // 3. Cross-evaluation: Board members evaluate all non-executive roles
+                // Define role priority (higher index = higher priority)
+                $role_priority = [
+                    'trustee' => 1,
+                    'corporate officer' => 2,
+                    'corporate treasurer' => 3,
+                    'corporate comptroller' => 4,
+                    'corporate secretary' => 5,
+                    'lead resource person' => 6,
+                    'vice chairman' => 7,
+                    'chairman' => 8,
+                ];
 
-        });
+                $board_members = User::role(get_board_members())
+                    ->with('roles')
+                    ->get();
 
+                // Get all users with non-executive roles (excluding super admin and secretariat)
+                $executive_roles = ['super admin', 'secretariat'];
+                $all_users = User::with('roles')->get();
+
+                foreach ($board_members as $evaluator) {
+                    foreach ($all_users as $evaluatee) {
+                        // Don't create self-evaluation
+                        if ($evaluator->getKey() === $evaluatee->getKey()) {
+                            continue;
+                        }
+
+                        // Get all non-executive roles for the evaluatee
+                        $evaluatee_roles = $evaluatee->roles()
+                            ->whereNotIn('name', $executive_roles)
+                            ->get();
+
+                        // Skip if evaluatee has no non-executive roles
+                        if ($evaluatee_roles->isEmpty()) {
+                            continue;
+                        }
+
+                        // Get the highest priority role
+                        $highest_priority_role = null;
+                        $highest_priority_value = -1;
+
+                        foreach ($evaluatee_roles as $role) {
+                            $priority = $role_priority[strtolower($role->name)] ?? 0;
+                            if ($priority > $highest_priority_value) {
+                                $highest_priority_value = $priority;
+                                $highest_priority_role = $role;
+                            }
+                        }
+
+                        // Create assignment only for the highest priority role
+                        if ($highest_priority_role) {
+                            $eval_form = get_eval_form_by_role($highest_priority_role->name);
+                            if ($eval_form) {
+                                // Check if assignment already exists to avoid duplicates
+                                $exists = $this->record->assignments()
+                                    ->where('evaluator_id', $evaluator->getKey())
+                                    ->where('member_id', $evaluatee->getKey())
+                                    ->where('ef_id', $eval_form)
+                                    ->exists();
+
+                                if (!$exists) {
+                                    $this->record->assignments()->create([
+                                        'ef_id' => $eval_form,
+                                        'committee_id' => null,
+                                        'member_id' => $evaluatee->getKey(),
+                                        'evaluator_id' => $evaluator->getKey(),
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            Notification::make()
+                ->title('Success')
+                ->body('Evaluation period created and all assignments delegated successfully.')
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error')
+                ->body('Failed to create evaluation period: ' . $e->getMessage())
+                ->danger()
+                ->send();
+
+            throw $e;
+        }
     }
 }

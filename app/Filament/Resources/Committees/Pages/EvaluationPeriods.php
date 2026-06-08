@@ -52,7 +52,7 @@ class EvaluationPeriods extends ListRecords
     public function table(Table $table): Table
     {
         $query = TrusteeHasEvaluation::query()
-            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
+            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = In Progress and 3 = Pending
             ->whereHas('evaluationPeriod', fn($q) => $q->where('status_id', 1)) // 1 = Active
             ->where('committee_id', $this->record)
             ->where('evaluator_id', $this->evaluator_id);

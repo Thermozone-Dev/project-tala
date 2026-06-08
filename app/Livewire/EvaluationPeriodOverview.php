@@ -21,14 +21,26 @@ class EvaluationPeriodOverview extends StatsOverviewWidget
 
         if($this->evaluation_period_id){
             $evaluation_period = EvaluationPeriod::find($this->evaluation_period_id);
-            $evaluation = $evaluation_period->assignments();
-            if($this->trustee_id){
-                $evaluation = $evaluation->where('evaluator_id', $this->trustee_id);
+
+            // Build base query
+            $baseQuery = $evaluation_period->assignments();
+
+            // Filter by role: executives see all assignments, non-executives see only their own
+            if (!get_executive_role(auth()->user()->roles->first()?->name)) {
+                $baseQuery = $baseQuery->where('evaluator_id', auth()->id());
             }
-            $total_evaluations = $evaluation->count();
-            $pending_evaluations = $evaluation->pending()->count();
-            $submitted_evaluation = $total_evaluations - $pending_evaluations;
-            $percentage = (($total_evaluations - $pending_evaluations) / (($total_evaluations <= 0) ? 1 : $total_evaluations)) * 100;
+
+            if($this->trustee_id){
+                $baseQuery = $baseQuery->where('evaluator_id', $this->trustee_id);
+            }
+
+            // Get counts using fresh queries to avoid scope interference
+            $in_progress = (clone $baseQuery)->where('trustee_evaluation_statuses_id', 1)->count();
+            $pending_evaluations = (clone $baseQuery)->where('trustee_evaluation_statuses_id', 3)->count();
+            $total_evaluations = (clone $baseQuery)->count();
+
+            $submitted_evaluation = $total_evaluations - ($pending_evaluations + $in_progress);
+            $percentage = (($total_evaluations - ($pending_evaluations + $in_progress)) / (($total_evaluations <= 0) ? 1 : $total_evaluations)) * 100;
             $percentage = round($percentage, 1);
         }
         // dd($evaluation_period);

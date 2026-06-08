@@ -3,6 +3,10 @@
 namespace App\Filament\Resources\EvaluationPeriods\Pages;
 
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
+use App\Filament\Widgets\EvaluationStatsOverview;
+use App\Filament\Widgets\EvaluationStatusChart;
+use App\Filament\Widgets\EvaluatorsPerformanceChart;
+use App\Filament\Widgets\EvaluationFormBreakdown;
 use App\Livewire\AttendanceEvaluation;
 use App\Livewire\EvaluationListTable;
 use App\Livewire\EvaluationPeriodOverview;
@@ -26,9 +30,10 @@ class ViewEvaluationPeriod extends ViewRecord
         $trustee_id = Trustee::where('user_id', auth()->user()->id)?->first()?->user_id ?? null;
 
         return [
-            EvaluationPeriodOverview::make(['evaluation_period_id' => $this->record->id,'trustee_id' => $trustee_id]),
+            EvaluationStatsOverview::class,
         ];
     }
+
     protected function getFooterWidgets(): array
     {
         return [

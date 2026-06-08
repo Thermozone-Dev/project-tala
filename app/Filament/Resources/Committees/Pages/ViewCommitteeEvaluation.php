@@ -126,7 +126,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
         }
     }
 
-        public function getFormSchema(): array
+    public function getFormSchema(): array
     {
         $view_record = TrusteeHasEvaluation::find($this->record_id);
         $eval_status = new EvaluationMembers();
@@ -189,7 +189,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
                 ->visible(function (){
                     $record = TrusteeHasEvaluation::find($this->record_id);
 
-                    if($record->trustee_evaluation_statuses_id == 1 || $record->trustee_evaluation_statuses_id == 3){ // 1 = Draft | 3 = Pending
+                    if($record->trustee_evaluation_statuses_id == 1 || $record->trustee_evaluation_statuses_id == 3){ // 1 = In Progress | 3 = Pending
                         return true;
                     }
 
@@ -230,6 +230,7 @@ class ViewCommitteeEvaluation extends Page implements HasForms, HasTable
     public function table(Table $table): Table
     {
         return $table
+            ->authorized(fn () => auth()->user()->can('View:ActivityLog'))
             ->heading('Activity Log')
             ->poll('30s')
             ->query(ActivityLogModel::query()->with(['causer', 'subject'])

@@ -78,6 +78,13 @@ class TrusteeHasEvaluation extends Model
         $query->where('trustee_evaluation_statuses_id', 3);
     }
 
+
+    protected function scopeProgress(Builder $query): void
+    {
+        $query->where('trustee_evaluation_statuses_id', 1);
+    }
+
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

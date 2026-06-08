@@ -24,29 +24,38 @@ class AttendanceForm
 
     public function handle($evaluation_period = null , $trustees = [])
     {
-        // $evaluation_period = EvaluationPeriod::active()->first();
-        // $trustees = $evaluation_period->assignments()->get();
-        // dd($trustees);
+        // Group assignments by evaluator role (excluding Super Admin and Secretariat)
+        $excluded_roles = ['super admin', 'secretariat'];
 
-        // $trustee_attendance = [];
-        // foreach($trustees as $trustee){
-        // $commiteeIDs = $evaluation_period->assignments->groupBy('committee_id');
-
-
-        $participating_committees = $evaluation_period->assignments
-            ->groupBy('committee_id');
+        $assignments_by_role = $evaluation_period->assignments->groupBy(function($assignment) use ($excluded_roles) {
+            $role = $assignment->evaluator->roles->first()?->name ?? 'Other';
+            // Exclude Super Admin and Secretariat
+            if (in_array(strtolower($role), $excluded_roles)) {
+                return null;
+            }
+            return $role;
+        })->filter(); // Remove null keys
 
         $committees = [];
-        foreach($participating_committees as $commitee){
-            $com_details = $commitee->first()->committee;
+        $role_order = ['Chairman', 'Vice Chairman', 'Trustee','Corporate Officer','Corporate Treasurer','Corporate Comptroller','Corporate Secretary', 'Lead Resource Person'];
+
+        // Sort by role order
+        foreach($role_order as $role) {
+            if (!isset($assignments_by_role[$role])) {
+                continue;
+            }
+
+            $role_assignments = $assignments_by_role[$role];
+            $grouped_members = $role_assignments->groupBy('evaluator_id');
             $members = [];
-            $commitee = $commitee->groupBy('evaluator_id');
-            foreach($commitee as $member){
-                $member = $member->first();
+
+            foreach($grouped_members as $member_assignments) {
+                $member = $member_assignments->first();
                 $members[] = [
                     'id' => $member->evaluator_id,
                     'name' => $member->evaluator->full_name,
-                    'commitee_id' => $com_details->id,
+                    'role' => $role,
+                    'committee_id' => $member->committee_id,
                     'total_meetings' => 0,
                     'physically_present' => 0,
                     'considered_present' => 0,
@@ -54,12 +63,49 @@ class AttendanceForm
                     'attendance_rating_scale_values_id' => 0,
                 ];
             }
-            $committees[] = [
-                'id'  => $com_details->id,
-                'name' => $com_details->name,
-                'members' => $members
-            ];
 
+            if (!empty($members)) {
+                $committees[] = [
+                    'id' => $role,
+                    'name' => $role,
+                    'role' => $role,
+                    'members' => $members
+                ];
+            }
+        }
+
+        // Add any remaining roles not in the predefined order
+        foreach($assignments_by_role as $role => $role_assignments) {
+            if (in_array($role, $role_order)) {
+                continue; // Already processed
+            }
+
+            $grouped_members = $role_assignments->groupBy('evaluator_id');
+            $members = [];
+
+            foreach($grouped_members as $member_assignments) {
+                $member = $member_assignments->first();
+                $members[] = [
+                    'id' => $member->evaluator_id,
+                    'name' => $member->evaluator->full_name,
+                    'role' => $role,
+                    'committee_id' => $member->committee_id,
+                    'total_meetings' => 0,
+                    'physically_present' => 0,
+                    'considered_present' => 0,
+                    'total_present' => 0,
+                    'attendance_rating_scale_values_id' => 0,
+                ];
+            }
+
+            if (!empty($members)) {
+                $committees[] = [
+                    'id' => $role,
+                    'name' => $role,
+                    'role' => $role,
+                    'members' => $members
+                ];
+            }
         }
         // dd($commitees);
         // dd($evaluation_period->assignments->groupBy('committee_id'));
@@ -158,26 +204,30 @@ class AttendanceForm
                     TextInput::make('commitee.'.$commitee['id'].'.members.'.$member['id'].'.physically_present.value')
                         ->numeric()
                         ->minValue(0)
+                        ->default(0)
                         ->label('Physically Present')
                         ->reactive()
                         ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
+                        ->formatStateUsing( fn ($state) => $state ? $state : 0)
                         ->afterStateUpdated(function ($state, callable $get, callable $set) use ($commitee, $member) {
                             $base = 'commitee.'.$commitee['id'].'.members.'.$member['id'];
-                            $physical = (int) $get($base.'.physically_present.value');
-                            $considered = (int) $get($base.'.considered_present.value');
+                            $physical = (int) $get($base.'.physically_present.value') ?? 0;
+                            $considered = (int) $get($base.'.considered_present.value') ?? 0;
                             $set($base.'.total_present.value', $physical + $considered);
                         }),
 
                     TextInput::make('commitee.'.$commitee['id'].'.members.'.$member['id'].'.considered_present.value')
                         ->numeric()
+                        ->default(0)
                         ->label('Considered Present')
                         ->minValue(0)
                         ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
                         ->reactive()
+                        ->formatStateUsing( fn ($state) => $state ? $state : 0)
                         ->afterStateUpdated(function ($state, callable $get, callable $set) use ($commitee, $member) {
                             $base = 'commitee.'.$commitee['id'].'.members.'.$member['id'];
-                            $physical = (int) $get($base.'.physically_present.value');
-                            $considered = (int) $get($base.'.considered_present.value');
+                            $physical = (int) $get($base.'.physically_present.value') ?? 0;
+                            $considered = (int) $get($base.'.considered_present.value') ?? 0;
                             $set($base.'.total_present.value', $physical + $considered);
                         }),
 

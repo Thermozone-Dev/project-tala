@@ -4,9 +4,9 @@ namespace App\Providers\Filament;
 
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Livewire\CustomPersonalInfo;
+use App\Livewire\CustomUpdatePassword;
 use App\Models\Committee;
 use App\Models\CommitteeHasTrustee;
-use App\Models\EvaluationPeriod;
 use App\Models\TrusteeHasEvaluation;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Auth\MultiFactor\Email\EmailAuthentication;
@@ -23,7 +23,6 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -46,18 +45,18 @@ class AdminPanelProvider extends PanelProvider
             foreach ($committees as $committee) {
                 $navigation[] = NavigationItem::make($committee->name)
                     ->group('Committees')
-                    ->badge(function () use ($committee) {
-                        $total_eval = TrusteeHasEvaluation::query()
-                            ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = Draft and 3 = Pending
-                            ->where('committee_id', $committee->id)
-                            ->when((!get_executive_role(auth()->user()->getRoleNames()->first())), function ($q){
-                                return $q->where('evaluator_id',auth()->user()->id);
-                            })
-                            ->whereHas('evaluationPeriod', fn($q) => $q->where('status_id', 1)) // 1 = Active
-                            ->count() ?: null;
+                    // ->badge(function () use ($committee) {
+                    //     $total_eval = TrusteeHasEvaluation::query()
+                    //         ->whereIn('trustee_evaluation_statuses_id',[1,3]) // 1 = In Progress and 3 = Pending
+                    //         ->where('committee_id', $committee->id)
+                    //         ->when((!get_executive_role(auth()->user()->getRoleNames()->first())), function ($q){
+                    //             return $q->where('evaluator_id',auth()->user()->id);
+                    //         })
+                    //         ->whereHas('evaluationPeriod', fn($q) => $q->where('status_id', 1)) // 1 = Active
+                    //         ->count() ?: null;
 
-                        return $total_eval;
-                    },'warning')
+                    //     return $total_eval;
+                    // },'warning')
                     ->isActiveWhen(fn() => request()->is('admin/committees/' . $committee->id . '*'))
                     ->url(fn (): string => CommitteeResource::getUrl('view', ['record' => $committee->id]))
                     ->visible(function () use ($committee) {
@@ -118,7 +117,9 @@ class AdminPanelProvider extends PanelProvider
                     ->navigationGroup('Settings'),
                 BreezyCore::make()
                     ->avatarUploadComponent(fn($fileUpload) => $fileUpload->disableLabel())
-                    ->myProfileComponents(['personal_info' => CustomPersonalInfo::class])
+                    ->myProfileComponents([
+                        'personal_info' => CustomPersonalInfo::class,
+                        'update_password' => CustomUpdatePassword::class])
                     ->myProfile(
                         shouldRegisterNavigation: true,
                         userMenuLabel: 'My Profile', // Customizes the 'account' link label in the panel User Menu (default = null)
