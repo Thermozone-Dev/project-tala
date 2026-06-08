@@ -3,3 +3,8 @@
 @source '../../../../vendor/jeffgreco13/filament-breezy/resources/**/*';
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+.assessment-radio input[type=radio].fi-radio-input:disabled:checked {
+    opacity: 1 !important;
+    background-color: var(--primary-600) !important;
+}

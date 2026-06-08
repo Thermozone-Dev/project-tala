@@ -48,6 +48,7 @@ class AssessmentEvaluationFields
                             ->weight(FontWeight::Bold)
                             ->color('neutral'),
                         Radio::make($prefix.$question->id.'.rating_scale_values_id')
+                            ->extraAttributes(['class' => 'assessment-radio'])
                             ->required(fn() => $page->requiresValidation)
                             ->columnSpanFull()
                             ->inline()
@@ -70,6 +71,7 @@ class AssessmentEvaluationFields
                             ->weight(FontWeight::Bold)
                             ->color('neutral'),
                         Radio::make($prefix.$question->id.'.rating_scale_values_id')
+                            ->extraAttributes(['class' => 'assessment-radio'])
                             ->required(fn() => $page->requiresValidation)
                             ->columnSpanFull()
                             ->inline()
