@@ -15,6 +15,7 @@ class DefaultSeeder extends Seeder
         $this->call([
             PDFTemplateSeeder::class,
             RatingScalesSeeder::class,
+            SectionTypeSeeder::class,
             EvaluationC1Seeder::class,
             EvaluationC2Seeder::class,
             EvaluationC3Seeder::class,

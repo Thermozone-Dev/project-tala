@@ -18,6 +18,10 @@ class BoardOfTrusteesTable
                 TextColumn::make('full_name')
                     ->label('Trustee')
                     ->searchable(),
+
+                TextColumn::make('roles.name')
+                    ->badge()
+                    ->wrap(),
                 TextColumn::make('committees')
                     ->badge()
                     ->wrap()

@@ -93,34 +93,77 @@ class CreateEvaluationPeriod extends CreateRecord
                     }
                 }
 
-                // 3. Cross-evaluation: Each board member evaluates every other board member
-                $board_members_with_roles = User::role(get_board_members())
+                // 3. Cross-evaluation: Board members evaluate all non-executive roles
+                // Define role priority (higher index = higher priority)
+                $role_priority = [
+                    'trustee' => 1,
+                    'corporate officer' => 2,
+                    'corporate treasurer' => 3,
+                    'corporate comptroller' => 4,
+                    'corporate secretary' => 5,
+                    'lead resource person' => 6,
+                    'vice chairman' => 7,
+                    'chairman' => 8,
+                ];
+
+                $board_members = User::role(get_board_members())
                     ->with('roles')
                     ->get();
 
-                foreach ($board_members_with_roles as $evaluator) {
-                    foreach ($board_members_with_roles as $evaluatee) {
+                // Get all users with non-executive roles (excluding super admin and secretariat)
+                $executive_roles = ['super admin', 'secretariat'];
+                $all_users = User::with('roles')->get();
+
+                foreach ($board_members as $evaluator) {
+                    foreach ($all_users as $evaluatee) {
                         // Don't create self-evaluation
                         if ($evaluator->getKey() === $evaluatee->getKey()) {
                             continue;
                         }
 
-                        $evaluatee_role = $evaluatee->roles()->first();
-                        if (!$evaluatee_role) {
+                        // Get all non-executive roles for the evaluatee
+                        $evaluatee_roles = $evaluatee->roles()
+                            ->whereNotIn('name', $executive_roles)
+                            ->get();
+
+                        // Skip if evaluatee has no non-executive roles
+                        if ($evaluatee_roles->isEmpty()) {
                             continue;
                         }
 
-                        $eval_form = get_eval_form_by_role($evaluatee_role->name);
-                        if (!$eval_form) {
-                            continue;
+                        // Get the highest priority role
+                        $highest_priority_role = null;
+                        $highest_priority_value = -1;
+
+                        foreach ($evaluatee_roles as $role) {
+                            $priority = $role_priority[strtolower($role->name)] ?? 0;
+                            if ($priority > $highest_priority_value) {
+                                $highest_priority_value = $priority;
+                                $highest_priority_role = $role;
+                            }
                         }
 
-                        $this->record->assignments()->create([
-                            'ef_id' => $eval_form,
-                            'committee_id' => null,
-                            'member_id' => $evaluatee->getKey(),
-                            'evaluator_id' => $evaluator->getKey(),
-                        ]);
+                        // Create assignment only for the highest priority role
+                        if ($highest_priority_role) {
+                            $eval_form = get_eval_form_by_role($highest_priority_role->name);
+                            if ($eval_form) {
+                                // Check if assignment already exists to avoid duplicates
+                                $exists = $this->record->assignments()
+                                    ->where('evaluator_id', $evaluator->getKey())
+                                    ->where('member_id', $evaluatee->getKey())
+                                    ->where('ef_id', $eval_form)
+                                    ->exists();
+
+                                if (!$exists) {
+                                    $this->record->assignments()->create([
+                                        'ef_id' => $eval_form,
+                                        'committee_id' => null,
+                                        'member_id' => $evaluatee->getKey(),
+                                        'evaluator_id' => $evaluator->getKey(),
+                                    ]);
+                                }
+                            }
+                        }
                     }
                 }
             });
