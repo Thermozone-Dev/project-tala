@@ -3,3 +3,6 @@
 @source '../../../../vendor/jeffgreco13/filament-breezy/resources/**/*';
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+@import '../../../../vendor/saade/filament-fullcalendar/resources/css/filament-fullcalendar.css';
+@source '../../../../vendor/saade/filament-fullcalendar/resources/views/**/*.blade.php';

@@ -31,6 +31,8 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Illuminate\Support\Facades\Schema;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
+use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -113,6 +115,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
+                FilamentFullCalendarPlugin::make(),
                 FilamentShieldPlugin::make()
                     ->navigationGroup('Settings'),
                 BreezyCore::make()
