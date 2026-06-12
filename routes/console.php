@@ -1,6 +1,8 @@
 <?php
 
 use App\Notifications\MeetingReminder;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\Meeting;
@@ -23,7 +25,22 @@ Schedule::call(function () {
         $users = $meeting->attendees->pluck('user')->filter();
 
         foreach ($users as $user) {
+            // Email notification
             $user->notify(new MeetingReminder($meeting, '30min'));
+
+            // Bell icon notification
+            Notification::make()
+                ->title('Meeting in 30 Minutes')
+                ->body("'{$meeting->title}' starts at " . $meeting->scheduled_at->format('h:i A'))
+                ->icon('heroicon-o-clock')
+                ->warning()
+                ->actions([
+                    Action::make('view')
+                        ->label('View Meeting')
+                        ->url($meeting->meeting_link)
+                        ->button(),
+                ])
+                ->sendToDatabase($user);
         }
     }
 })->everyMinute();
@@ -38,7 +55,22 @@ Schedule::call(function () {
         $users = $meeting->attendees->pluck('user')->filter();
 
         foreach ($users as $user) {
+            // Email notification
             $user->notify(new MeetingReminder($meeting, 'daily'));
+
+            // Bell icon notification
+            Notification::make()
+                ->title('Meeting Tomorrow')
+                ->body("'{$meeting->title}' is scheduled tomorrow at " . $meeting->scheduled_at->format('h:i A'))
+                ->icon('heroicon-o-calendar')
+                ->info()
+                ->actions([
+                    Action::make('view')
+                        ->label('View Meeting')
+                        ->url($meeting->meeting_link)
+                        ->button(),
+                ])
+                ->sendToDatabase($user);
         }
     }
 })->dailyAt('08:00');
