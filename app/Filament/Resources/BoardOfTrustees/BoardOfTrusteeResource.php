@@ -24,11 +24,15 @@ class BoardOfTrusteeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
 
+
+    protected static ?string $modelLabel = 'Board Members';
+
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
             ->whereHas('roles', function ($query) {
-                $query->whereIn('name', ['Chairman','Trustee']);
+                $query->whereNotIn('name', ['Super Admin','Secretariat']);
             });
     }
 

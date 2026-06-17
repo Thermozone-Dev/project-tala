@@ -26,7 +26,7 @@ class ViewReport extends ViewRecord
             Action::make('download')
                 ->url(fn () => route('preview-report',['report' => $this->record->id,'download' => true]))
                 ->icon(Heroicon::OutlinedArrowDownTray),
-            EditAction::make()
+            // EditAction::make()
         ];
     }
 

@@ -18,8 +18,6 @@ class CreateEvaluationPeriod extends CreateRecord
 
     public function mount(): void{
 
-
-
         if(EvaluationPeriod::where('status_id', 1)->exists()){
             Notification::make()
                 ->title('An active evaluation period already exists.')
@@ -44,7 +42,20 @@ class CreateEvaluationPeriod extends CreateRecord
     protected function afterCreate(): void
     {
         try {
-            DB::transaction(function () {
+            // Check for governance committee
+            $governance_committee = $this->getGovernanceCommittee();
+            if (!$governance_committee) {
+                Notification::make()
+                    ->title('Error')
+                    ->body('No governance committee found. Please ensure a committee with "Governance" in its name exists.')
+                    ->danger()
+                    ->send();
+
+                $this->record->delete();
+                return;
+            }
+
+            DB::transaction(function () use ($governance_committee) {
                 // 1. Form 8 (Self Assessment) for all board members
                 $board_members = User::role(get_board_members())->get();
                 foreach ($board_members as $member) {
@@ -114,7 +125,15 @@ class CreateEvaluationPeriod extends CreateRecord
                 $executive_roles = ['super admin', 'secretariat'];
                 $all_users = User::with('roles')->get();
 
+                // Get governance committee members
+                $governance_members = $governance_committee->committee_has_trustees()
+                    ->with('user')
+                    ->pluck('user_id')
+                    ->toArray();
+
                 foreach ($board_members as $evaluator) {
+                    $is_in_governance = in_array($evaluator->getKey(), $governance_members);
+
                     foreach ($all_users as $evaluatee) {
                         // Don't create self-evaluation
                         if ($evaluator->getKey() === $evaluatee->getKey()) {
@@ -143,8 +162,33 @@ class CreateEvaluationPeriod extends CreateRecord
                             }
                         }
 
-                        // Create assignment only for the highest priority role
-                        if ($highest_priority_role) {
+                        if (!$highest_priority_role) {
+                            continue;
+                        }
+
+                        // Check if evaluator can evaluate this person
+                        $can_evaluate = false;
+
+                        if ($is_in_governance) {
+                            // Governance members can evaluate all non-executive board members
+                            $can_evaluate = true;
+                        } else {
+                            // Non-governance members can only evaluate LRPs in their committees
+                            if (strtolower($highest_priority_role->name) === 'lead resource person') {
+                                $evaluator_committees = $evaluator->committees()
+                                    ->pluck('committee_id')
+                                    ->toArray();
+
+                                $evaluatee_committees = $evaluatee->committees()
+                                    ->pluck('committee_id')
+                                    ->toArray();
+
+                                // Check if they share any committee
+                                $can_evaluate = count(array_intersect($evaluator_committees, $evaluatee_committees)) > 0;
+                            }
+                        }
+
+                        if ($can_evaluate) {
                             $eval_form = get_eval_form_by_role($highest_priority_role->name);
                             if ($eval_form) {
                                 // Check if assignment already exists to avoid duplicates
@@ -182,5 +226,23 @@ class CreateEvaluationPeriod extends CreateRecord
 
             throw $e;
         }
+    }
+
+    private function getGovernanceCommittee(): ?Committee
+    {
+        // First try ID 2 (default)
+        $committee = Committee::find(2);
+        if ($committee && stripos($committee->name, 'governance') !== false) {
+            return $committee;
+        }
+
+        // If ID 2 doesn't work, search by name
+        $committee = Committee::where('name', 'like', '%Governance%')->first();
+        if ($committee) {
+            return $committee;
+        }
+
+        // Not found
+        return null;
     }
 }

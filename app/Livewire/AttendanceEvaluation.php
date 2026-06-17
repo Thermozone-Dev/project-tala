@@ -73,10 +73,11 @@ class AttendanceEvaluation extends TableWidget
 
 
                 TextColumn::make('commitee.name')
-                    ->label('Commitee')
+                    ->label('Category')
                     ->badge()
                     ->color('warning')
-                    ->formatStateUsing(fn($state) => ucfirst($state))
+                    ->default('BOT Meetings')
+                    ->formatStateUsing(fn($state) => ucfirst($state ?? 'BOT Meetings'))
                     ->sortable(),
 
 
@@ -137,24 +138,26 @@ class AttendanceEvaluation extends TableWidget
                             $fillForm = [];
 
                             foreach($evaluation_period->attendance as $attendance){
-                                // Get the evaluator's role
-                                $evaluator = $attendance->trustee;
-                                $role = $evaluator->roles()->first()?->name ?? 'Other';
+                                // Determine committee key: 'bot' for BOT Meetings (null committee), or committee_id
+                                $committee_key = $attendance->committee_id ?? 'bot';
 
-                                // Structure: commitee.[role].members.[member_id].[field].value
-                                $fillForm['commitee'][$role]['members'][$attendance->trustee_id]['total_meetings']['value'] = $attendance->total_meetings;
-                                $fillForm['commitee'][$role]['members'][$attendance->trustee_id]['physically_present']['value'] = $attendance->physically_present;
-                                $fillForm['commitee'][$role]['members'][$attendance->trustee_id]['considered_present']['value'] = $attendance->considered_present;
-                                $fillForm['commitee'][$role]['members'][$attendance->trustee_id]['total_present']['value'] = $attendance->total_present;
+                                // Structure: commitee.[committee_key].members.[member_id].[field].value
+                                $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['total_meetings']['value'] = $attendance->total_meetings;
+                                $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['physically_present']['value'] = $attendance->physically_present;
+                                $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['considered_present']['value'] = $attendance->considered_present;
+                                $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['total_present']['value'] = $attendance->total_present;
                             }
                             return $fillForm;
                         })
                         ->action(function (array $data){
                             $evaluationPeriod = EvaluationPeriod::find($this->evaluation_period_id);
 
-                            // Data structure is now organized by role instead of committee
-                            foreach($data['commitee'] as $role => $role_data){
-                                foreach($role_data['members'] as $member_id => $member_data ){
+                            // Data structure is now organized by committee (bot or committee_id)
+                            foreach($data['commitee'] as $committee_key => $committee_data){
+                                // Determine committee_id: null for 'bot', or the actual committee_id
+                                $committee_id = $committee_key === 'bot' ? null : (int)$committee_key;
+
+                                foreach($committee_data['members'] as $member_id => $member_data ){
                                     $percentage = AssesmentComputation::get_attendance_percentage(
                                         $member_data['total_meetings']['value'],
                                         $member_data['total_present']['value']
@@ -170,18 +173,13 @@ class AttendanceEvaluation extends TableWidget
                                         return;
                                     }
 
-                                    // Get the committee_id from the evaluation assignment if it exists
-                                    $assignment = $evaluationPeriod->assignments
-                                        ->where('evaluator_id', $member_id)
-                                        ->first();
-
                                     $answer = [
                                         'total_meetings' => $member_data['total_meetings']['value'],
                                         'physically_present' => $member_data['physically_present']['value'],
                                         'considered_present' => $member_data['considered_present']['value'],
                                         'total_present' => $member_data['total_present']['value'],
                                         'attendance_rating_scale_values_id' => $rating?->id ?? null,
-                                        'committee_id' => $assignment->committee_id ?? null,
+                                        'committee_id' => $committee_id,
                                         'trustee_id' => $member_id,
                                         'evaluation_period_id' => $evaluationPeriod->id
                                     ];
@@ -190,6 +188,7 @@ class AttendanceEvaluation extends TableWidget
                                         [
                                             'trustee_id' => $member_id,
                                             'evaluation_period_id' => $evaluationPeriod->id,
+                                            'committee_id' => $committee_id,
                                         ],
                                         $answer,
                                     );
