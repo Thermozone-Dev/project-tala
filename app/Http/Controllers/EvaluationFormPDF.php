@@ -224,7 +224,7 @@ class EvaluationFormPDF extends Controller
                 if(!$trustee_attendance){
                     $meetings =  Committee::take(3)->get()->map(function ($item) use ($attendance_criteria) {
                         return [
-                            'name' => $item->name,
+                            'name' => $item->name . ' Meetings',
                             'show_total_meetings' => ($attendance_criteria['show_total_meetings']['show']) ? $item?->total_meetings ?? 0 : 0,
                             'show_physically_present' => ($attendance_criteria['show_physically_present']['show']) ? $item?->physically_present ?? 0 : 0,
                             'show_considered_present' => ($attendance_criteria['show_considered_present']['show']) ? $item?->considered_present ?? 0 : 0,
@@ -235,17 +235,44 @@ class EvaluationFormPDF extends Controller
 
                 }
                 else{
-                    $trustee_attendance = $trustee_attendance->where('trustee_id',$this->eval_result->evaluator_id);
-                    // use ($attendance_answer, $attendance)
-                    $meetings =   $trustee_attendance->map(function ($item) use ($attendance_criteria) {
+                    $trustee_attendance = $trustee_attendance->where('trustee_id',$this->eval_result->member_id);
+
+                    // Group by committee_id
+                    $grouped = $trustee_attendance->groupBy('committee_id')->map(function ($group, $committee_id) use ($attendance_criteria) {
+                        $first_item = $group->first();
+
+                        // Determine the name
+                        if ($first_item->commitee) {
+                            $name = $first_item?->commitee?->name . ' Meetings';
+                        } else {
+                            $name =  "BOT Meetings (Regular & Special Meetings)" ;
+                        }
+
                         return [
-                            'name' => $item?->commitee?->name ?? 'BOT Meetings (Regular & Special Meetings)',
-                            'show_total_meetings' => ($attendance_criteria['show_total_meetings']['show']) ? $item?->total_meetings ?? 0 : 0,
-                            'show_physically_present' => ($attendance_criteria['show_physically_present']['show']) ? $item?->physically_present ?? 0 : 0,
-                            'show_considered_present' => ($attendance_criteria['show_considered_present']['show']) ? $item?->considered_present ?? 0 : 0,
-                            'show_total_present' => ($attendance_criteria['show_total_present']['show']) ? $item?->total_present ?? 0 : 0,
-                            'show_attendance_rating' => ($attendance_criteria['show_attendance_rating']['show']) ? $item?->ratingScaleValue?->name ?? 'N/A' : 0,
+                            'name' => $name,
+                            'committee_id' => $committee_id,
+                            'show_total_meetings' => ($attendance_criteria['show_total_meetings']['show']) ? $first_item?->total_meetings ?? 0 : 0,
+                            'show_physically_present' => ($attendance_criteria['show_physically_present']['show']) ? $first_item?->physically_present ?? 0 : 0,
+                            'show_considered_present' => ($attendance_criteria['show_considered_present']['show']) ? $first_item?->considered_present ?? 0 : 0,
+                            'show_total_present' => ($attendance_criteria['show_total_present']['show']) ? $first_item?->total_present ?? 0 : 0,
+                            'show_attendance_rating' => ($attendance_criteria['show_attendance_rating']['show']) ? $first_item?->ratingScaleValue?->name ?? 'N/A' : 'N/A',
                         ];
+                    })->toArray();
+
+                    // Sort: BOT Meetings (null) first, then committees by ID
+                    usort($grouped, function ($a, $b) {
+                        $a_id = $a['committee_id'];
+                        $b_id = $b['committee_id'];
+
+                        if ($a_id === null) return -1;
+                        if ($b_id === null) return 1;
+
+                        return (int)$a_id - (int)$b_id;
+                    });
+
+                    $meetings = collect($grouped)->map(function ($item) {
+                        unset($item['committee_id']);
+                        return $item;
                     });
                 }
                 $sec_data['attendance'] = ['criteria' => $attendance_criteria, 'meetings' => $meetings];
@@ -275,6 +302,7 @@ class EvaluationFormPDF extends Controller
 
             $sections[] = $sec_data;
         }
+        // dd($sections);
         return $sections;
     }
 

@@ -73,10 +73,11 @@ class AttendanceEvaluation extends TableWidget
 
 
                 TextColumn::make('commitee.name')
-                    ->label('Commitee')
+                    ->label('Category')
                     ->badge()
                     ->color('warning')
-                    ->formatStateUsing(fn($state) => ucfirst($state))
+                    ->default('BOT Meetings')
+                    ->formatStateUsing(fn($state) => ucfirst($state ?? 'BOT Meetings'))
                     ->sortable(),
 
 
