@@ -3,6 +3,7 @@
 namespace App\Actions\Form;
 
 use App\Models\CommitteeHasTrustee;
+use App\Models\Committee;
 use App\Models\EvaluationPeriod;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Repeater;
@@ -24,86 +25,72 @@ class AttendanceForm
 
     public function handle($evaluation_period = null , $trustees = [])
     {
-        // Group assignments by evaluator role (excluding Super Admin and Secretariat)
         $excluded_roles = ['super admin', 'secretariat'];
-
-        $assignments_by_role = $evaluation_period->assignments->groupBy(function($assignment) use ($excluded_roles) {
-            $role = $assignment->evaluator->roles->first()?->name ?? 'Other';
-            // Exclude Super Admin and Secretariat
-            if (in_array(strtolower($role), $excluded_roles)) {
-                return null;
-            }
-            return $role;
-        })->filter(); // Remove null keys
-
         $committees = [];
-        $role_order = ['Chairman', 'Vice Chairman', 'Trustee','Corporate Officer','Corporate Treasurer','Corporate Comptroller','Corporate Secretary', 'Lead Resource Person'];
 
-        // Sort by role order
-        foreach($role_order as $role) {
-            if (!isset($assignments_by_role[$role])) {
-                continue;
-            }
+        // Get all unique board members from assignments (excluding Super Admin and Secretariat)
+        $board_members = $evaluation_period->assignments()
+            ->with('evaluator')
+            ->get()
+            ->filter(function($assignment) use ($excluded_roles) {
+                $role = $assignment->evaluator->roles->first()?->name ?? 'Other';
+                return !in_array(strtolower($role), $excluded_roles);
+            })
+            ->unique('evaluator_id')
+            ->keyBy('evaluator_id');
 
-            $role_assignments = $assignments_by_role[$role];
-            $grouped_members = $role_assignments->groupBy('evaluator_id');
-            $members = [];
-
-            foreach($grouped_members as $member_assignments) {
-                $member = $member_assignments->first();
-                $members[] = [
-                    'id' => $member->evaluator_id,
-                    'name' => $member->evaluator->full_name,
-                    'role' => $role,
-                    'committee_id' => $member->committee_id,
-                    'total_meetings' => 0,
-                    'physically_present' => 0,
-                    'considered_present' => 0,
-                    'total_present' => 0,
-                    'attendance_rating_scale_values_id' => 0,
-                ];
-            }
-
-            if (!empty($members)) {
-                $committees[] = [
-                    'id' => $role,
-                    'name' => $role,
-                    'role' => $role,
-                    'members' => $members
-                ];
-            }
+        // 1. Create BOT Meetings tab (default for all board members)
+        $bot_members = [];
+        foreach($board_members as $member) {
+            $bot_members[] = [
+                'id' => $member->evaluator_id,
+                'name' => $member->evaluator->full_name,
+                'role' => $member->evaluator->roles->first()?->name ?? 'Member',
+                'committee_id' => null,
+                'total_meetings' => 0,
+                'physically_present' => 0,
+                'considered_present' => 0,
+                'total_present' => 0,
+                'attendance_rating_scale_values_id' => 0,
+            ];
         }
 
-        // Add any remaining roles not in the predefined order
-        foreach($assignments_by_role as $role => $role_assignments) {
-            if (in_array($role, $role_order)) {
-                continue; // Already processed
+        if (!empty($bot_members)) {
+            $committees[] = [
+                'id' => 'bot',
+                'name' => 'BOT Meetings',
+                'members' => $bot_members
+            ];
+        }
+
+        // 2. Create tabs for each committee
+        $all_committees = Committee::with('committee_has_trustees.user')->get();
+
+        foreach($all_committees as $committee) {
+            $committee_members = [];
+
+            foreach($committee->committee_has_trustees as $trustee) {
+                // Only include members who are in the board_members list
+                if (isset($board_members[$trustee->user_id])) {
+                    $committee_members[] = [
+                        'id' => $trustee->user_id,
+                        'name' => $trustee->user->full_name,
+                        'role' => $trustee->user->roles->first()?->name ?? 'Member',
+                        'committee_id' => $committee->id,
+                        'total_meetings' => 0,
+                        'physically_present' => 0,
+                        'considered_present' => 0,
+                        'total_present' => 0,
+                        'attendance_rating_scale_values_id' => 0,
+                    ];
+                }
             }
 
-            $grouped_members = $role_assignments->groupBy('evaluator_id');
-            $members = [];
-
-            foreach($grouped_members as $member_assignments) {
-                $member = $member_assignments->first();
-                $members[] = [
-                    'id' => $member->evaluator_id,
-                    'name' => $member->evaluator->full_name,
-                    'role' => $role,
-                    'committee_id' => $member->committee_id,
-                    'total_meetings' => 0,
-                    'physically_present' => 0,
-                    'considered_present' => 0,
-                    'total_present' => 0,
-                    'attendance_rating_scale_values_id' => 0,
-                ];
-            }
-
-            if (!empty($members)) {
+            if (!empty($committee_members)) {
                 $committees[] = [
-                    'id' => $role,
-                    'name' => $role,
-                    'role' => $role,
-                    'members' => $members
+                    'id' => $committee->id,
+                    'name' => $committee->name . ' Meetings',
+                    'members' => $committee_members
                 ];
             }
         }

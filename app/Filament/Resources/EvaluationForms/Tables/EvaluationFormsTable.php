@@ -52,7 +52,7 @@ class EvaluationFormsTable
                     ->url(fn (EvaluationForm $form): string => route('queues-call-next', ['formID' => $form->id]))
                     ->color('warning'),
 
-                ViewAction::make(),
+                // ViewAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([

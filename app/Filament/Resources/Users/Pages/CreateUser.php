@@ -12,6 +12,8 @@ class CreateUser extends CreateRecord
     public function mutateFormDataBeforeCreate(array $data): array
     {
         $data['name'] = $data['first_name'];
+        $data['is_active'] = true;
+
         return parent::mutateFormDataBeforeCreate($data);
     }
 }
