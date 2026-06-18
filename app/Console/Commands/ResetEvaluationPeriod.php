@@ -7,6 +7,7 @@ use App\Models\TrusteeHasEvaluation;
 use App\Models\QuestionaireAnswer;
 use App\Models\OtherCommentAnswer;
 use App\Models\AttendanceAnswer;
+use App\Models\Report;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -71,6 +72,11 @@ class ResetEvaluationPeriod extends Command
                 TrusteeHasEvaluation::where('evaluation_id', $evaluationId)->forceDelete();
                 $this->line('✓ Deleted trustee evaluations');
 
+
+                Report::where('evaluation_period_id', $evaluationId)->forceDelete();
+                $this->line('✓ Deleted connected reports');
+
+
                 EvaluationPeriod::find($evaluationId)->forceDelete();
                 $this->line('✓ Deleted evaluation period');
             });
@@ -113,6 +119,10 @@ class ResetEvaluationPeriod extends Command
 
                 TrusteeHasEvaluation::query()->forceDelete();
                 $this->line('✓ Deleted all trustee evaluations');
+
+                Report::query()->forceDelete();
+
+                $this->line('✓ Deleted all reports');
 
                 EvaluationPeriod::query()->forceDelete();
                 $this->line('✓ Deleted all evaluation periods');
