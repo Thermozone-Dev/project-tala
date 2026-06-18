@@ -6,6 +6,7 @@ use App\Filament\Resources\Committees\CommitteeResource;
 use App\Models\CommitteeHasTrustee;
 use App\Models\EvaluationPeriod;
 use App\Models\TrusteeHasEvaluation;
+use Filament\Actions\BulkAction;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -17,6 +18,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Role;
 
 class MembersRelationManager extends RelationManager
@@ -93,11 +95,19 @@ class MembersRelationManager extends RelationManager
                         return $total_eval;
                     })
             ])
+            ->toolbarActions([
+                BulkAction::make('delete')
+                    ->label('Detach members')
+                    ->requiresConfirmation()
+                    ->authorize(check_committee_permission($this->getOwnerRecord()->id,'Update:Committee'))
+                    ->color('danger')
+                    ->action(fn (Collection $records) => $records->each->delete()),
+            ])
             ->recordActions([
-                ViewAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'View:Committee'))
-                    ->url(fn (Model $record) => CommitteeResource::getUrl('evaluation-periods', ['record' => $this->getOwnerRecord()->id,'evaluator_id' => $record->user_id])),
-                EditAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'Update:Committee')),
-                DeleteAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'Delete:Committee')),
+                // ViewAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'View:Committee'))
+                //     ->url(fn (Model $record) => CommitteeResource::getUrl('evaluation-periods', ['record' => $this->getOwnerRecord()->id,'evaluator_id' => $record->user_id])),
+                // EditAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'Update:Committee')),
+                // DeleteAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'Delete:Committee')),
             ])
             ->headerActions([
                 CreateAction::make(),

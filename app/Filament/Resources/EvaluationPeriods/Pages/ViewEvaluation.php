@@ -122,99 +122,123 @@ class ViewEvaluation extends Page implements HasForms, HasTable
         $view_record = TrusteeHasEvaluation::find($this->record_id);
         $eval_status = new EvaluationMembers();
         $eval_status = $eval_status->editable_field_status($view_record);
+        $actions = $this->formAction();
         return [
             Grid::make(1)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id,$this))->disabled(fn () => ($eval_status ) ? false : true),
             Grid::make(1)->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id))->disabled(fn () => ($eval_status ) ? false : true),
+            Grid::make(1)->schema($actions)
         ];
     }
 
-    protected function getHeaderActions(): array
+
+    public function formAction(): array
     {
         return [
-            Action::make('Mark as Reviewed')
-                ->requiresConfirmation()
+
+        Action::make('submit_eval')
                 ->visible(function (){
                     $record = TrusteeHasEvaluation::find($this->record_id);
-                    if($record->trustee_evaluation_statuses_id == 4){ // 4 = For Review
-                        return true;
-                    }
-                    return false;
-                })
-                ->action(function (){
-                    $record = TrusteeHasEvaluation::find($this->record_id);
-
-                    $record->update([
-                        'trustee_evaluation_statuses_id' => 5 // 5 = Reviewed
-                    ]);
-
-                    Notification::make()
-                        ->success()
-                        ->title('Evaluation successfully marked as reviewed')
-                        ->send();
-                }),
-            Action::make('Mark as For Review')
-                ->requiresConfirmation()
-                ->visible(function (){
-                    $record = TrusteeHasEvaluation::find($this->record_id);
-                    if($record->trustee_evaluation_statuses_id == 2){ // 2 = Submitted
-                        return true;
-                    }
-                    return false;
-                })
-                ->color('info')
-                ->action(function (){
-                    $record = TrusteeHasEvaluation::find($this->record_id);
-
-                    $record->update([
-                        'trustee_evaluation_statuses_id' => 4 // 4 = For Review
-                    ]);
-
-                    Notification::make()
-                        ->success()
-                        ->title('Evaluation successfully marked as for review')
-                        ->send();
-                }),
-            Action::make('Submit')
-                ->requiresConfirmation()
-                ->visible(function (){
-                    $record = TrusteeHasEvaluation::find($this->record_id);
-
                     if($record->trustee_evaluation_statuses_id == 1 || $record->trustee_evaluation_statuses_id == 3){ // 1 = In Progress | 3 = Pending
                         return true;
                     }
 
                     return false;
                 })
+                ->label('Submit')
+                // ->modalHeading('Submit Evaluation')
+                // ->modalDescription('Are you sure you want to submit this evaluation? Once submitted, it cannot be edited.')
+                // ->modalSubmitActionLabel('Submit')
+                // ->modalCancelActionLabel('Cancel')
                 ->action(function (){
-                    $record = TrusteeHasEvaluation::find($this->record_id);
+                    try {
+                        $record = TrusteeHasEvaluation::find($this->record_id);
 
-                    if(CheckEvaluationCompleted::run($record->ef_id,$record->id) ){
+                        if (!$record) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Error')
+                                ->body('Evaluation record not found.')
+                                ->send();
+                            return;
+                        }
 
-                        $record->update([
-                            'trustee_evaluation_statuses_id' => 2 // 2 = Submitted
-                        ]);
+                        if(CheckEvaluationCompleted::run($record->ef_id,$record->id) ){
+                            $record->update([
+                                'trustee_evaluation_statuses_id' => 2 // 2 = Submitted
+                            ]);
 
-                        Notification::make()
-                            ->success()
-                            ->title('Evaluation successfully marked as submitted')
-                            ->body('The evaluation has been successfully completed and submitted.')
-                            ->send();
-                    }else{
+                            Notification::make()
+                                ->success()
+                                ->title('Evaluation successfully marked as submitted')
+                                ->body('The evaluation has been successfully completed and submitted.')
+                                ->send();
+                        }else{
+                            Notification::make()
+                                ->danger()
+                                ->title('Evaluation Incomplete')
+                                ->body('Please complete all evaluation fields before submitting this record.')
+                                ->send();
+
+                            $this->requiresValidation = true;
+                        }
+                    } catch (\Exception $e) {
                         Notification::make()
                             ->danger()
-                            ->title('Evaluation Incomplete')
-                            ->body('Please complete all evaluation fields before submitting this record.')
+                            ->title('Error')
+                            ->body('An error occurred: ' . $e->getMessage())
                             ->send();
-
-                        $this->requiresValidation = true;
-
-                        $this->unmountAction();
-
-                        $this->form->validate();
                     }
                 }),
+
+            // Action::make('Mark as Reviewed')
+            //     ->requiresConfirmation()
+            //     ->visible(function (){
+            //         $record = TrusteeHasEvaluation::find($this->record_id);
+            //         if($record->trustee_evaluation_statuses_id == 4){ // 4 = For Review
+            //             return true;
+            //         }
+            //         return false;
+            //     })
+            //     ->action(function (){
+            //         $record = TrusteeHasEvaluation::find($this->record_id);
+
+            //         $record->update([
+            //             'trustee_evaluation_statuses_id' => 5 // 5 = Reviewed
+            //         ]);
+
+            //         Notification::make()
+            //             ->success()
+            //             ->title('Evaluation successfully marked as reviewed')
+            //             ->send();
+            //     }),
+            // Action::make('Mark as For Review')
+            //     ->requiresConfirmation()
+            //     ->visible(function (){
+            //         $record = TrusteeHasEvaluation::find($this->record_id);
+            //         if($record->trustee_evaluation_statuses_id == 2){ // 2 = Submitted
+            //             return true;
+            //         }
+            //         return false;
+            //     })
+            //     ->color('info')
+            //     ->action(function (){
+            //         $record = TrusteeHasEvaluation::find($this->record_id);
+
+            //         $record->update([
+            //             'trustee_evaluation_statuses_id' => 4 // 4 = For Review
+            //         ]);
+
+            //         Notification::make()
+            //             ->success()
+            //             ->title('Evaluation successfully marked as for review')
+            //             ->send();
+            //     }),
+
+
         ];
     }
+
+
 
     public function table(Table $table): Table
     {

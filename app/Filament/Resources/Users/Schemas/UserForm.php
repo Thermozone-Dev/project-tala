@@ -20,7 +20,7 @@ class UserForm
                 ->columnSpanFull()
                 ->columns()
                 ->schema([
-                    Toggle::make('is_active')->default(true),
+                    Toggle::make('is_active')->hiddenOn('create')->default(true),
                     Grid::make(4)
                         ->columnSpanFull()
                         ->schema([

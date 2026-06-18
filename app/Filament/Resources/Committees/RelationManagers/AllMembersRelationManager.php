@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Committees\RelationManagers;
 
 use App\Filament\Resources\Committees\CommitteeResource;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -13,6 +15,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class AllMembersRelationManager extends RelationManager
@@ -36,7 +39,16 @@ class AllMembersRelationManager extends RelationManager
                     ->trueIcon(Heroicon::OutlinedCheckCircle)
                     ->falseIcon(Heroicon::OutlinedXCircle),
             ])
+            ->toolbarActions([
+                BulkAction::make('delete')
+                    ->label('Detach members')
+                    ->requiresConfirmation()
+                    ->authorize(check_committee_permission($this->getOwnerRecord()->id,'Update:Committee'))
+                    ->color('danger')
+                    ->action(fn (Collection $records) => $records->each->delete()),
+            ])
             ->recordActions([
+
                 Action::make('toggle_active')
                     ->visible(fn ($record) => Auth::user()->hasRole(['Super Admin','Secretariat']))
                     ->label(fn ($record) => $record->is_active ? 'Deactivate' : 'Activate')
@@ -52,16 +64,13 @@ class AllMembersRelationManager extends RelationManager
                         return $record;
                     })
                     ->requiresConfirmation(),
-                ViewAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'View:Committee'))
-                    ->url(fn (Model $record) => CommitteeResource::getUrl('evaluation-periods', ['record' => $this->getOwnerRecord()->id,'evaluator_id' => $record->user_id])),
-                EditAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'Update:Committee')),
-                DeleteAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'Delete:Committee')),
-//                Action::make('Delete')
-//                    ->color('danger')
-//                    ->icon(Heroicon::OutlinedTrash)
-//                    ->action(fn ($record) => $record->delete())
-//                    ->successNotificationTitle('Deleted')
-//                    ->requiresConfirmation()
+                // ViewAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'View:Committee'))
+                //     ->url(fn (Model $record) => CommitteeResource::getUrl('evaluation-periods', ['record' => $this->getOwnerRecord()->id,'evaluator_id' => $record->user_id])),
+                // EditAction::make()->authorize(check_committee_permission($this->getOwnerRecord()->id,'Update:Committee')),
+                // DeleteAction::make()
+                //     ->label('Detach')
+                //     ->authorize(check_committee_permission($this->getOwnerRecord()->id,'Delete:Committee'))
+                //     ->successNotificationTitle('Member detached from committee'),
             ]);
     }
 }
