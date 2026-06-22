@@ -14,12 +14,15 @@ class MeetingInfolist
     {
         return $schema
             ->components([
+                TextEntry::make('evaluationPeriod.formattedCoverage')
+                    ->label('Evaluation period')
+                    ->columnSpanFull(),
                 TextEntry::make('title'),
                 TextEntry::make('meetingType.name')
                     ->label('Meeting type'),
                 TextEntry::make('committee.name')
-                    ->label('Committee')
-                    ->placeholder('-'),
+                    ->label('Category')
+                    ->placeholder('BOT Meetings'),
                 TextEntry::make('meeting_link')
                     ->url(fn($state) => $state)
                     ->color(Color::Blue)

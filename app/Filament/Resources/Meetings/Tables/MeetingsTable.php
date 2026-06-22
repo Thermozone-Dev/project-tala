@@ -23,6 +23,8 @@ class MeetingsTable
                 TextColumn::make('meetingType.name')
                     ->searchable(),
                 TextColumn::make('committee.name')
+                    ->label('Category')
+                    ->placeholder('BOT Meetings')
                     ->searchable(),
                 TextColumn::make('meeting_link')
                     ->url(fn ($state) => $state)
@@ -35,6 +37,7 @@ class MeetingsTable
                     ->dateTime()
                     ->formatStateUsing(fn($state) => $state->format('M d, Y H:i A'))
                     ->sortable(),
+                TextColumn::make('evaluationPeriod.formattedCoverage'),
                 TextColumn::make('createdBy.name')
                     ->label('Created by')
                     ->sortable(),

@@ -10,16 +10,21 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\DissociateBulkAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
+
 
 class AttendeesRelationManager extends RelationManager
 {
+    #[On('refreshAttendees')]
+    public function refresh(): void
+    {}
     protected static string $relationship = 'attendees';
 
     public function form(Schema $schema): Schema
@@ -35,8 +40,6 @@ class AttendeesRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('user.full_name')
                     ->label('Name'),
-                TextColumn::make('committee.name')
-                    ->label('Committee'),
                 TextColumn::make('attendanceStatus.name')
                     ->label('Status'),
                 TextColumn::make('is_late')
@@ -56,21 +59,24 @@ class AttendeesRelationManager extends RelationManager
                 Action::make('Update')
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->schema([
-                        DateTimePicker::make('mark_timestamp')
-                            ->required()
-                            ->label('Marked At')
-                            ->seconds(false),
-                        Select::make('attendance_status_id')
-                            ->required()
-                            ->label('Status')
-                            ->options(MeetingAttendanceStatus::pluck('name', 'id')),
-                        Select::make('is_late')
-                            ->required()
-                            ->label('Arrival Status')
-                            ->options([
-                                0 => 'On Time',
-                                1 => 'Late Comer',
-                            ]),
+                        Grid::make(3)
+                            ->schema([
+                                DateTimePicker::make('mark_timestamp')
+                                    ->required()
+                                    ->label('Marked At')
+                                    ->seconds(false),
+                                Select::make('attendance_status_id')
+                                    ->required()
+                                    ->label('Status')
+                                    ->options(MeetingAttendanceStatus::pluck('name', 'id')),
+                                Select::make('is_late')
+                                    ->required()
+                                    ->label('Is Late?')
+                                    ->options([
+                                        0 => 'Not Late',
+                                        1 => 'Late',
+                                    ]),
+                            ])
                     ])
                     ->action(function ($record,$data){
                         $data['updated_by'] = Auth::user()->id;

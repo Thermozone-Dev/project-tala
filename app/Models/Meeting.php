@@ -50,4 +50,9 @@ class Meeting extends Model
     {
         return $this->hasMany(MeetingAttendee::class);
     }
+
+    public function evaluationPeriod()
+    {
+        return $this->belongsTo(EvaluationPeriod::class, 'evaluation_period_id');
+    }
 }
