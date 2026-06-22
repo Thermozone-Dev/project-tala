@@ -35,13 +35,19 @@ class CalendarWidget extends BaseCalendarWidget
                 })
             )
             ->get();
+
         foreach ($meetings as $meeting) {
+
+            $bgColor = $meeting->committee?->color ?? '#5b5d76';
+
+            $textColor = $this->isReadableWithWhiteText($bgColor) ? '#ffffff' : '#111827';
+
             $events[] = new CalendarEventModel(
                 'meeting-' . $meeting->id,
                 $meeting->title,
                 $meeting->scheduled_at,
-                $meeting->meetingType?->color ?? '#3b82f6',
-                '#ffffff',
+                $bgColor,
+                $textColor,
                 Auth::user()->hasRole(['Super Admin', 'Secretariat'])
                     ? MeetingResource::getUrl('view', ['record' => $meeting->id])
                     : $meeting->meeting_link
@@ -49,5 +55,21 @@ class CalendarWidget extends BaseCalendarWidget
         }
 
         return $events;
+    }
+
+    function isReadableWithWhiteText($hexColor) {
+
+        $hex = ltrim($hexColor, '#');
+
+        // Convert hex to decimal RGB values
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+
+        // Calculate YIQ brightness (human eye perception weight)
+        $yiq = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+
+        // Return true if the background is dark enough for white text
+        return ($yiq < 128);
     }
 }
