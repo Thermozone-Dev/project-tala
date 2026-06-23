@@ -95,64 +95,103 @@ class ReportsController extends Controller
     }
 
     public function bot_performance_summary_collection($report){
+        // Get BOT individual results
+        $botMembers = $this->indiviual_results_of_rating_bot_collection();
+        $botSummary = [
+            'id' => 1,
+            'code' => 'BOT',
+            'name' => 'Board of Trustees',
+            'members' => $botMembers->map(function ($member) {
+                return [
+                    'member_id' => $member['member_id'],
+                    'member_name' => $member['member_name'],
+                    'rating_average' => $member['rating_average'],
+                    'total_qualitative' => $member['total_qualitative'],
+                    'attendance_rating' => $member['attendance_rating'],
+                    'attendance_avg_rating' => $member['attendance']['summary']['avg_rating'] ?? 0,
+                    'attendance_qualitative' => $member['attendance']['summary']['attendance_rating_qualititative'] ?? 'No Rating',
+                    'final_grade_quantitative' => $member['final_grade']['quantitative'] ?? 0,
+                    'final_grade_qualitative' => $member['final_grade']['qualitative'] ?? 'No Rating'
+                ];
+            })->values()->toArray()
+        ];
 
-        $collections = collect([
-            [
-                'id' => 1,
-                'code' => 'BOT',
-                'ef_id' => [2, 3],
-                'group_by_committee' => false,
-                'name' => 'Summary of BOT Evaluation',
-                'header' => 'Member Board of Trustees',
-                'header2' => 'Governance Committee<br>Rating(Form C.2 to C.3)<br>(70%)',
-                'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Governance Rating and 30% attendance"
-            ],
-            [
-                'id' => 2,
-                'code' => 'CO',
-                'ef_id' => [4, 5, 6],
-                'group_by_committee' => false,
-                'name' => 'Summary of Corporate Evaluation',
-                'header' => 'Corporate Officers',
-                'header2' => 'Governance Committee<br>Rating(Form C.4 to C.6)<br>(70%)',
-                'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Governance Rating and 30% attendance"
-            ],
-            [
-                'id' => 3,
-                'code' => 'LRP',
-                'ef_id' => [7],
-                'group_by_committee' => true, // toggle here
-                'name' => 'Summary of Lead Resource Persons Evaluation',
-                'header' => 'Lead Resource Person',
-                'header2' => 'Committee Members<br>Rating(Form C.7)(70%)',
-                'weight_distribution' => "<span style='color: red'>*</span> Weight Distribution is 70% Committee Members' Rating and 30% attendance"
-            ],
-        ]);
+        // Get CO/LRP individual results
+        $coLrpMembers = $this->indiviual_results_of_rating_co_and_lrps_collection($report);
 
-        $collections = $collections->map(function ($collection) use ($report) {
-            $collection['members'] = collect(
-                $this->get_data($report, $collection['ef_id'], $collection['group_by_committee'])
-            )->map(function ($item) use ($report) {
+        // Separate CO and LRP
+        $corporateOfficers = collect();
+        $lrps = collect();
 
-                if (isset($item['member_id'])) {
-                    return $this->enrichMember($item, $report);
-                }
+        foreach ($coLrpMembers as $member) {
+            $user = User::find($member['member_id']);
+            $roles = $user->roles()->pluck('name')->toArray();
 
+            // Check if LRP
+            if (in_array('Lead Resource Person', $roles)) {
+                $lrps->push([
+                    'member_id' => $member['member_id'],
+                    'member_name' => $member['member_name'],
+                    'committee_id' => $member['committee_id'] ?? null,
+                    'committee_name' => $member['committee_name'] ?? 'Unknown',
+                    'rating_average' => $member['rating_average'],
+                    'total_qualitative' => $member['total_qualitative'],
+                    'attendance_rating' => $member['attendance_rating'],
+                    'attendance_avg_rating' => $member['attendance']['summary']['avg_rating'] ?? 0,
+                    'attendance_qualitative' => $member['attendance']['summary']['attendance_rating_qualititative'] ?? 'No Rating',
+                    'final_grade_quantitative' => $member['final_grade']['quantitative'] ?? 0,
+                    'final_grade_qualitative' => $member['final_grade']['qualitative'] ?? 'No Rating'
+                ]);
+            } else {
+                // Corporate Officer - get specific role for this committee
+                $committeeRoles = $user->committees()
+                    ->where('committee_id', $member['committee_id'] ?? null)
+                    ->with('role')
+                    ->get()
+                    ->pluck('role.name')
+                    ->toArray();
 
-                if (isset($item['members'])) {
-                    $item['members'] = collect($item['members'])
-                        ->map(fn ($member) => $this->enrichMember($member, $report))
-                        ->values();
+                $roleForCommittee = !empty($committeeRoles) ? implode(', ', $committeeRoles) : 'Corporate Officer';
 
-                    return $item;
-                }
+                $corporateOfficers->push([
+                    'member_id' => $member['member_id'],
+                    'member_name' => $member['member_name'],
+                    'role' => $roleForCommittee,
+                    'committee_id' => $member['committee_id'] ?? null,
+                    'committee_name' => $member['committee_name'] ?? 'Unknown',
+                    'rating_average' => $member['rating_average'],
+                    'total_qualitative' => $member['total_qualitative'],
+                    'attendance_rating' => $member['attendance_rating'],
+                    'attendance_avg_rating' => $member['attendance']['summary']['avg_rating'] ?? 0,
+                    'attendance_qualitative' => $member['attendance']['summary']['attendance_rating_qualititative'] ?? 'No Rating',
+                    'final_grade_quantitative' => $member['final_grade']['quantitative'] ?? 0,
+                    'final_grade_qualitative' => $member['final_grade']['qualitative'] ?? 'No Rating'
+                ]);
+            }
+        }
 
-                return $item;
+        $coSummary = [
+            'id' => 2,
+            'code' => 'CO',
+            'name' => 'Corporate Officers',
+            'members' => $corporateOfficers->values()->toArray()
+        ];
 
-            })->values();
-            return $collection;
-        });
+        $lrpSummary = [
+            'id' => 3,
+            'code' => 'LRP',
+            'name' => 'Lead Resource Persons',
+            'members' => $lrps->groupBy('committee_id')->map(function ($lrpGroup) {
+                return [
+                    'committee_id' => $lrpGroup->first()['committee_id'],
+                    'committee_name' => $lrpGroup->first()['committee_name'],
+                    'members' => $lrpGroup->values()->toArray()
+                ];
+            })->values()->toArray()
+        ];
 
+        $collections = collect([$botSummary, $coSummary, $lrpSummary]);
+        // dd($collections);
         return $collections;
     }
 
@@ -245,7 +284,7 @@ class ReportsController extends Controller
                 $result['committee_id'] = $member['committee_id'];
             }
             $result['committee_name'] = $member['committee_name']?? 'Board';
-
+            // dd($result);
             return $result;
         })->values();
     }
@@ -380,8 +419,108 @@ class ReportsController extends Controller
         }
         return $results->values();
     }
+    /**
+     * Get summary results using individual collection methods
+     * Consolidates BOT, CO, and LRP evaluations organized by type
+     */
     public function summary_results_of_committee_assessment_collection($report){
-        return null;
+        $collections = collect([
+            [
+                'id' => 1,
+                'code' => 'BOT',
+                'name' => 'Board of Trustees',
+                'members' => []
+            ],
+            [
+                'id' => 2,
+                'code' => 'CO',
+                'name' => 'Corporate Officers',
+                'members' => []
+            ],
+            [
+                'id' => 3,
+                'code' => 'LRP',
+                'name' => 'Lead Resource Persons',
+                'members' => []
+            ],
+        ]);
+
+        // Get BOT individual results
+        $botMembers = $this->indiviual_results_of_rating_bot_collection();
+        $collections[0]['members'] = $botMembers->map(function ($member) {
+            return [
+                'member_id' => $member['member_id'],
+                'member_name' => $member['member_name'],
+                'rating_average' => $member['rating_average'],
+                'attendance_rating' => $member['attendance_rating'],
+                'qualitative' => $member['total_qualitative']
+            ];
+        })->values();
+
+        // Get CO/LRP individual results
+        $coLrpMembers = $this->indiviual_results_of_rating_co_and_lrps_collection($report);
+
+        // Separate CO and LRP
+        $corporateOfficers = collect();
+        $lrps = collect();
+
+        foreach ($coLrpMembers as $member) {
+            $user = User::find($member['member_id']);
+            $roles = $user->roles()->pluck('name')->toArray();
+
+            // Check if LRP
+            if (in_array('Lead Resource Person', $roles)) {
+                $lrps->push([
+                    'member_id' => $member['member_id'],
+                    'member_name' => $member['member_name'],
+                    'committee_id' => $member['committee_id'] ?? null,
+                    'committee_name' => $member['committee_name'] ?? 'Unknown',
+                    'rating_average' => $member['rating_average'],
+                    'total_qualitative' => $member['total_qualitative'],
+                    'attendance_rating' => $member['attendance_rating'],
+                    'attendance_avg_rating' => $member['attendance']['summary']['avg_rating'] ?? 0,
+                    'attendance_qualitative' => $member['attendance']['summary']['attendance_rating_qualititative'] ?? 'No Rating',
+                    'final_grade_quantitative' => $member['final_grade']['quantitative'] ?? 0,
+                    'final_grade_qualitative' => $member['final_grade']['qualitative'] ?? 'No Rating'
+                ]);
+            } else {
+                // Corporate Officer - get specific role for this committee
+                $committeeRoles = $user->committees()
+                    ->where('committee_id', $member['committee_id'] ?? null)
+                    ->with('role')
+                    ->get()
+                    ->pluck('role.name')
+                    ->toArray();
+
+                $roleForCommittee = !empty($committeeRoles) ? implode(', ', $committeeRoles) : 'Corporate Officer';
+
+                $corporateOfficers->push([
+                    'member_id' => $member['member_id'],
+                    'member_name' => $member['member_name'],
+                    'role' => $roleForCommittee,
+                    'committee_id' => $member['committee_id'] ?? null,
+                    'committee_name' => $member['committee_name'] ?? 'Unknown',
+                    'rating_average' => $member['rating_average'],
+                    'total_qualitative' => $member['total_qualitative'],
+                    'attendance_rating' => $member['attendance_rating'],
+                    'attendance_avg_rating' => $member['attendance']['summary']['avg_rating'] ?? 0,
+                    'attendance_qualitative' => $member['attendance']['summary']['attendance_rating_qualititative'] ?? 'No Rating',
+                    'final_grade_quantitative' => $member['final_grade']['quantitative'] ?? 0,
+                    'final_grade_qualitative' => $member['final_grade']['qualitative'] ?? 'No Rating'
+                ]);
+            }
+        }
+
+        $collections[1]['members'] = $corporateOfficers->values();
+        $collections[2]['members'] = $lrps->groupBy('committee_id')->map(function ($lrpGroup) {
+            return [
+                'committee_id' => $lrpGroup->first()['committee_id'],
+                'committee_name' => $lrpGroup->first()['committee_name'],
+                'members' => $lrpGroup->values()->toArray()
+            ];
+        })->values();
+        // dd($collections);
+        return $collections;
     }
     private function enrichMember($member, $report)
     {
