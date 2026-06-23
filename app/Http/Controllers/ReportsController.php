@@ -218,6 +218,9 @@ class ReportsController extends Controller
             $rating_average = $questionGroups->avg('average_rating');
 
             $total_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($rating_average);
+            $attendance = $this->get_trustee_attendance_evaluation($member['member_id']);
+            $attendance_rating = $attendance['summary']['avg_rating'] ?? 0;
+            $final_grade = AssesmentComputation::calculate_performance_summary($attendance_rating,$rating_average);
 
             return [
                 'member_id' => $member['member_id'],
@@ -229,9 +232,80 @@ class ReportsController extends Controller
                 'total_qualitative' => $total_qualitative,
                 'roles' => $member['roles'],
                 'questions' => $questionGroups->toArray(),
+                'attendance' => $attendance,
+                'final_grade' => $final_grade,
+                'attendance_rating' => $attendance_rating,
                 'evaluators_summary' => $evaluatorSummaries->toArray()
             ];
         })->values();
+    }
+
+    /**
+     * Get attendance evaluation results for a specific member
+     * Returns organized attendance data grouped by category (BOT or Committee)
+     *
+     * @param int $member_id
+     * @return \Illuminate\Support\Collection
+     */
+    public function get_trustee_attendance_evaluation($member_id)
+    {
+        $query = AttendanceAnswer::where('trustee_id', $member_id)
+            ->with(['commitee', 'ratingScaleValue']);
+
+        // Filter by evaluation period if $report is set
+        if ($this->report) {
+            $query->where('evaluation_period_id', $this->report->evaluationPeriod->id);
+        }
+
+        $attendance = $query->get()->groupBy('committee_id')->map(function ($attendanceGroup, $committee_id) {
+            $firstItem = $attendanceGroup->first();
+            // Determine category name
+            if ($committee_id == null) {
+                $category = 'BOT Meetings';
+            } else {
+                $committee_name = $firstItem->commitee?->name ?? 'Unknown';
+                $category = $committee_name . ' Meetings';
+            }
+
+            // Get the first attendance record (should be only one per committee per member per period)
+            $attendance = $firstItem;
+
+            $total_meetings = $attendance->total_meetings ?? 0;
+            $physically_present = $attendance->physically_present ?? 0;
+            $considered_present = $attendance->considered_present ?? 0;
+            $total_present = $attendance->total_present ?? 0;
+
+            $attendance_percentage = AssesmentComputation::get_attendance_percentage($total_meetings,$total_present);
+
+
+            return [
+                'committee_id' =>$attendance->committee_id,
+                'category' => $category,
+                'total_meetings' => $total_meetings,
+                'physically_present' => $physically_present,
+                'considered_present' => $considered_present,
+                'total_present' => $total_present,
+                'attendance_percentage' => $attendance_percentage,
+                'rating_scale' => $attendance->ratingScaleValue?->value  ?? 0,
+                'rating_scale_equivalent' => $attendance->ratingScaleValue?->qualitative ?? 'No Rating'
+            ];
+        })->values();
+
+        $attendance_rating_qualitative = AssesmentComputation::get_attendance_rating($attendance->avg('rating_scale'));
+        $attendance_summary = [
+            'total_meetings' => $attendance->sum('total_meetings'),
+            'physically_present' => $attendance->sum('physically_present'),
+            'considered_present' => $attendance->sum('considered_present'),
+            'total_present' => $attendance->sum('total_present'),
+            'avg_attendance_percentage' => $attendance->avg('attendance_percentage'),
+            'avg_rating' => $attendance->avg('rating_scale'),
+            'attendance_rating_qualititative' => $attendance_rating_qualitative?->qualitative ?? 'No Rating Found',
+        ];
+
+        return [
+            'attendance' => $attendance,
+            'summary' => collect($attendance_summary)
+        ];
     }
 
     /**

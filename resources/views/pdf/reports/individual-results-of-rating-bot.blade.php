@@ -88,23 +88,25 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="text-center">Board Meetings (Regular & Special) </td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">Excellent</td>
-                                    </tr>
+                                    @foreach ($members['attendance']['attendance'] as $attendance)
+                                        <tr>
+                                            <td class="text-center">{{$attendance['category']}} </td>
+                                            <td class="text-center">{{$attendance['total_meetings']}} </td>
+                                            <td class="text-center">{{$attendance['total_present']}} </td>
+                                            <td class="text-center">{{$attendance['attendance_percentage']}}%</td>
+                                            <td class="text-center">{{$attendance['rating_scale']}} </td>
+                                            <td class="text-center">{{$attendance['rating_scale_equivalent']}} </td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                                 <thead class="header-color">
                                     <tr>
                                         <th>OVER-ALL RATING</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>Excellent</th>
+                                        <th>{{$members['attendance']['summary']['total_meetings']}} </th>
+                                        <th>{{$members['attendance']['summary']['total_present']}} </th>
+                                        <th>{{$members['attendance']['summary']['avg_attendance_percentage']}}% </th>
+                                        <th>{{$members['attendance']['summary']['avg_rating']}} </th>
+                                        <th>{{$members['attendance']['summary']['attendance_rating_qualititative']}}</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -129,28 +131,27 @@
                                 </thead>
                                 <tbody>
                                     <tr>
+                                        {{-- @dd($members['final_grade']) --}}
                                         <td colspan="3">As a Member of the Board</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
+                                        <td class="text-center">{{number_format($members['rating_average'] ?? 0,2)}}</td>
+                                        <td class="text-center">70%</td>
+                                        <td class="text-center">{{number_format($members['final_grade']['assesment_grade'] ?? 0,2)}}</td>
                                     </tr>
                                     <tr>
                                         <td colspan="3">Attendance in Board & Committee Meetings</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
+                                        <td class="text-center">{{number_format($members['attendance_rating'] ?? 0,2)}}</td>
+                                        <td class="text-center">30&</td>
+                                        <td class="text-center">{{number_format($members['final_grade']['attendance_grade'] ?? 0,2)}}</td>
+                                    </tr>
+                                    <tr class="header-color">
+                                        <th colspan="3">Total Score</th>
+                                        <th colspan="3" style="font-size: 1.5em">{{number_format($members['final_grade']['quantitative'] ?? 0,2)}}</th>
+                                    </tr>
+                                    <tr class="header-color">
+                                        <th colspan="3">Qualitative Rating</th>
+                                        <th colspan="3" style="font-size: 1.5em">{{$members['final_grade']['qualitative']}}</th>
                                     </tr>
                                 </tbody>
-                                <thead class="header-color">
-                                    <tr>
-                                        <th colspan="3">Total Score</th>
-                                        <th colspan="3">-</th>
-                                    </tr>
-                                    <tr>
-                                        <th colspan="3">Qualitative Rating</th>
-                                        <th colspan="3">Excellent</th>
-                                    </tr>
-                                </thead>
                             </table>
                         </div>
                     </div>

@@ -82,13 +82,17 @@ class AssesmentComputation
         // Total: 70% assessment + 30% attendance
         $total_quantitative = null;
         if ($assesment_avg !== null && $attendance_avg !== null) {
-            $total_quantitative = ($assesment_avg * 0.70) + ($attendance_avg * 0.30);
+            $assesment_grade = $assesment_avg * 0.70;
+            $attendance_grade = $attendance_avg * 0.30;
+            $total_quantitative = $assesment_grade + $attendance_grade;
         }
         $total_qualitative = self::get_assesment_rating_bot_summary($total_quantitative);
 
         return [
             'quantitative' => $total_quantitative,
             'qualitative' => $total_qualitative,
+            'assesment_grade' => $assesment_grade ?? 0,
+            'attendance_grade' => $attendance_grade ?? 0,
         ];
     }
 
