@@ -218,11 +218,13 @@ class ReportsController extends Controller
             $rating_average = $questionGroups->avg('average_rating');
 
             $total_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($rating_average);
-            $attendance = $this->get_trustee_attendance_evaluation($member['member_id']);
+            // Pass committee_id if available (for CO/LRP reports filtered by committee)
+            $committee_id = isset($member['committee_id']) ? $member['committee_id'] : null;
+            $attendance = $this->get_trustee_attendance_evaluation($member['member_id'], $committee_id);
             $attendance_rating = $attendance['summary']['avg_rating'] ?? 0;
             $final_grade = AssesmentComputation::calculate_performance_summary($attendance_rating,$rating_average);
 
-            return [
+            $result = [
                 'member_id' => $member['member_id'],
                 'member_name' => $member['member_name'],
                 'member_email' => $member['member_email'],
@@ -237,6 +239,14 @@ class ReportsController extends Controller
                 'attendance_rating' => $attendance_rating,
                 'evaluators_summary' => $evaluatorSummaries->toArray()
             ];
+
+            // Add committee context if provided (for CO/LRP reports)
+            if (isset($member['committee_id'])) {
+                $result['committee_id'] = $member['committee_id'];
+            }
+            $result['committee_name'] = $member['committee_name']?? 'Board';
+
+            return $result;
         })->values();
     }
 
@@ -245,9 +255,10 @@ class ReportsController extends Controller
      * Returns organized attendance data grouped by category (BOT or Committee)
      *
      * @param int $member_id
+     * @param int|null $committee_id Filter by specific committee (null for BOT, integer for committee)
      * @return \Illuminate\Support\Collection
      */
-    public function get_trustee_attendance_evaluation($member_id)
+    public function get_trustee_attendance_evaluation($member_id, $committee_id = null)
     {
         $query = AttendanceAnswer::where('trustee_id', $member_id)
             ->with(['commitee', 'ratingScaleValue']);
@@ -255,6 +266,11 @@ class ReportsController extends Controller
         // Filter by evaluation period if $report is set
         if ($this->report) {
             $query->where('evaluation_period_id', $this->report->evaluationPeriod->id);
+        }
+
+        // Filter by specific committee if provided
+        if ($committee_id !== null) {
+            $query->where('committee_id', $committee_id);
         }
 
         $attendance = $query->get()->groupBy('committee_id')->map(function ($attendanceGroup, $committee_id) {
@@ -310,16 +326,59 @@ class ReportsController extends Controller
 
     /**
      * Get individual results of rating for CO & LRPs (Corporate Officers & Lead Resource Persons)
-     * Uses get_members_evaluation_summary_by_roles for flexibility
+     * Organized by: Committee -> Member -> Question -> Evaluators
+     * LRPs can appear multiple times (once per committee they're in)
      */
     public function indiviual_results_of_rating_co_and_lrps_collection($report){
-        return $this->get_members_evaluation_summary_by_roles([
+        $roles = [
             'Corporate Officer',
             'Corporate Treasurer',
             'Corporate Comptroller',
             'Corporate Secretary',
-            'Lead Resource Person'
-        ]);
+            'Lead Resource Person',
+            'EVP-GM'
+        ];
+
+        $members = $this->get_members_evaluation_summary_by_roles($roles);
+        $results = collect();
+
+        foreach ($members as $member) {
+            // Get member's committees through the pivot
+            $user = User::find($member['member_id']);
+            $memberCommittees = $user->committees()->with('committee')->get();
+
+            if ($memberCommittees->isEmpty()) {
+                // If no committee, add without committee context
+                $mapped = $this->individual_summary_mapper(collect([$member]))->first();
+                $results->push($mapped);
+            } else {
+                // Create an entry for each committee
+                foreach ($memberCommittees as $committeeHasTrustee) {
+                    $committee = $committeeHasTrustee->committee;
+
+                    // Filter evaluation_summary to only evaluators from this committee
+                    $committeeEvaluatorIds = $committee->committee_has_trustees()
+                        ->pluck('user_id')
+                        ->toArray();
+
+                    $filteredEvaluationSummary = collect($member['evaluation_summary'])
+                        ->filter(function ($evaluatorGroup) use ($committeeEvaluatorIds) {
+                            return in_array($evaluatorGroup['evaluator_id'], $committeeEvaluatorIds);
+                        })
+                        ->values();
+
+                    $committeeEntry = array_merge($member, [
+                        'committee_id' => $committee->id,
+                        'committee_name' => $committee->name,
+                        'evaluation_summary' => $filteredEvaluationSummary->toArray()
+                    ]);
+
+                    $mapped = $this->individual_summary_mapper(collect([$committeeEntry]))->first();
+                    $results->push($mapped);
+                }
+            }
+        }
+        return $results->values();
     }
     public function summary_results_of_committee_assessment_collection($report){
         return null;

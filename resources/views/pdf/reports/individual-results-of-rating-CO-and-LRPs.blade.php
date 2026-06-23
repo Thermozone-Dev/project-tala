@@ -10,74 +10,62 @@
         <link rel="stylesheet" href="{{ base_path('public/css/custom.css') }}" />
     </head>
     <body>
-            <div class="container-fluid">
+        <div class="container-fluid">
+            @foreach ($data['collections'] as $members)
                 <div class="page">
-                    <div class="row" style="white-space:nowrap;">
+                    <div class="row">
                         <div class="col-xs-12 text-center">
-                            <h1><b><u>{{strtoupper('GEN ROMEO S BRAWNER JR PA')}}</u></b></h1>
                         </div>
-                    </div>
-
-                    <div class="row" style="white-space:nowrap;">
-                        <div class="col-xs-12" style="white-space:nowrap; margin: 10px 0">
-                            <table>
+                        <div class="col-xs-12" style="margin: 10px 0; overflow-x: auto;">
+                            <table style="width: 100%; table-layout: auto; word-wrap: break-word; word-break: break-word;">
                                 <thead class="header-color">
                                     <tr>
-                                        <th style="width: 3%;">#</th>
-                                        <th>BOT Performance (70%)</th>
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        <th>Total</th>
-                                        <th>Average</th>
-                                        <th>Qualitative Rating</th>
+                                        <h1 class="text-center"><b><u>{{strtoupper($members['member_name'])}}</u></b></h1>
+                                    </tr>
+                                    <tr>
+                                        <th style="width: 3%; padding: 8px;">#</th>
+                                        <th style="padding: 8px; min-width: 200px;">{{ucfirst($members['committee_name'])}} Committee Performance (70%)</th>
+                                        @foreach ($members['evaluators_summary'] as $evaluator)
+                                            <th style="padding: 8px; min-width: 100px;">{{$evaluator['evaluator_name']}}</th>
+                                        @endforeach
+                                        <th style="padding: 8px; min-width: 80px;">Total</th>
+                                        <th style="padding: 8px; min-width: 90px;">Average</th>
+                                        <th style="padding: 8px; min-width: 130px;">Qualitative Rating</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="text-center">1</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">Excellent</td>
-                                    </tr>
+                                    @foreach ($members['questions'] as $key => $question)
+                                        <tr>
+                                            <td class="text-center" style="padding: 8px;">{{$key+1}}</td>
+                                            <td style="padding: 8px; word-wrap: break-word; word-break: break-word;">{{$question['question']}}</td>
+                                            @foreach ($question['evaluators'] as $evaluator)
+                                                <td class="text-center" style="padding: 8px;">{{number_format($evaluator['answer_value'],2)}}</td>
+                                            @endforeach
+                                            <td class="text-center" style="padding: 8px;">{{number_format($question['total_rating'],2)}}</td>
+                                            <td class="text-center" style="padding: 8px;">{{number_format($question['average_rating'],2)}}</td>
+                                            <td class="text-center" style="padding: 8px;">{{$question['qualitative_rating']}}</td>
+                                        </tr>
+                                    @endforeach
+
                                 </tbody>
                                 <thead class="header-color">
                                     <tr>
                                         <th colspan="2" rowspan="2" >OVER-ALL RATING</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>Excellent</th>
+                                        @foreach ($members['evaluators_summary'] as $evaluator )
+                                            <th>{{number_format($evaluator['total_rating'],2)}}</th>
+                                        @endforeach
+                                        <th>{{number_format($members['total_rating'],2)}}</th>
+                                        <th>{{number_format($members['rating_average'],2)}}</th>
+                                        <th>{{ucfirst($members['total_qualitative'])}}</th>
                                     </tr>
                                     <tr>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>Excellent</th>
+                                        @foreach ($members['evaluators_summary'] as $evaluator )
+                                            <th>{{number_format($evaluator['average_rating'],2)}}</th>
+
+                                        @endforeach
+                                        <th>{{number_format($members['total_average'],2)}}</th>
+                                        <th>{{number_format($members['rating_average'],2)}}</th>
+                                        <th>{{ucfirst($members['total_qualitative'])}}</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -100,23 +88,32 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="text-center">Board Meetings (Regular & Special)</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">Excellent</td>
-                                    </tr>
+                                    {{-- @dd($members) --}}
+                                    @if(isset($members['attendance']['attendance']) && !empty($members['attendance']['attendance']))
+                                        @foreach ($members['attendance']['attendance'] as $attendance)
+                                            <tr>
+                                                <td class="text-center">{{$attendance['category']}}</td>
+                                                <td class="text-center">{{$attendance['total_meetings']}}</td>
+                                                <td class="text-center">{{$attendance['total_present']}}</td>
+                                                <td class="text-center">{{$attendance['attendance_percentage']}}%</td>
+                                                <td class="text-center">{{number_format($attendance['rating_scale'],2)}}</td>
+                                                <td class="text-center">{{$attendance['rating_scale_equivalent']}}</td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td class="text-center" colspan="6">-</td>
+                                        </tr>
+                                    @endif
                                 </tbody>
                                 <thead class="header-color">
                                     <tr>
                                         <th>OVER-ALL RATING</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>-</th>
-                                        <th>Excellent</th>
+                                        <th>{{isset($members['attendance']) && !empty($members['attendance']) ? number_format($members['attendance']['summary']['total_meetings'] ?? 0, 2) : '-'}}</th>
+                                        <th>{{isset($members['attendance']) && !empty($members['attendance']) ? number_format($members['attendance']['summary']['total_present'] ?? 0, 2) : '-'}}</th>
+                                        <th>{{isset($members['attendance']) && !empty($members['attendance']) ? number_format($members['attendance']['summary']['avg_attendance_percentage'] ?? 0, 2) : '-'}}%</th>
+                                        <th>{{isset($members['attendance_rating']) ? number_format($members['attendance_rating'], 2) : '-'}}</th>
+                                        <th>{{isset($members['attendance']) && !empty($members['attendance']) ? $members['attendance']['summary']['attendance_rating_qualititative'] ?? '-' : '-'}}</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -141,26 +138,26 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td colspan="3">As Member BOT & Committee Meetings</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
+                                        <td colspan="3">{{ucfirst($members['committee_name'])}} Committee Performance</td>
+                                        <td class="text-center">{{number_format($members['rating_average'],2)}}</td>
+                                        <td class="text-center">70%</td>
+                                        <td class="text-center">{{number_format($members['rating_average'] * 0.7, 2)}}</td>
                                     </tr>
                                     <tr>
-                                        <td colspan="3">Attendance in BOT & Committee Meetings</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
-                                        <td class="text-center">-</td>
+                                        <td colspan="3">Attendance in Meetings</td>
+                                        <td class="text-center">{{isset($members['attendance_rating']) ? number_format($members['attendance_rating'], 2) : '-'}}</td>
+                                        <td class="text-center">30%</td>
+                                        <td class="text-center">{{isset($members['attendance_rating']) ? number_format($members['attendance_rating'] * 0.3, 2) : '-'}}</td>
                                     </tr>
                                 </tbody>
                                 <thead class="header-color">
                                     <tr>
                                         <th colspan="3">Total Score</th>
-                                        <th colspan="3">-</th>
+                                        <th colspan="3" style="font-size: 1.5em">{{isset($members['final_grade']) ? number_format($members['final_grade']['quantitative'], 2) : '-'}}</th>
                                     </tr>
                                     <tr>
                                         <th colspan="3">Qualitative Rating</th>
-                                        <th colspan="3">Excellent</th>
+                                        <th colspan="3" style="font-size: 1.5em">{{isset($members['final_grade']) ? ucfirst($members['final_grade']['qualitative']) : '-'}}</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -180,6 +177,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            @endforeach
+        </div>
     </body>
 </html>
