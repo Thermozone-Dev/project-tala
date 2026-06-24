@@ -78,7 +78,8 @@ class ListEvaluationRecords extends ListRecords
             ])
             ->recordUrl(function($record){
                 return $this->getResource()::getUrl('view-evaluation',['evaluation_id' => $record->evaluation_id, 'record_id' => $record->id]);
-            });
+            })
+            ->defaultPaginationPageOption(50);
     }
 
 
