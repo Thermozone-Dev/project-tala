@@ -194,7 +194,7 @@ class AttendanceForm
                         ->default(0)
                         ->label('Physically Present')
                         ->reactive()
-                        ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
+                        ->mask('999999999999')
                         ->formatStateUsing( fn ($state) => $state ? $state : 0)
                         ->afterStateUpdated(function ($state, callable $get, callable $set) use ($commitee, $member) {
                             $base = 'commitee.'.$commitee['id'].'.members.'.$member['id'];
@@ -208,7 +208,7 @@ class AttendanceForm
                         ->default(0)
                         ->label('Considered Present')
                         ->minValue(0)
-                        ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
+                        ->mask('999999999999')
                         ->reactive()
                         ->formatStateUsing( fn ($state) => $state ? $state : 0)
                         ->afterStateUpdated(function ($state, callable $get, callable $set) use ($commitee, $member) {
