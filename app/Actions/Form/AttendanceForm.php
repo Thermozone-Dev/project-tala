@@ -2,21 +2,13 @@
 
 namespace App\Actions\Form;
 
-use App\Models\CommitteeHasTrustee;
 use App\Models\Committee;
-use App\Models\EvaluationPeriod;
-use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Fieldset;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Schemas\Components\Text;
-use Filament\Support\Enums\FontWeight;
-use Filament\Support\RawJs;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class AttendanceForm
@@ -94,183 +86,134 @@ class AttendanceForm
                 ];
             }
         }
-        // dd($commitees);
-        // dd($evaluation_period->assignments->groupBy('committee_id'));
-        // if(!$evaluation_period->attendance){
 
-        // }
-
-
-        // $committees =  [
-        //     [
-        //         'id' => 1,
-        //         'name' =>  'Board of Trustees',
-        //         'members' => [
-        //             [
-        //                 'id' => 1,
-        //                 'name' => 'Dennis',
-        //                 'commitee_id' => 1,
-        //                 'total_meetings' => 0,
-        //                 'physically_present' => 0,
-        //                 'considered_present' => 0,
-        //                 'total_present' => 0,
-        //                 'attendance_rating_scale_values_id' => 1,
-        //             ],
-
-        //             [
-        //                 'id' => 2,
-        //                 'name' => 'Demarcus Cousins',
-        //                 'total_meetings' => 0,
-        //                 'commitee_id' => 1,
-        //                 'physically_present' => 0,
-        //                 'considered_present' => 0,
-        //                 'total_present' => 0,
-        //                 'attendance_rating_scale_values_id' => 1,
-        //             ],
-
-        //             [
-        //                 'id' => 3,
-        //                 'name' => 'Zaza Pachulia',
-        //                 'total_meetings' => 0,
-        //                 'commitee_id' => 1,
-        //                 'physically_present' => 2,
-        //                 'considered_present' => 3,
-        //                 'total_present' => 0,
-        //                 'attendance_rating_scale_values_id' => 1,
-        //             ],
-
-        //         ],
-        //     ],
-        //     [
-        //         'id' => 2,
-        //         'name' =>  'Governance',
-        //         'members' => [
-        //             [
-        //                 'id' => 1,
-        //                 'name' => 'Dennis',
-        //                 'commitee_id' => 2,
-        //                 'total_meetings' => 0,
-        //                 'physically_present' => 0,
-        //                 'considered_present' => 0,
-        //                 'total_present' => 0,
-        //                 'attendance_rating_scale_values_id' => 1,
-        //             ],
-
-        //             [
-        //                 'id' => 2,
-        //                 'name' => 'Jane Doe',
-        //                 'total_meetings' => 0,
-        //                 'commitee_id' => 2,
-        //                 'physically_present' => 0,
-        //                 'considered_present' => 0,
-        //                 'total_present' => 0,
-        //                 'attendance_rating_scale_values_id' => 1,
-        //             ],
-
-        //         ],
-        //     ]
-        // ];
-
-        // // $committees =  collect($committees)->map(function ($item) {
-        // //     return is_array($item) ? collect($item) : $item;
-        // // });
         $tabs = [];
         foreach($committees as $commitee){
             $sections = [];
 
             foreach ($commitee['members'] as $member) {
-                $fieldsets = [
-
-                    TextInput::make('commitee.'.$commitee['id'].'.members.'.$member['id'].'.total_meetings.value')
-                        ->minValue(0)
-                        ->required()
-                        ->default(0)
-                        ->label('Total Meetings')
-                        ->numeric(),
-
-                    TextInput::make('commitee.'.$commitee['id'].'.members.'.$member['id'].'.physically_present.value')
-                        ->numeric()
-                        ->minValue(0)
-                        ->default(0)
-                        ->label('Physically Present')
-                        ->reactive()
-                        ->mask('999999999999')
-                        ->formatStateUsing( fn ($state) => $state ? $state : 0)
-                        ->afterStateUpdated(function ($state, callable $get, callable $set) use ($commitee, $member) {
-                            $base = 'commitee.'.$commitee['id'].'.members.'.$member['id'];
-                            $physical = (int) $get($base.'.physically_present.value') ?? 0;
-                            $considered = (int) $get($base.'.considered_present.value') ?? 0;
-                            $set($base.'.total_present.value', $physical + $considered);
-                        }),
-
-                    TextInput::make('commitee.'.$commitee['id'].'.members.'.$member['id'].'.considered_present.value')
-                        ->numeric()
-                        ->default(0)
-                        ->label('Considered Present')
-                        ->minValue(0)
-                        ->mask('999999999999')
-                        ->reactive()
-                        ->formatStateUsing( fn ($state) => $state ? $state : 0)
-                        ->afterStateUpdated(function ($state, callable $get, callable $set) use ($commitee, $member) {
-                            $base = 'commitee.'.$commitee['id'].'.members.'.$member['id'];
-                            $physical = (int) $get($base.'.physically_present.value') ?? 0;
-                            $considered = (int) $get($base.'.considered_present.value') ?? 0;
-                            $set($base.'.total_present.value', $physical + $considered);
-                        }),
-
-                    TextInput::make('commitee.'.$commitee['id'].'.members.'.$member['id'].'.total_present.value')
-                        ->numeric()
-                        ->label('Total Number of Attendance')
-                        ->readOnly()
-                        ->default(0)
-                        ->rules([
-                            function (callable $get) use ($commitee, $member) {
-                                return function (string $attribute, $value, \Closure $fail) use ($get, $commitee, $member) {
-
-                                    $base = 'commitee.'.$commitee['id'].'.members.'.$member['id'];
-
-                                    $totalMeetings = (int) $get($base.'.total_meetings.value');
-                                    $physical = (int) $get($base.'.physically_present.value');
-                                    $considered = (int) $get($base.'.considered_present.value');
-
-                                    $totalPresent = $physical + $considered;
-
-                                    if ($totalPresent > $totalMeetings) {
-                                        $fail('Total present cannot exceed total meetings.');
-                                    }
-
-                                    if ($physical > $totalMeetings) {
-                                        $fail('Physically present cannot exceed total meetings.');
-                                    }
-
-                                    if ($considered > $totalMeetings) {
-                                        $fail('Considered present cannot exceed total meetings.');
-                                    }
-                                };
-                            }
-                        ])
-                        ->dehydrated(true)
-                ];
-                // dd($fieldsets);
+                $base = 'commitee.' . $commitee['id'] . '.members.' . $member['id'];
 
                 $sections[] = Section::make($member['name'])
-                        ->columns(4)
-                        ->extraAttributes(['class' => 'p-0 m-0 testing'], true)
-                        ->schema($fieldsets);
+                    ->columns(4)
+                    ->schema([
 
+                        TextInput::make($base . '.total_meetings.value')
+                            ->label('Total Meetings')
+                            ->minValue(0)
+                            ->default(0)
+                            ->required()
+                            ->live(onBlur: true)
+                            ->extraInputAttributes([
+                                'oninput' => "this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace('.','')"
+                            ])
+                            ->afterStateUpdated(function (Get $get,Set $set, $livewire) use ($base, $commitee, $member) {
+                                $physical   = (int) ($get($base . '.physically_present.value') ?? 0);
+                                $considered = (int) ($get($base . '.considered_present.value') ?? 0);
+                                $total      = $physical + $considered;
+
+                                $livewire->validateOnly('mountedActions.0.data.' . $base . '.total_present.value');
+
+                                $livewire->autoSave(
+                                    $commitee['id'],
+                                    $member['id'],
+                                    (int) ($get($base . '.total_meetings.value') ?? 0),
+                                    $physical,
+                                    $considered,
+                                    $total,
+                                );
+                            }),
+
+                        TextInput::make($base . '.physically_present.value')
+                            ->label('Physically Present')
+                            ->minValue(0)
+                            ->default(0)
+                            ->live(onBlur: true)
+                            ->extraInputAttributes([
+                                'oninput' => "this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace('.','')"
+                            ])
+                            ->afterStateUpdated(function (Get $get, Set $set, $livewire) use ($base, $commitee, $member) {
+                                $physical   = (int) ($get($base . '.physically_present.value') ?? 0);
+                                $considered = (int) ($get($base . '.considered_present.value') ?? 0);
+                                $total      = $physical + $considered;
+
+                                $set($base . '.total_present.value', $total);
+
+                                $livewire->validateOnly('mountedActions.0.data.' . $base . '.total_present.value');
+
+                                $livewire->autoSave(
+                                    $commitee['id'],
+                                    $member['id'],
+                                    (int) ($get($base . '.total_meetings.value') ?? 0),
+                                    $physical,
+                                    $considered,
+                                    $total,
+                                );
+                            }),
+
+                        TextInput::make($base . '.considered_present.value')
+                            ->label('Considered Present')
+                            ->minValue(0)
+                            ->default(0)
+                            ->live(onBlur: true)
+                            ->extraInputAttributes([
+                                'oninput' => "this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace('.','')"
+                            ])
+                            ->afterStateUpdated(function (Get $get, Set $set, $livewire) use ($base, $commitee, $member) {
+                                $physical   = (int) ($get($base . '.physically_present.value') ?? 0);
+                                $considered = (int) ($get($base . '.considered_present.value') ?? 0);
+                                $total      = $physical + $considered;
+
+                                $set($base . '.total_present.value', $total);
+
+                                $livewire->validateOnly('mountedActions.0.data.' . $base . '.total_present.value');
+
+                                $livewire->autoSave(
+                                    $commitee['id'],
+                                    $member['id'],
+                                    (int) ($get($base . '.total_meetings.value') ?? 0),
+                                    $physical,
+                                    $considered,
+                                    $total,
+                                );
+                            }),
+
+                        TextInput::make($base . '.total_present.value')
+                            ->label('Total Number of Attendance')
+                            ->numeric()
+                            ->default(0)
+                            ->readOnly()
+                            ->dehydrated(true)
+                            ->rules([
+                                function (Get $get) use ($base) {
+                                    return function (string $attribute, $value, \Closure $fail) use ($get, $base) {
+                                        $totalMeetings = (int)$get($base . '.total_meetings.value');
+                                        $physical = (int)$get($base . '.physically_present.value');
+                                        $considered = (int)$get($base . '.considered_present.value');
+                                        $totalPresent = $physical + $considered;
+
+                                        if ($totalPresent > $totalMeetings) {
+                                            $fail('Total number of attendance cannot exceed total meetings.');
+                                        }
+                                        if ($physical > $totalMeetings) {
+                                            $fail('Physically present cannot exceed total meetings.');
+                                        }
+                                        if ($considered > $totalMeetings) {
+                                            $fail('Considered present cannot exceed total meetings.');
+                                        }
+                                    };
+                                }
+                            ]),
+
+                    ]);
             }
 
             $tabs[] = Tab::make($commitee['name'])
-                ->schema(
-                    $sections
-                );
+                ->schema($sections);
         }
 
-        $test = Tabs::make('Tabs')
-            ->tabs($tabs);
-
-
-        return [$test];
-        // ...
+        return [
+            Tabs::make('Tabs')->tabs($tabs)
+        ];
     }
 }

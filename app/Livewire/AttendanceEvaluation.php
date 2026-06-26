@@ -4,9 +4,6 @@ namespace App\Livewire;
 
 use App\Models\AttendanceAnswer;
 use App\Models\EvaluationPeriod;
-use App\Models\Committee;
-use App\Models\RatingScale;
-use App\Models\RatingScaleValue;
 use Filament\Actions\BulkActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -21,7 +18,6 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Text;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
@@ -53,7 +49,7 @@ class AttendanceEvaluation extends TableWidget
 
     public function table(Table $table): Table
     {
-        $query = AttendanceAnswer::where('evaluation_period_id',$this->evaluation_period_id);
+        $query = AttendanceAnswer::where('evaluation_period_id',$this->evaluation_period_id)->orderByRaw('CASE WHEN committee_id IS NULL THEN 0 ELSE 1 END')->orderBy('id');
 
 
         return $table
@@ -108,101 +104,90 @@ class AttendanceEvaluation extends TableWidget
             ])
             ->headerActions([
                 Action::make('evaluate_attendance')
-                        ->modalWidth(Width::SixExtraLarge)
-                        ->closeModalByClickingAway(false)
-                        ->color('primary')
-                        ->modalheading(function() : string {
+                    ->modalWidth(Width::SixExtraLarge)
+                    ->closeModalByClickingAway(false)
+                    ->color('primary')
+                    ->icon(Heroicon::OutlinedClipboardDocumentList)
+                    ->modalHeading(function (): string {
+                        $test = EvaluationPeriod::find($this->evaluation_period_id);
+                        $string = $test ? $test->formatted_coverage : ' ';
+                        return 'Attendance Evaluation for Period: ' . $string;
+                    })
+                    ->fillForm(function (): array {
+                        $evaluation_period = EvaluationPeriod::find($this->evaluation_period_id);
+                        $fillForm = [];
 
-                            $test = EvaluationPeriod::find($this->evaluation_period_id);
+                        foreach ($evaluation_period->attendance as $attendance) {
+                            $committee_key = $attendance->committee_id ?? 'bot';
 
-                            $string  =  $test ?  $test->formatted_coverage : ' ';
-                            $string = 'Attendance Evaluation for Period: '. $string;
-                            return $string;
-                        })
-                        ->schema(function (){
+                            $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['total_meetings']['value']     = $attendance->total_meetings;
+                            $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['physically_present']['value'] = $attendance->physically_present;
+                            $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['considered_present']['value'] = $attendance->considered_present;
+                            $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['total_present']['value']      = $attendance->total_present;
+                        }
 
-                            return [
-                                Grid::make(1)->schema(AttendanceForm::run($this->evaluation_period))
-                            ];
-                        })
-                        ->modalSubmitAction(function () {
-                            //EvaluationPeriod $evaluation_period_id
-                            // if($record->trustee_evaluation_statuses_id == 2 || $record->trustee_evaluation_statuses_id == 4 || $record->trustee_evaluation_statuses_id == 5){
-                            //     // 2 = Lock | 4 = For Review | 5 = Review
-                            //     return false;
-                            // }
+                        return $fillForm;
+                    })
+                    ->schema(function (): array {
+                        return [
+                            Grid::make(1)->schema(AttendanceForm::run($this->evaluation_period))
+                        ];
+                    })
+                    ->modalSubmitAction(function () {
+                        // return false here if you want to hide the submit button under certain conditions
+                        // e.g. if record is locked:
+                        // if ($this->record->trustee_evaluation_statuses_id == 2) return false;
+                    })
+                    ->action(function (array $data): void {
+                        $evaluationPeriod = EvaluationPeriod::find($this->evaluation_period_id);
 
-                        })
-                        ->fillForm(function () {
-                            $evaluation_period = EvaluationPeriod::find($this->evaluation_period_id);
-                            $fillForm = [];
+                        foreach ($data['commitee'] as $committee_key => $committee_data) {
+                            $committee_id = $committee_key === 'bot' ? null : (int) $committee_key;
 
-                            foreach($evaluation_period->attendance as $attendance){
-                                // Determine committee key: 'bot' for BOT Meetings (null committee), or committee_id
-                                $committee_key = $attendance->committee_id ?? 'bot';
+                            foreach ($committee_data['members'] as $member_id => $member_data) {
+                                $percentage = AssesmentComputation::get_attendance_percentage(
+                                    $member_data['total_meetings']['value'],
+                                    $member_data['total_present']['value']
+                                );
 
-                                // Structure: commitee.[committee_key].members.[member_id].[field].value
-                                $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['total_meetings']['value'] = $attendance->total_meetings;
-                                $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['physically_present']['value'] = $attendance->physically_present;
-                                $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['considered_present']['value'] = $attendance->considered_present;
-                                $fillForm['commitee'][$committee_key]['members'][$attendance->trustee_id]['total_present']['value'] = $attendance->total_present;
-                            }
-                            return $fillForm;
-                        })
-                        ->action(function (array $data){
-                            $evaluationPeriod = EvaluationPeriod::find($this->evaluation_period_id);
+                                $rating = AssesmentComputation::get_attendance_rating($percentage);
 
-                            // Data structure is now organized by committee (bot or committee_id)
-                            foreach($data['commitee'] as $committee_key => $committee_data){
-                                // Determine committee_id: null for 'bot', or the actual committee_id
-                                $committee_id = $committee_key === 'bot' ? null : (int)$committee_key;
-
-                                foreach($committee_data['members'] as $member_id => $member_data ){
-                                    $percentage = AssesmentComputation::get_attendance_percentage(
-                                        $member_data['total_meetings']['value'],
-                                        $member_data['total_present']['value']
-                                    );
-                                    $rating = AssesmentComputation::get_attendance_rating($percentage);
-
-                                    if(!$rating){
-                                        Notification::make()
-                                            ->title('Error')
-                                            ->danger()
-                                            ->body('Saving Error!. Please check encoded attendance')
-                                            ->send();
-                                        return;
-                                    }
-
-                                    $answer = [
-                                        'total_meetings' => $member_data['total_meetings']['value'],
-                                        'physically_present' => $member_data['physically_present']['value'],
-                                        'considered_present' => $member_data['considered_present']['value'],
-                                        'total_present' => $member_data['total_present']['value'],
-                                        'attendance_rating_scale_values_id' => $rating?->id ?? null,
-                                        'committee_id' => $committee_id,
-                                        'trustee_id' => $member_id,
-                                        'evaluation_period_id' => $evaluationPeriod->id
-                                    ];
-
-                                    AttendanceAnswer::updateOrCreate(
-                                        [
-                                            'trustee_id' => $member_id,
-                                            'evaluation_period_id' => $evaluationPeriod->id,
-                                            'committee_id' => $committee_id,
-                                        ],
-                                        $answer,
-                                    );
+                                if (!$rating) {
+                                    Notification::make()
+                                        ->title('Error')
+                                        ->danger()
+                                        ->body('Saving Error! Please check encoded attendance.')
+                                        ->send();
+                                    return;
                                 }
-                            }
 
-                            Notification::make()
-                                ->title('Attendance Evaluation Submitted')
-                                ->success()
-                                ->body('Your attendance evaluation has been successfully submitted.')
-                                ->send();
-                        })
-                        ->icon(Heroicon::OutlinedClipboardDocumentList),
-                //
+                                AttendanceAnswer::updateOrCreate(
+                                    [
+                                        'trustee_id'          => $member_id,
+                                        'evaluation_period_id' => $evaluationPeriod->id,
+                                        'committee_id'         => $committee_id,
+                                    ],
+                                    [
+                                        'total_meetings'                    => $member_data['total_meetings']['value'],
+                                        'physically_present'                => $member_data['physically_present']['value'],
+                                        'considered_present'                => $member_data['considered_present']['value'],
+                                        'total_present'                     => $member_data['total_present']['value'],
+                                        'attendance_rating_scale_values_id' => $rating?->id ?? null,
+                                        'committee_id'                      => $committee_id,
+                                        'trustee_id'                        => $member_id,
+                                        'evaluation_period_id'              => $evaluationPeriod->id,
+                                    ]
+                                );
+                            }
+                        }
+
+                        Notification::make()
+                            ->title('Attendance Evaluation Submitted')
+                            ->success()
+                            ->body('Your attendance evaluation has been successfully submitted.')
+                            ->send();
+                    }),
+
             ])
             ->recordActions([
                 EditAction::make()
@@ -284,5 +269,45 @@ class AttendanceEvaluation extends TableWidget
                     //
                 ]),
             ]);
+    }
+
+    public function autoSave(
+        string|int $committee_key,
+        int $member_id,
+        int $total_meetings,
+        int $physically_present,
+        int $considered_present,
+        int $total_present
+    ): void {
+        try {
+            $evaluationPeriod = EvaluationPeriod::find($this->evaluation_period_id);
+            $committee_id = $committee_key === 'bot' ? null : (int) $committee_key;
+
+            $percentage = AssesmentComputation::get_attendance_percentage($total_meetings, $total_present);
+            $rating = AssesmentComputation::get_attendance_rating($percentage);
+
+            if (!$rating) return;
+
+            AttendanceAnswer::updateOrCreate(
+                [
+                    'trustee_id'           => $member_id,
+                    'evaluation_period_id' => $evaluationPeriod->id,
+                    'committee_id'         => $committee_id,
+                ],
+                [
+                    'total_meetings'                    => $total_meetings,
+                    'physically_present'                => $physically_present,
+                    'considered_present'                => $considered_present,
+                    'total_present'                     => $total_present,
+                    'attendance_rating_scale_values_id' => $rating?->id ?? null,
+                    'committee_id'                      => $committee_id,
+                    'trustee_id'                        => $member_id,
+                    'evaluation_period_id'              => $evaluationPeriod->id,
+                ]
+            );
+
+        } catch (\InvalidArgumentException $e) {
+            return;
+        }
     }
 }
