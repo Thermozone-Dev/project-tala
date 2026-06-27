@@ -78,6 +78,7 @@ class AdminPanelProvider extends PanelProvider
 
         return $panel
             ->globalSearch(false)
+            ->databaseNotifications()
             ->darkMode(false)
             ->default()
             ->id('admin')
