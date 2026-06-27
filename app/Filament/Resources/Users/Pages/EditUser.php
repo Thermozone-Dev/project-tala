@@ -40,4 +40,9 @@ class EditUser extends EditRecord
 
         return parent::mutateFormDataBeforeSave($data);
     }
+
+    protected function getRedirectUrl(): ?string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

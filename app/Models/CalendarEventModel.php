@@ -13,19 +13,22 @@ class CalendarEventModel implements Eventable
     protected Carbon $date;
     protected string $backgroundColor;
     protected string $textColor;
+    protected string $meetingLink;
 
     public function __construct(
         string $id,
         string $title,
         Carbon $date,
         string $backgroundColor = '#3b82f6',
-        string $textColor = '#ffffff'
+        string $textColor = '#ffffff',
+        string $meetingLink
     ) {
         $this->id = $id;
         $this->title = $title;
         $this->date = $date;
         $this->backgroundColor = $backgroundColor;
         $this->textColor = $textColor;
+        $this->meetingLink = $meetingLink;
     }
 
     public function getCalendarEventId(): string
@@ -70,7 +73,7 @@ class CalendarEventModel implements Eventable
 
     public function getCalendarEventUrl(): ?string
     {
-        return null;
+        return $this->meetingLink;
     }
 
     public function toCalendarEvent(): CalendarEvent
@@ -78,8 +81,9 @@ class CalendarEventModel implements Eventable
         return CalendarEvent::make()
             ->title($this->title)
             ->start($this->date)
-            ->end($this->date->copy()->addDay())
+            ->end($this->date->copy()->addHour())
             ->backgroundColor($this->backgroundColor)
-            ->textColor($this->textColor);
+            ->textColor($this->textColor)
+            ->url($this->getCalendarEventUrl());
     }
 }

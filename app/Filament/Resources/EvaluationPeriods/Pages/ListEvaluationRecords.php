@@ -47,9 +47,11 @@ class ListEvaluationRecords extends ListRecords
         return $table
             ->columns([
                 TextColumn::make('form.title')
-                    ->sortable('evaluation_forms.id'),
-                TextColumn::make('member.full_name')->label('Evaluated'),
-                TextColumn::make('committee.name')->badge(),
+                    ->sortable('evaluation_forms.id')
+                    ->wrap(),
+                TextColumn::make('member.full_name')->label('Evaluated')
+                    ->wrap(),
+                TextColumn::make('committee.name')->badge()->wrap(),
                 TextColumn::make('eval_status.name')
                     ->label('Status')
                     ->badge()
@@ -78,7 +80,8 @@ class ListEvaluationRecords extends ListRecords
             ])
             ->recordUrl(function($record){
                 return $this->getResource()::getUrl('view-evaluation',['evaluation_id' => $record->evaluation_id, 'record_id' => $record->id]);
-            });
+            })
+            ->defaultPaginationPageOption(50);
     }
 
 
