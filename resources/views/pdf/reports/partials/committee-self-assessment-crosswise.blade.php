@@ -12,11 +12,12 @@
             </div>
 
             {{-- BOT SUMMARY & ASSESSMENT GUIDE (Side by Side) --}}
-            @if (isset($data['collections']['crosswise']['bot_sections']) && is_array($data['collections']['crosswise']['bot_sections']) && count($data['collections']['crosswise']['bot_sections']) > 0)
+            @if ((isset($data['collections']['crosswise']['bot_sections']) && is_array($data['collections']['crosswise']['bot_sections']) && count($data['collections']['crosswise']['bot_sections']) > 0) || (isset($data['collections']['crosswise']['committee_sections_matrix']) && is_array($data['collections']['crosswise']['committee_sections_matrix']) && count($data['collections']['crosswise']['committee_sections_matrix']) > 0))
                 <div class="row" style="white-space:nowrap; margin: 0;">
                     {{-- BOT Self Assessment Summary with Sections --}}
                     <div class="col-xs-6" style="padding: 0; padding-right: 5px;">
                         <h4 style="margin: 0 0 5px 0; font-size: 11px;"><b>BOT SELF-ASSESSMENT SUMMARY</b></h4>
+                        @if (isset($data['collections']['crosswise']['bot_sections']) && is_array($data['collections']['crosswise']['bot_sections']) && count($data['collections']['crosswise']['bot_sections']) > 0)
                         <table style="width: 100%; table-layout: auto; border-collapse: collapse; margin: 0;">
                             <thead class="header-color">
                                 <tr>
@@ -60,6 +61,11 @@
                                 </tr>
                             </tbody>
                         </table>
+                        @else
+                        <div style="padding: 10px; text-align: center; border: 1px solid #ccc;">
+                            <p style="margin: 0; font-size: 10px;">No data available yet</p>
+                        </div>
+                        @endif
                     </div>
 
                     {{-- Assessment Guide (7x3 Blank Table) --}}
@@ -188,11 +194,19 @@
                             </table>
                         </div>
                     </div>
+                @else
+                    <div class="row" style="white-space:nowrap; margin: 15px 0 0 0;">
+                        <div class="col-xs-12" style="padding: 0;">
+                            <div style="padding: 10px; text-align: center; border: 1px solid #ccc;">
+                                <p style="margin: 0; font-size: 10px;">No committee data available yet</p>
+                            </div>
+                        </div>
+                    </div>
                 @endif
             @else
                 <div class="row">
                     <div class="col-xs-12 text-center">
-                        <p>No crosswise summary data available</p>
+                        <p>No summary data available yet</p>
                     </div>
                 </div>
             @endif

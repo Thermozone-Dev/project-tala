@@ -10,6 +10,16 @@
                     <div class="col-xs-12 text-center">
                         <h1><b><u>{{ strtoupper($summary['committee_name'] ?? 'BOT') }} SUMMARY</u></b></h1>
                     </div>
+                    <div class="col-xs-12" style="margin: 10px 0;">
+                        <div class="row">
+                            <div class="col-xs-6 text-right"><b>Committee: </b></div>
+                            <div class="col-xs-6 text-left"><b><u>{{ strtoupper($summary['committee_name'] ?? 'Board of Trustees') }}</u></b></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-6 text-right"><b>Period Covered: </b></div>
+                            <div class="col-xs-6 text-left"><b><u>{{ strtoupper($data['evaluation_period']) }}</u></b></div>
+                        </div>
+                    </div>
                 </div>
 
                 @if (isset($summary['sections_summary']) && is_array($summary['sections_summary']) && count($summary['sections_summary']) > 0)
