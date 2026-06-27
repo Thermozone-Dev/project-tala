@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,14 +12,25 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if(Schema::hasColumn('meeting_types','color')){
+            Schema::table('meeting_types', function (Blueprint $table) {
+                $table->dropColumn('color');
+            });
+        }
+
         Schema::table('meeting_types', function (Blueprint $table) {
-            $table->dropColumn('color');
+
             $table->string('url')->nullable()->after('name');
         });
 
         DB::table('meeting_types')->delete();
 
-        DB::statement('DBCC CHECKIDENT (meeting_types, RESEED, 0)');
+        // Reset auto-increment/identity for both MySQL and MSSQL
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE meeting_types AUTO_INCREMENT = 1');
+        } elseif (DB::getDriverName() === 'sqlsrv') {
+            DB::statement('DBCC CHECKIDENT (meeting_types, RESEED, 0)');
+        }
 
         DB::table('meeting_types')->insert([
             [

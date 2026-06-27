@@ -39,8 +39,17 @@ class AttendeesRelationManager extends RelationManager
             ->recordTitleAttribute('user')
             ->columns([
                 TextColumn::make('user.full_name')
+                    ->sortable([
+                        'last_name'
+                    ])
+                    ->searchable([
+                        'last_name',
+                        'first_name',
+                        'middle_name'
+                    ])
                     ->label('Name'),
                 TextColumn::make('attendanceStatus.name')
+                    ->sortable()
                     ->label('Status'),
                 TextColumn::make('is_late')
                     ->label('Is Late?')
@@ -58,12 +67,18 @@ class AttendeesRelationManager extends RelationManager
             ->recordActions([
                 Action::make('Update')
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                    ->fillForm(fn ($record) => [
+                        'mark_timestamp' => $record->mark_timestamp ?? now(),
+                        'attendance_status_id' => $record->attendance_status_id,
+                        'is_late' => $record->is_late,
+                    ])
                     ->schema([
                         Grid::make(3)
                             ->schema([
                                 DateTimePicker::make('mark_timestamp')
                                     ->required()
                                     ->label('Marked At')
+                                    ->default(now()->format('M d, Y H:i A'))
                                     ->seconds(false),
                                 Select::make('attendance_status_id')
                                     ->required()

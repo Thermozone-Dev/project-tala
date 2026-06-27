@@ -7,6 +7,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\Meeting;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Log;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -25,8 +26,13 @@ Schedule::call(function () {
         $users = $meeting->attendees->pluck('user')->filter();
 
         foreach ($users as $user) {
-            // Email notification
-            $user->notify(new MeetingReminder($meeting, '30min'));
+            // Email notification (queued - skip if timeout)
+            try {
+                $user->notify(new MeetingReminder($meeting, '30min'));
+            } catch (\Exception $e) {
+                // Skip email if it times out or fails, continue to database notification
+                \Log::warning("Meeting reminder email failed: {$e->getMessage()}");
+            }
 
             // Bell icon notification
             Notification::make()
@@ -55,8 +61,13 @@ Schedule::call(function () {
         $users = $meeting->attendees->pluck('user')->filter();
 
         foreach ($users as $user) {
-            // Email notification
-            $user->notify(new MeetingReminder($meeting, 'daily'));
+            // Email notification (queued - skip if timeout)
+            try {
+                $user->notify(new MeetingReminder($meeting, 'daily'));
+            } catch (\Exception $e) {
+                // Skip email if it times out or fails, continue to database notification
+                Log::warning("Meeting reminder email failed: {$e->getMessage()}");
+            }
 
             // Bell icon notification
             Notification::make()
