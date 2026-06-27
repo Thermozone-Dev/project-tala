@@ -31,13 +31,20 @@ class AttendanceForm
             ->unique('evaluator_id')
             ->keyBy('evaluator_id');
 
-        // 1. Create BOT Meetings tab (default for all board members)
+        // 1. Create BOT Meetings tab (default for all board members, excluding LRPs)
         $bot_members = [];
         foreach($board_members as $member) {
+            $role = $member->evaluator->roles->first()?->name ?? 'Member';
+
+            // Exclude Lead Resource Persons from BOT meetings
+            if (strtolower($role) === 'lead resource person') {
+                continue;
+            }
+
             $bot_members[] = [
                 'id' => $member->evaluator_id,
                 'name' => $member->evaluator->full_name,
-                'role' => $member->evaluator->roles->first()?->name ?? 'Member',
+                'role' => $role,
                 'committee_id' => null,
                 'total_meetings' => 0,
                 'physically_present' => 0,
