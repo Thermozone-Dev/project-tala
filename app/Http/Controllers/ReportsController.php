@@ -61,7 +61,7 @@ class ReportsController extends Controller
                 $pay_load = [
                     'blade_path' => 'pdf.reports.summary-results-of-committee-assessment',
                     'page_orientation' => 'landscape',
-                    'collections' => $this->summary_results_of_committee_assessment_collection($report),
+                    'collections' => $this->summary_of_committee_individual_self_assesment(),
                 ];
 
                 break;
@@ -419,6 +419,189 @@ class ReportsController extends Controller
         }
         return $results->values();
     }
+    /**
+     * Get summary of committee individual self assessment
+     * Returns organized committee self assessment data for reporting
+     */
+    public function summary_of_committee_individual_self_assesment()
+    {
+        // Get detailed self-assessments (all questions with evaluators)
+        $detailedAssessments = $this->committee_individual_self_assessment_collection();
+        $detailedBotAssessments = $this->bot_individual_self_assessment_collection();
+        $allDetailed = $detailedAssessments->concat($detailedBotAssessments);
+
+        // Get summary assessments (aggregated by section and overall)
+        $summaryAssessments = $this->committee_summary_assessment_collection();
+
+        // Organize detailed assessments for display
+        $detailedData = $allDetailed->map(function ($assessment) {
+            return [
+                'member_id' => $assessment['member_id'] ?? null,
+                'member_name' => $assessment['member_name'],
+                'committee_id' => $assessment['committee_id'] ?? null,
+                'committee_name' => $assessment['committee_name'],
+                'sections' => $assessment['sections']
+            ];
+        })->values();
+
+        // Get crosswise summary (sections vs committees matrix)
+        $crosswiseSummary = $this->committee_self_assessment_crosswise_summary($summaryAssessments);
+
+        $result =  [
+            'detailed' => $detailedData->toArray(),
+            'summary' => $summaryAssessments->toArray(),
+            'crosswise' => $crosswiseSummary
+        ];
+        
+        return $result;
+    }
+
+    /**
+     * Get crosswise summary matrix: Separated BOT and Committee sections
+     * BOT sections from Form 8, Committee sections from Form 9
+     */
+    public function committee_self_assessment_crosswise_summary($summaryAssessments)
+    {
+        // Separate BOT and Committee assessments
+        $botAssessment = null;
+        $committeeAssessments = collect();
+
+        foreach ($summaryAssessments as $assessment) {
+            $committeeName = $assessment['committee_name'] ?? 'BOT';
+            if ($committeeName === 'BOT') {
+                $botAssessment = $assessment;
+            } else {
+                $committeeAssessments->push($assessment);
+            }
+        }
+
+        // Build BOT sections matrix
+        $botSections = [];
+        if ($botAssessment && isset($botAssessment['sections_summary'])) {
+            foreach ($botAssessment['sections_summary'] as $section) {
+                $botSections[] = [
+                    'section_id' => $section['section_id'],
+                    'section_title' => $section['section_title'],
+                    'committees' => [[
+                        'committee_id' => 'bot',
+                        'committee_name' => 'BOT',
+                        'average_rating' => $section['average_rating'] ?? 0,
+                        'qualitative' => $section['qualitative'] ?? 'No Rating'
+                    ]],
+                    'section_overall_average' => $section['average_rating'] ?? 0,
+                    'section_overall_qualitative' => $section['qualitative'] ?? 'No Rating'
+                ];
+            }
+        }
+
+        // Build Committee sections matrix: Sections (rows) vs Committees (columns)
+        $allCommitteeSections = collect();
+        $committeeList = collect();
+
+        // Collect all unique sections and committees
+        foreach ($committeeAssessments as $assessment) {
+            $committeeList->push([
+                'committee_id' => $assessment['committee_id'],
+                'committee_name' => $assessment['committee_name']
+            ]);
+
+            if (isset($assessment['sections_summary'])) {
+                foreach ($assessment['sections_summary'] as $section) {
+                    $allCommitteeSections->push([
+                        'section_id' => $section['section_id'],
+                        'section_title' => $section['section_title'],
+                        'committee_id' => $assessment['committee_id'],
+                        'committee_name' => $assessment['committee_name'],
+                        'average_rating' => $section['average_rating'] ?? 0,
+                        'qualitative' => $section['qualitative'] ?? 'No Rating'
+                    ]);
+                }
+            }
+        }
+
+        // Get unique committees and sections
+        $uniqueCommittees = $committeeList->unique('committee_id')->values();
+        $uniqueSectionIds = $allCommitteeSections->unique('section_id')->pluck('section_id', 'section_title')->toArray();
+
+        // Build matrix: section -> committee -> average
+        $committeeSectionsMatrix = [];
+        foreach ($uniqueSectionIds as $sectionTitle => $sectionId) {
+            $sectionRow = [
+                'section_id' => $sectionId,
+                'section_title' => $sectionTitle,
+                'committees' => [],
+                'total_rating' => 0,
+                'average_rating' => 0,
+                'qualitative' => ''
+            ];
+
+            $sectionAverages = [];
+
+            // Get average for each committee in this section
+            foreach ($uniqueCommittees as $committee) {
+                $committeeSection = $allCommitteeSections
+                    ->where('section_id', $sectionId)
+                    ->where('committee_id', $committee['committee_id'])
+                    ->first();
+
+                $average = $committeeSection['average_rating'] ?? 0;
+                $qualitative = $committeeSection['qualitative'] ?? 'No Rating';
+
+                if ($average > 0) {
+                    $sectionAverages[] = $average;
+                }
+
+                $sectionRow['committees'][] = [
+                    'committee_id' => $committee['committee_id'],
+                    'committee_name' => $committee['committee_name'],
+                    'average_rating' => $average,
+                    'qualitative' => $qualitative
+                ];
+            }
+
+            // Calculate section total and average
+            if (!empty($sectionAverages)) {
+                $sectionRow['total_rating'] = array_sum($sectionAverages);
+                $sectionRow['average_rating'] = round(array_sum($sectionAverages) / count($sectionAverages), 2);
+                $sectionRow['qualitative'] = AssesmentComputation::get_assesment_rating_bot_summary($sectionRow['average_rating']);
+            }
+
+            $committeeSectionsMatrix[] = $sectionRow;
+        }
+
+        // Calculate overall consolidated averages
+        $consolidatedData = [
+            'bot_sections' => $botSections,
+            'committee_sections_matrix' => $committeeSectionsMatrix,
+            'committee_list' => $uniqueCommittees->toArray(),
+            'overall_averages' => []
+        ];
+
+        // Per-committee overall average (including BOT)
+        foreach ($summaryAssessments as $assessment) {
+            $committeeName = $assessment['committee_name'] ?? 'BOT';
+            $committeeId = $assessment['committee_id'] ?? 'bot';
+            $overallAverage = $assessment['overall_summary']['average_rating'] ?? 0;
+
+            $consolidatedData['overall_averages'][] = [
+                'committee_id' => $committeeId,
+                'committee_name' => $committeeName,
+                'overall_average_rating' => $overallAverage,
+                'overall_qualitative' => $assessment['overall_summary']['qualitative'] ?? 'No Rating'
+            ];
+        }
+
+        // Grand consolidated average across all committees
+        $allOverallAverages = array_column($consolidatedData['overall_averages'], 'overall_average_rating');
+        if (!empty($allOverallAverages)) {
+            $grandConsolidatedAverage = array_sum($allOverallAverages) / count($allOverallAverages);
+            $consolidatedData['grand_consolidated_average'] = round($grandConsolidatedAverage, 2);
+            $consolidatedData['grand_consolidated_qualitative'] = AssesmentComputation::get_assesment_rating_bot_summary($grandConsolidatedAverage);
+        }
+
+        return $consolidatedData;
+    }
+
     /**
      * Get summary results using individual collection methods
      * Consolidates BOT, CO, and LRP evaluations organized by type
@@ -778,5 +961,249 @@ class ReportsController extends Controller
                 })->toArray()
             ];
         })->values();
+    }
+
+    /**
+     * Get committee individual self assessment results
+     * Form 9: Committee Self Assessment
+     * Organized by: Section -> Questions -> Evaluators with ratings
+     */
+    public function committee_individual_self_assessment_collection()
+    {
+        // Get all Form 9 evaluations (Committee Self Assessment)
+        // Evaluates committees, not individual members
+        $evaluations = TrusteeHasEvaluation::where('evaluation_id', $this->report->evaluationPeriod->id)
+            ->where('ef_id', 9) // Form 9 = Committee Self Assessment
+            ->with([
+                'evaluator', 'evaluationPeriod', 'form', 'committee',
+                'assesment_answer.questionnaire.section',
+                'assesment_answer.ratingScaleValue'
+            ])
+            ->get()
+            ->groupBy('committee_id'); // Group by committee, not member
+
+        return $evaluations->map(function ($committeeEvals) {
+            $committee = $committeeEvals->first()->committee;
+
+            // Flatten all answers with evaluator info
+            $allAnswers = collect();
+            foreach ($committeeEvals as $eval) {
+                foreach ($eval->assesment_answer as $answer) {
+                    $allAnswers->push([
+                        'section_id' => $answer->questionnaire->section->id ?? null,
+                        'section_title' => $answer->questionnaire->section->title ?? 'N/A',
+                        'question_id' => $answer->questionnaire_id,
+                        'question' => $answer->questionnaire->name ?? 'N/A',
+                        'evaluator_id' => $eval->evaluator_id,
+                        'evaluator_name' => $eval->evaluator->full_name ?? 'N/A',
+                        'answer_value' => $answer->ratingScaleValue?->value ?? 0,
+                        'answer_qualitative' => $answer->ratingScaleValue?->qualitative ?? 'No Rating',
+                        'remarks' => $answer->remarks ?? ''
+                    ]);
+                }
+            }
+
+            if ($allAnswers->isEmpty()) {
+                return null;
+            }
+
+            // Group by section, then by question
+            $sections = $allAnswers->groupBy('section_id')->map(function ($sectionAnswers) {
+                $sectionTitle = $sectionAnswers->first()['section_title'];
+
+                // Group questions within section
+                $questions = $sectionAnswers->groupBy('question_id')->map(function ($questionAnswers) {
+                    $firstAnswer = $questionAnswers->first();
+                    $answerValues = $questionAnswers->pluck('answer_value')->filter(fn($v) => $v !== null);
+
+                    return [
+                        'question_id' => $firstAnswer['question_id'],
+                        'question' => $firstAnswer['question'],
+                        'total_rating' => $answerValues->sum(),
+                        'average_rating' => $answerValues->count() > 0 ? round($answerValues->avg(), 2) : 0,
+                        'qualitative_rating' => AssesmentComputation::get_assesment_rating_bot_summary(
+                            $answerValues->count() > 0 ? $answerValues->avg() : 0
+                        ),
+                        'evaluators' => $questionAnswers->map(fn($answer) => [
+                            'evaluator_id' => $answer['evaluator_id'],
+                            'evaluator_name' => $answer['evaluator_name'],
+                            'answer_value' => $answer['answer_value'],
+                            'answer_qualitative' => $answer['answer_qualitative'],
+                            'remarks' => $answer['remarks']
+                        ])->values()->toArray()
+                    ];
+                })->values();
+
+                // Calculate section summary
+                $sectionTotalAnswers = $sectionAnswers->pluck('answer_value')->filter(fn($v) => $v !== null);
+                $sectionAvg = $sectionTotalAnswers->count() > 0 ? $sectionTotalAnswers->avg() : 0;
+
+                return [
+                    'section_id' => $sectionAnswers->first()['section_id'],
+                    'section_title' => $sectionTitle,
+                    'questions' => $questions,
+                    'section_total_rating' => $sectionTotalAnswers->sum(),
+                    'section_average_rating' => $sectionAvg ? round($sectionAvg, 2) : 0,
+                    'section_qualitative' => AssesmentComputation::get_assesment_rating_bot_summary($sectionAvg)
+                ];
+            })->values();
+
+            // Calculate overall summary
+            $allAnswerValues = $allAnswers->pluck('answer_value')->filter(fn($v) => $v !== null);
+            $overallAvg = $allAnswerValues->count() > 0 ? $allAnswerValues->avg() : 0;
+
+            return [
+                'member_id' => null,
+                'member_name' => $committee->name ?? 'Committee Self Assessment',
+                'committee_id' => $committee->id,
+                'committee_name' => $committee->name,
+                'sections' => $sections->toArray(),
+                'overall_total_rating' => $allAnswerValues->sum(),
+                'overall_average_rating' => $overallAvg ? round($overallAvg, 2) : 0,
+                'overall_qualitative' => AssesmentComputation::get_assesment_rating_bot_summary($overallAvg)
+            ];
+        })->filter()->values(); // Remove null entries
+    }
+
+    /**
+     * Get committee self assessment summary
+     * Shows per-section and overall summary for both committee and BOT self assessments
+     */
+    public function committee_summary_assessment_collection()
+    {
+        $individualAssessments = $this->committee_individual_self_assessment_collection();
+
+        // Add BOT self assessments (Form 8)
+        $botAssessments = $this->bot_individual_self_assessment_collection();
+
+        // Merge both collections
+        $allAssessments = $individualAssessments->concat($botAssessments);
+
+        return $allAssessments->map(function ($assessment) {
+            return [
+                'member_id' => $assessment['member_id'],
+                'member_name' => $assessment['member_name'],
+                'committee_id' => isset($assessment['committee_id']) ? $assessment['committee_id'] : 'bot',
+                'committee_name' => isset($assessment['committee_id']) ? $assessment['committee_name'] : 'BOT',
+                'sections_summary' => collect($assessment['sections'])->map(function ($section) {
+                    return [
+                        'section_id' => $section['section_id'],
+                        'section_title' => $section['section_title'],
+                        'total_rating' => $section['section_total_rating'],
+                        'average_rating' => $section['section_average_rating'],
+                        'qualitative' => $section['section_qualitative']
+                    ];
+                })->values()->toArray(),
+                'overall_summary' => [
+                    'total_rating' => $assessment['overall_total_rating'],
+                    'average_rating' => $assessment['overall_average_rating'],
+                    'qualitative' => $assessment['overall_qualitative'],
+                    'final_grade' => AssesmentComputation::get_committee_final_grade($assessment['overall_average_rating'])
+                ]
+            ];
+        })->values();
+    }
+
+    /**
+     * Get BOT individual self assessment results
+     * Form 8: BOT Self Assessment
+     * Evaluates the BOT as a whole, not individual members
+     */
+    public function bot_individual_self_assessment_collection()
+    {
+        // Get all Form 8 evaluations (BOT Self Assessment)
+        $evaluations = TrusteeHasEvaluation::where('evaluation_id', $this->report->evaluationPeriod->id)
+            ->where('ef_id', 8) // Form 8 = BOT Self Assessment
+            ->with([
+                'evaluator', 'evaluationPeriod', 'form',
+                'assesment_answer.questionnaire.section',
+                'assesment_answer.ratingScaleValue'
+            ])
+            ->get();
+
+        if ($evaluations->isEmpty()) {
+            return collect();
+        }
+
+        // Flatten all answers with evaluator info
+        $allAnswers = collect();
+        foreach ($evaluations as $eval) {
+            foreach ($eval->assesment_answer as $answer) {
+                $allAnswers->push([
+                    'section_id' => $answer->questionnaire->section->id ?? null,
+                    'section_title' => $answer->questionnaire->section->title ?? 'N/A',
+                    'question_id' => $answer->questionnaire_id,
+                    'question' => $answer->questionnaire->name ?? 'N/A',
+                    'evaluator_id' => $eval->evaluator_id,
+                    'evaluator_name' => $eval->evaluator->full_name ?? 'N/A',
+                    'answer_value' => $answer->ratingScaleValue?->value ?? 0,
+                    'answer_qualitative' => $answer->ratingScaleValue?->qualitative ?? 'No Rating',
+                    'remarks' => $answer->remarks ?? ''
+                ]);
+            }
+        }
+
+        if ($allAnswers->isEmpty()) {
+            return collect();
+        }
+
+        // Group by section, then by question
+        $sections = $allAnswers->groupBy('section_id')->map(function ($sectionAnswers) {
+            $sectionTitle = $sectionAnswers->first()['section_title'];
+
+            // Group questions within section
+            $questions = $sectionAnswers->groupBy('question_id')->map(function ($questionAnswers) {
+                $firstAnswer = $questionAnswers->first();
+                $answerValues = $questionAnswers->pluck('answer_value')->filter(fn($v) => $v !== null);
+
+                return [
+                    'question_id' => $firstAnswer['question_id'],
+                    'question' => $firstAnswer['question'],
+                    'total_rating' => $answerValues->sum(),
+                    'average_rating' => $answerValues->count() > 0 ? round($answerValues->avg(), 2) : 0,
+                    'qualitative_rating' => AssesmentComputation::get_assesment_rating_bot_summary(
+                        $answerValues->count() > 0 ? $answerValues->avg() : 0
+                    ),
+                    'evaluators' => $questionAnswers->map(fn($answer) => [
+                        'evaluator_id' => $answer['evaluator_id'],
+                        'evaluator_name' => $answer['evaluator_name'],
+                        'answer_value' => $answer['answer_value'],
+                        'answer_qualitative' => $answer['answer_qualitative'],
+                        'remarks' => $answer['remarks']
+                    ])->values()->toArray()
+                ];
+            })->values();
+
+            // Calculate section summary
+            $sectionTotalAnswers = $sectionAnswers->pluck('answer_value')->filter(fn($v) => $v !== null);
+            $sectionAvg = $sectionTotalAnswers->count() > 0 ? $sectionTotalAnswers->avg() : 0;
+
+            return [
+                'section_id' => $sectionAnswers->first()['section_id'],
+                'section_title' => $sectionTitle,
+                'questions' => $questions,
+                'section_total_rating' => $sectionTotalAnswers->sum(),
+                'section_average_rating' => $sectionAvg ? round($sectionAvg, 2) : 0,
+                'section_qualitative' => AssesmentComputation::get_assesment_rating_bot_summary($sectionAvg)
+            ];
+        })->values();
+
+        // Calculate overall summary
+        $allAnswerValues = $allAnswers->pluck('answer_value')->filter(fn($v) => $v !== null);
+        $overallAvg = $allAnswerValues->count() > 0 ? $allAnswerValues->avg() : 0;
+
+        // Return single item collection for BOT self-assessment (evaluating BOT as a whole)
+        return collect([
+            [
+                'member_id' => null,
+                'member_name' => 'Board of Trustees',
+                'committee_id' => null,
+                'committee_name' => 'BOT',
+                'sections' => $sections->toArray(),
+                'overall_total_rating' => $allAnswerValues->sum(),
+                'overall_average_rating' => $overallAvg ? round($overallAvg, 2) : 0,
+                'overall_qualitative' => AssesmentComputation::get_assesment_rating_bot_summary($overallAvg)
+            ]
+        ]);
     }
 }

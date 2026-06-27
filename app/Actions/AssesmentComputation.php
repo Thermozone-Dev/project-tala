@@ -115,6 +115,22 @@ class AssesmentComputation
 
     }
 
+    /**
+     * Get committee final grade (qualitative only)
+     * For committee self assessments with no attendance component
+     *
+     * @param float $average_rating The average rating value
+     * @return array Array with quantitative and qualitative rating
+     */
+    public static function get_committee_final_grade($average_rating = 0)
+    {
+        $qualitative = self::get_assesment_rating_bot_summary($average_rating);
+
+        return [
+            'quantitative' => round($average_rating, 2),
+            'qualitative' => $qualitative
+        ];
+    }
 
 
 
