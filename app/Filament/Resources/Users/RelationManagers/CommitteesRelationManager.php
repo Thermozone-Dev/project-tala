@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\BoardOfTrustees\RelationManagers;
+namespace App\Filament\Resources\Users\RelationManagers;
 
-use App\Filament\Resources\BoardOfTrustees\Pages\EditBoardOfTrustee;
+use App\Filament\Resources\Users\Pages\EditUser;
 use App\Models\Committee;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -34,7 +34,7 @@ class CommitteesRelationManager extends RelationManager
             ])
             ->recordActions([
                 Action::make('toggle_active')
-                    ->visible(fn () => $this->getPageClass() == EditBoardOfTrustee::class)
+                    ->visible(fn () => $this->getPageClass() == EditUser::class)
                     ->label(fn ($record) => $record->is_active ? 'Deactivate' : 'Activate')
                     ->successNotificationTitle(fn ($record) => $record->is_active ? 'Deactivated' : 'Activated')
                     ->color(fn ($record) => $record->is_active ? 'danger' : 'success')

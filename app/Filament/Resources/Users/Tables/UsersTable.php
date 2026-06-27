@@ -20,7 +20,12 @@ class UsersTable
                 TextColumn::make('full_name')
                     ->label('Full Name')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable([
+                        'first_name',
+                        'middle_name',
+                        'last_name',
+                        'suffix',
+                    ]),
                 TextColumn::make('email')
                     ->label('Email address')
                     ->searchable(),

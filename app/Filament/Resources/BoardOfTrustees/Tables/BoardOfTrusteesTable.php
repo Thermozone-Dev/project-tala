@@ -17,7 +17,12 @@ class BoardOfTrusteesTable
             ->columns([
                 TextColumn::make('full_name')
                     ->label('Trustee')
-                    ->searchable(),
+                    ->searchable([
+                        'first_name',
+                        'middle_name',
+                        'last_name',
+                        'suffix',
+                    ]),
 
                 TextColumn::make('roles.name')
                     ->badge()

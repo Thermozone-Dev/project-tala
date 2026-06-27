@@ -77,6 +77,7 @@ class AdminPanelProvider extends PanelProvider
             ->url(fn(): string => route('filament.admin.auth.profile'));
 
         return $panel
+            ->globalSearch(false)
             ->databaseNotifications()
             ->darkMode(false)
             ->default()
