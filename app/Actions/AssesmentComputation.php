@@ -81,14 +81,16 @@ class AssesmentComputation
     public static function calculate_performance_summary($attendance_avg = 0, $assesment_avg = 0){
         // Total: 70% assessment + 30% attendance
         $total_quantitative = null;
-        if ($assesment_avg !== null && $attendance_avg !== null) {
-            $total_quantitative = ($assesment_avg * 0.70) + ($attendance_avg * 0.30);
-        }
+        $assesment_grade = ($assesment_avg ?? 0) * 0.70;
+        $attendance_grade = ($attendance_avg ?? 0) * 0.30;
+        $total_quantitative = $assesment_grade + $attendance_grade;
         $total_qualitative = self::get_assesment_rating_bot_summary($total_quantitative);
 
         return [
             'quantitative' => $total_quantitative,
             'qualitative' => $total_qualitative,
+            'assesment_grade' => $assesment_grade ?? 0,
+            'attendance_grade' => $attendance_grade ?? 0,
         ];
     }
 
@@ -113,6 +115,22 @@ class AssesmentComputation
 
     }
 
+    /**
+     * Get committee final grade (qualitative only)
+     * For committee self assessments with no attendance component
+     *
+     * @param float $average_rating The average rating value
+     * @return array Array with quantitative and qualitative rating
+     */
+    public static function get_committee_final_grade($average_rating = 0)
+    {
+        $qualitative = self::get_assesment_rating_bot_summary($average_rating);
+
+        return [
+            'quantitative' => round($average_rating, 2),
+            'qualitative' => $qualitative
+        ];
+    }
 
 
 

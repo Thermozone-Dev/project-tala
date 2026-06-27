@@ -10,7 +10,8 @@
         <link rel="stylesheet" href="{{ base_path('public/css/custom.css') }}" />
     </head>
     <body>
-        @foreach($data['collections'] as $collection)
+        @if (isset($data['collections']))
+            @foreach($data['collections'] as $collection)
             <div class="container-fluid">
                 <div class="page">
                     <div class="row" style="white-space:nowrap;">
@@ -28,8 +29,8 @@
                                 <thead class="header-color">
                                 <tr>
                                     <th rowspan="2" style="width: 3%;">#</th>
-                                    <th rowspan="2" style="width: 37%;">{{ $collection['header'] }}</th>
-                                    <th colspan="2" style="width: 20%;">{!! $collection['header2'] !!}</th>
+                                    <th rowspan="2" style="width: 37%;">{{ $collection['code'] === 'BOT' ? 'Member Board of Trustees' : ($collection['code'] === 'CO' ? 'Corporate Officers & Role' : 'Lead Resource Person') }}</th>
+                                    <th colspan="2" style="width: 20%;">Evaluation Rating<br>(70%)</th>
                                     <th colspan="2" style="width: 20%;">Attendance Rating<br>(30%)</th>
                                     <th colspan="2" style="width: 20%;">TOTAL</th>
                                 </tr>
@@ -43,43 +44,72 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                    @if ($collection['group_by_committee'])
+                                    {{-- LRP: grouped by committee --}}
+                                    @if ($collection['code'] === 'LRP')
                                         @php $no = 1; @endphp
-                                        @foreach ($collection['members'] as $committee)
-                                            <tr class="header-color">
-                                                <th colspan="8" class="text-left">&emsp;{{ $committee['committee_name'] }}</th>
+                                        @if (isset($collection['members']) && is_array($collection['members']) && count($collection['members']) > 0)
+                                            @foreach ($collection['members'] as $committee)
+                                                <tr class="header-color">
+                                                    <th colspan="8" class="text-left">&emsp;{{ $committee['committee_name'] ?? 'Unknown Committee' }}</th>
+                                                </tr>
+                                                @if (isset($committee['members']) && is_array($committee['members']))
+                                                    @foreach ($committee['members'] as $member)
+                                                        <tr>
+                                                            <td class="text-center">{{$no++}}</td>
+                                                            <td class="text-wrap">{{ isset($member['member_name']) ? $member['member_name'] : 'N/A' }}</td>
+                                                            <td class="text-center">{{ (isset($member['rating_average']) && $member['rating_average']) ? number_format($member['rating_average'], 2) : '-' }}</td>
+                                                            <td class="text-center">{{ isset($member['total_qualitative']) ? $member['total_qualitative'] : '-' }}</td>
+                                                            <td class="text-center">{{ (isset($member['attendance_avg_rating']) && $member['attendance_avg_rating']) ? number_format($member['attendance_avg_rating'], 2) : '-' }}</td>
+                                                            <td class="text-center">{{ isset($member['attendance_qualitative']) ? $member['attendance_qualitative'] : '-' }}</td>
+                                                            <td class="text-center">{{ (isset($member['final_grade_quantitative']) && $member['final_grade_quantitative']) ? number_format($member['final_grade_quantitative'], 2) : '-' }}</td>
+                                                            <td class="text-center">{{ isset($member['final_grade_qualitative']) ? $member['final_grade_qualitative'] : '-' }}</td>
+                                                        </tr>
+                                                    @endforeach
+                                                @endif
+                                            @endforeach
+                                        @else
+                                            <tr>
+                                                <td colspan="8" class="text-center">No data available</td>
                                             </tr>
-                                            @foreach ($committee['members'] as $member)
+                                        @endif
+                                    {{-- BOT / CO: flat list --}}
+                                    @else
+                                        @if (isset($collection['members']) && is_array($collection['members']) && count($collection['members']) > 0)
+                                            @foreach ($collection['members'] as $index => $member)
                                                 <tr>
-                                                    <td class="text-center">{{$no++}}</td>
-                                                    <td class="text-wrap">{{$member['name']}}</td>
-                                                    <td class="text-center">{{ $member['assessment_quantitative'] ? number_format($member['assessment_quantitative'],2) : ''}}</td>
-                                                    <td class="text-center">{{$member['assessment_qualitative']}}</td>
-                                                    <td class="text-center">{{ $member['attendance_quantitative'] ? number_format($member['attendance_quantitative'],2) : ''}}</td>
-                                                    <td class="text-center">{{$member['attendance_qualitative']}}</td>
-                                                    <td class="text-center">{{ $member['total_quantitative'] ? number_format($member['total_quantitative'],2) : ''}}</td>
-                                                    <td class="text-center">{{$member['total_qualitative']}}</td>
+                                                    <td class="text-center">{{$index+1}}</td>
+                                                    <td class="text-wrap">
+                                                        {{ isset($member['member_name']) ? $member['member_name'] : 'N/A' }}
+                                                        @if(isset($member['role']) && $member['role'])
+                                                            <br><small><i>{{ $member['role'] }}</i></small>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center">{{ (isset($member['rating_average']) && $member['rating_average']) ? number_format($member['rating_average'], 2) : '-' }}</td>
+                                                    <td class="text-center">{{ isset($member['total_qualitative']) ? $member['total_qualitative'] : '-' }}</td>
+                                                    <td class="text-center">{{ (isset($member['attendance_avg_rating']) && $member['attendance_avg_rating']) ? number_format($member['attendance_avg_rating'], 2) : '-' }}</td>
+                                                    <td class="text-center">{{ isset($member['attendance_qualitative']) ? $member['attendance_qualitative'] : '-' }}</td>
+                                                    <td class="text-center">{{ (isset($member['final_grade_quantitative']) && $member['final_grade_quantitative']) ? number_format($member['final_grade_quantitative'], 2) : '-' }}</td>
+                                                    <td class="text-center">{{ isset($member['final_grade_qualitative']) ? $member['final_grade_qualitative'] : '-' }}</td>
                                                 </tr>
                                             @endforeach
-                                        @endforeach
-                                    @else
-                                        {{-- BOT / CO: flat list --}}
-                                        @foreach ($collection['members'] as $index => $member)
+                                        @else
                                             <tr>
-                                                <td class="text-center">{{$index+1}}</td>
-                                                <td class="text-wrap">{{$member['name']}}</td>
-                                                <td class="text-center">{{ $member['assessment_quantitative'] ? number_format($member['assessment_quantitative'],2) : ''}}</td>
-                                                <td class="text-center">{{$member['assessment_qualitative']}}</td>
-                                                <td class="text-center">{{ $member['attendance_quantitative'] ? number_format($member['attendance_quantitative'],2) : ''}}</td>
-                                                <td class="text-center">{{$member['attendance_qualitative']}}</td>
-                                                <td class="text-center">{{ $member['total_quantitative'] ? number_format($member['total_quantitative'],2) : ''}}</td>
-                                                <td class="text-center">{{$member['total_qualitative']}}</td>
+                                                <td colspan="8" class="text-center">No data available</td>
                                             </tr>
-                                        @endforeach
+                                        @endif
                                     @endif
                                 </tbody>
                             </table>
-                            <p>{!! $collection['weight_distribution'] !!}</p>
+                            <p style="margin-top: 10px;">
+                                <span style="color: red">*</span>
+                                @if($collection['code'] === 'BOT')
+                                    Weight Distribution is 70% Evaluation Rating and 30% Attendance
+                                @elseif($collection['code'] === 'CO')
+                                    Weight Distribution is 70% Evaluation Rating and 30% Attendance
+                                @else
+                                    Weight Distribution is 70% Committee Members' Rating and 30% Attendance
+                                @endif
+                            </p>
                         </div>
                     </div>
 
@@ -107,21 +137,39 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($data['rating_scales'] as $rating_scale)
-                                        <tr class="font-bold">
-                                            <td class="text-center">{{ $rating_scale['assessment_quantitative'] }}</td>
-                                            <td class="text-center">{{ $rating_scale['assessment_qualitative'] }}</td>
-                                            <td colspan="2" class="text-center">{{ $rating_scale['attendance_name'] }}</td>
-                                            <td class="text-center">{{ $rating_scale['attendance_quantitative'] }}</td>
-                                            <td class="text-center">{{ $rating_scale['attendance_qualitative'] }}</td>
+                                    @if (isset($data['rating_scales']) && is_array($data['rating_scales']))
+                                        @foreach ($data['rating_scales'] as $rating_scale)
+                                            <tr class="font-bold">
+                                                <td class="text-center">{{ isset($rating_scale['assessment_quantitative']) ? $rating_scale['assessment_quantitative'] : '-' }}</td>
+                                                <td class="text-center">{{ isset($rating_scale['assessment_qualitative']) ? $rating_scale['assessment_qualitative'] : '-' }}</td>
+                                                <td colspan="2" class="text-center">{{ isset($rating_scale['attendance_name']) ? $rating_scale['attendance_name'] : '-' }}</td>
+                                                <td class="text-center">{{ isset($rating_scale['attendance_quantitative']) ? $rating_scale['attendance_quantitative'] : '-' }}</td>
+                                                <td class="text-center">{{ isset($rating_scale['attendance_qualitative']) ? $rating_scale['attendance_qualitative'] : '-' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="6" class="text-center">No rating scales available</td>
                                         </tr>
-                                    @endforeach
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-        @endforeach
+            @endforeach
+        @else
+            <div class="container-fluid">
+                <div class="page">
+                    <div class="row">
+                        <div class="col-xs-12 text-center">
+                            <h2>No data available</h2>
+                            <p>No collections data found for this report.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </body>
 </html>
