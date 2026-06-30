@@ -19,7 +19,7 @@ class EvaluationC6Seeder extends Seeder
         $c6 = EvaluationForm::create([
             "pdf_template_id" => 2,
             "shortcode" => "C6",
-            "title" => "BOT EVALUATION FORM C.6 - Corporate Comptroller",
+            "title" => "BOT EVALUATION FORM C.6 - Comptroller",
             "created_at" => now(),
             "updated_at" => now(),
         ]);

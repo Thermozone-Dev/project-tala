@@ -8,6 +8,8 @@ use App\Models\QuestionaireAnswer;
 use App\Models\OtherCommentAnswer;
 use App\Models\AttendanceAnswer;
 use App\Models\Report;
+use App\Models\Meeting;
+use App\Models\MeetingAttendee;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -57,6 +59,7 @@ class ResetEvaluationPeriod extends Command
         try {
             DB::transaction(function () use ($evaluationId) {
                 $trusteeEvals = TrusteeHasEvaluation::where('evaluation_id', $evaluationId)->pluck('id');
+                $meetings = Meeting::where('evaluation_period_id', $evaluationId)->pluck('id');
 
                 $this->line('Deleting related data...');
 
@@ -69,13 +72,17 @@ class ResetEvaluationPeriod extends Command
                 AttendanceAnswer::where('evaluation_period_id', $evaluationId)->delete();
                 $this->line('✓ Deleted attendance answers');
 
+                MeetingAttendee::whereIn('meeting_id', $meetings)->delete();
+                $this->line('✓ Deleted meeting attendees');
+
+                Meeting::where('evaluation_period_id', $evaluationId)->delete();
+                $this->line('✓ Deleted meetings');
+
                 TrusteeHasEvaluation::where('evaluation_id', $evaluationId)->forceDelete();
                 $this->line('✓ Deleted trustee evaluations');
 
-
                 Report::where('evaluation_period_id', $evaluationId)->forceDelete();
                 $this->line('✓ Deleted connected reports');
-
 
                 EvaluationPeriod::find($evaluationId)->forceDelete();
                 $this->line('✓ Deleted evaluation period');
@@ -117,11 +124,16 @@ class ResetEvaluationPeriod extends Command
                 AttendanceAnswer::query()->delete();
                 $this->line('✓ Deleted all attendance answers');
 
+                MeetingAttendee::query()->delete();
+                $this->line('✓ Deleted all meeting attendees');
+
+                Meeting::query()->delete();
+                $this->line('✓ Deleted all meetings');
+
                 TrusteeHasEvaluation::query()->forceDelete();
                 $this->line('✓ Deleted all trustee evaluations');
 
                 Report::query()->forceDelete();
-
                 $this->line('✓ Deleted all reports');
 
                 EvaluationPeriod::query()->forceDelete();

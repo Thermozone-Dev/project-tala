@@ -109,8 +109,8 @@ class CreateEvaluationPeriod extends CreateRecord
                 $role_priority = [
                     'trustee' => 1,
                     'corporate officer' => 2,
-                    'corporate treasurer' => 3,
-                    'corporate comptroller' => 4,
+                    'treasurer' => 3,
+                    'comptroller' => 4,
                     'corporate secretary' => 5,
                     'lead resource person' => 6,
                     'vice chairman' => 7,

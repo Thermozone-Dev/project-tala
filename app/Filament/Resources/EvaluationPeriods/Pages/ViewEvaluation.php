@@ -21,6 +21,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -29,6 +30,7 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Override;
 use Spatie\Activitylog\Models\Activity as ActivityLogModel;
 
 class ViewEvaluation extends Page implements HasForms, HasTable
@@ -126,14 +128,27 @@ class ViewEvaluation extends Page implements HasForms, HasTable
         return [
             Grid::make(1)->schema(AssessmentEvaluationFields::run($view_record->ef_id,$this->record_id,$this))->disabled(fn () => ($eval_status ) ? false : true),
             Grid::make(1)->schema(OtherCommentsFields::run($view_record->ef_id,$this->record_id))->disabled(fn () => ($eval_status ) ? false : true),
-            Grid::make(1)->schema($actions)
+            Grid::make(2)->extraAttributes([
+                'class' => 'flex m-0 p-0'
+            ])->schema($actions),
         ];
     }
+
+
 
 
     public function formAction(): array
     {
         return [
+
+         Action::make('back')
+                ->label('Back')
+                ->color('info')
+                ->url( function(){
+                        $record = TrusteeHasEvaluation::find($this->record_id);
+                        return $this->getResource()::getUrl('evaluation-trustee',['record' => $record->evaluation_id, 'evaluator_id' => $record->evaluator_id]);
+                })
+                ->icon(Heroicon::ArrowLeftCircle),
 
         Action::make('submit_eval')
                 ->visible(function (){
@@ -172,6 +187,10 @@ class ViewEvaluation extends Page implements HasForms, HasTable
                                 ->title('Evaluation successfully marked as submitted')
                                 ->body('The evaluation has been successfully completed and submitted.')
                                 ->send();
+
+                            $record = TrusteeHasEvaluation::find($this->record_id);
+                            redirect($this->getResource()::getUrl('evaluation-trustee',['record' => $record->evaluation_id, 'evaluator_id' => $record->evaluator_id]));
+
                         }else{
                             Notification::make()
                                 ->danger()
