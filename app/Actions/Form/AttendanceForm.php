@@ -25,7 +25,7 @@ class AttendanceForm
             ->with('evaluator')
             ->get()
             ->filter(function($assignment) use ($excluded_roles) {
-                $role = $assignment->evaluator->roles->first()?->name ?? 'Other';
+                $role = $assignment?->evaluator?->roles->first()?->name ?? 'Other';
                 return !in_array(strtolower($role), $excluded_roles);
             })
             ->unique('evaluator_id')

@@ -173,7 +173,7 @@ class ReportsController extends Controller
         $coSummary = [
             'id' => 2,
             'code' => 'CO',
-            'name' => 'Corporate Officers',
+            'name' => 'Corporate Secretary',
             'members' => $corporateOfficers->values()->toArray()
         ];
 
@@ -370,9 +370,8 @@ class ReportsController extends Controller
      */
     public function indiviual_results_of_rating_co_and_lrps_collection($report){
         $roles = [
-            'Corporate Officer',
-            'Corporate Treasurer',
-            'Corporate Comptroller',
+            'Treasurer',
+            'Comptroller',
             'Corporate Secretary',
             'Lead Resource Person',
             'EVP-GM'
@@ -452,7 +451,7 @@ class ReportsController extends Controller
             'summary' => $summaryAssessments->toArray(),
             'crosswise' => $crosswiseSummary
         ];
-        
+
         return $result;
     }
 
