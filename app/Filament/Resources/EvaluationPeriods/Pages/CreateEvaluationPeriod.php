@@ -67,18 +67,23 @@ class CreateEvaluationPeriod extends CreateRecord
                     ]);
                 }
 
-                // 2. Committee assignments: Form 9 for all + Form 7 (C7) for evaluating LRPs
-                $committees = Committee::with('committee_has_trustees.role')->get();
+                // 2. Committee assignments: Form 9 for board members only + Form 7 (C7) for evaluating LRPs
+                $board_member_roles = array_map('strtolower', get_board_members());
+                $committees = Committee::with('committee_has_trustees.role', 'committee_has_trustees.user.roles')->get();
                 foreach ($committees as $committee) {
-                    $committee_members = $committee->committee_has_trustees
-                        ->groupBy('user_id')
-                        ->map(fn($items) => $items->first());
+                    // Only get board member evaluators using get_board_members()
+                    $board_member_evaluators = $committee->committee_has_trustees
+                        ->filter(function($member) use ($board_member_roles) {
+                            $role_name = strtolower($member->role?->name ?? $member->user?->roles->first()?->name ?? '');
+                            return in_array($role_name, $board_member_roles);
+                        })
+                        ->unique('user_id');
 
                     // Find all LRPs in this committee
                     $lrps = $committee->committee_has_trustees
                         ->filter(fn($member) => strtolower($member->role->name) === 'lead resource person');
 
-                    foreach ($committee_members as $evaluator) {
+                    foreach ($board_member_evaluators as $evaluator) {
                         // Form 9: Committee Self Assessment for all members
                         $this->record->assignments()->create([
                             'ef_id' => 9,

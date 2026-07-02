@@ -27,8 +27,12 @@ class EvaluationStatsOverview extends StatsOverviewWidget
         $baseQuery = TrusteeHasEvaluation::where('evaluation_id', $activeEvaluationPeriod->id);
 
         // Filter by role: executives see all, non-executives see only their own
+        $is_evaluator = false;
         if (!get_executive_role(auth()->user()->roles->first()?->name)) {
             $baseQuery->where('evaluator_id', auth()->id());
+
+            $is_evaluator = $baseQuery->where('evaluator_id', auth()->id())->first();
+
         }
 
         $totalEvaluations = (clone $baseQuery)->count();
@@ -55,6 +59,7 @@ class EvaluationStatsOverview extends StatsOverviewWidget
 
             Stat::make('Total Evaluations', $totalEvaluations)
                 ->description('Across all forms')
+                ->visible(fn ($is_evaluator) => ($is_evaluator) ? false : true)
                 ->descriptionIcon('heroicon-m-document-text')
                 ->color('info')
                 ->url($viewUrl),
