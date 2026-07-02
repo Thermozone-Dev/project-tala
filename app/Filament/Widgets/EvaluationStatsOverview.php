@@ -12,6 +12,13 @@ use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 class EvaluationStatsOverview extends StatsOverviewWidget
 {
     use HasPageShield;
+
+    public static function canView(): bool
+    {
+        // Check if the user has a specific permission using Spatie or standard auth
+        return auth()->user()->can('View:EvaluationStatsOverview');
+    }
+
     protected function getStats(): array
     {
         $activeEvaluationPeriod = EvaluationPeriod::where('status_id', 1)->first();

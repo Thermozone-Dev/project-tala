@@ -13,6 +13,13 @@ class EvaluationStatusChart extends ChartWidget
 
     protected static ?int $sort = 2;
 
+    public static function canView(): bool
+    {
+        // Check if the user has a specific permission using Spatie or standard auth
+        return auth()->user()->can('View:EvaluationStatusChart');
+    }
+
+
     public function getHeading(): ?string
     {
         return 'Evaluation Status Distribution';

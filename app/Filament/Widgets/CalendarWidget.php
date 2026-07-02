@@ -20,6 +20,14 @@ class CalendarWidget extends BaseCalendarWidget
 
     protected bool $eventClickEnabled = true;
 
+
+    public static function canView(): bool
+    {
+        // Check if the user has a specific permission using Spatie or standard auth
+        return auth()->user()->can('View:CalendarWidget');
+    }
+
+
     public function getEvents(FetchInfo $info): Collection|Builder|array
     {
         $events = [];
