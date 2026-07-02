@@ -3,6 +3,7 @@
 namespace App\Actions\Form;
 
 use App\Models\Committee;
+use App\Models\TrusteeHasEvaluation;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
@@ -17,24 +18,22 @@ class AttendanceForm
 
     public function handle($evaluation_period = null , $trustees = [])
     {
-        $excluded_roles = ['super admin', 'secretariat'];
         $committees = [];
 
-        // Get all unique board members from assignments (excluding Super Admin and Secretariat)
-        $board_members = $evaluation_period->assignments()
-            ->with('evaluator')
+        // 1. Create BOT Meetings tab - Get unique BOT members (where committee_id is null)
+        $bot_evaluations = TrusteeHasEvaluation::where('evaluation_id', $evaluation_period->id)
+            ->whereNull('committee_id')
+            ->with('member.roles')
             ->get()
-            ->filter(function($assignment) use ($excluded_roles) {
-                $role = $assignment?->evaluator?->roles->first()?->name ?? 'Other';
-                return !in_array(strtolower($role), $excluded_roles);
-            })
-            ->unique('evaluator_id')
-            ->keyBy('evaluator_id');
+            ->unique('member_id');
 
-        // 1. Create BOT Meetings tab (default for all board members, excluding LRPs)
         $bot_members = [];
-        foreach($board_members as $member) {
-            $role = $member->evaluator->roles->first()?->name ?? 'Member';
+        foreach($bot_evaluations as $evaluation) {
+            $member = $evaluation->member;
+            if(!$member){
+                continue;
+            }
+            $role = $member?->roles?->first()?->name ?? 'Member';
 
             // Exclude Lead Resource Persons from BOT meetings
             if (strtolower($role) === 'lead resource person') {
@@ -42,8 +41,8 @@ class AttendanceForm
             }
 
             $bot_members[] = [
-                'id' => $member->evaluator_id,
-                'name' => $member->evaluator->full_name,
+                'id' => $member->id,
+                'name' => $member->full_name,
                 'role' => $role,
                 'committee_id' => null,
                 'total_meetings' => 0,
@@ -62,27 +61,33 @@ class AttendanceForm
             ];
         }
 
-        // 2. Create tabs for each committee
-        $all_committees = Committee::with('committee_has_trustees.user')->get();
+        // 2. Create tabs for each committee - Get unique committee-specific members from evaluations
+        $all_committees = Committee::get();
 
         foreach($all_committees as $committee) {
-            $committee_members = [];
+            $committee_evaluations = TrusteeHasEvaluation::where('evaluation_id', $evaluation_period->id)
+                ->where('committee_id', $committee->id)
+                ->with('member.roles')
+                ->get()
+                ->unique('member_id');
 
-            foreach($committee->committee_has_trustees as $trustee) {
-                // Only include members who are in the board_members list
-                if (isset($board_members[$trustee->user_id])) {
-                    $committee_members[] = [
-                        'id' => $trustee->user_id,
-                        'name' => $trustee->user->full_name,
-                        'role' => $trustee->user->roles->first()?->name ?? 'Member',
-                        'committee_id' => $committee->id,
-                        'total_meetings' => 0,
-                        'physically_present' => 0,
-                        'considered_present' => 0,
-                        'total_present' => 0,
-                        'attendance_rating_scale_values_id' => 0,
-                    ];
+            $committee_members = [];
+            foreach($committee_evaluations as $evaluation) {
+                $member = $evaluation->member;
+                if(!$member){
+                    continue;
                 }
+                $committee_members[] = [
+                    'id' => $member->id,
+                    'name' => $member->full_name,
+                    'role' => $member->roles->first()?->name ?? 'Member',
+                    'committee_id' => $committee->id,
+                    'total_meetings' => 0,
+                    'physically_present' => 0,
+                    'considered_present' => 0,
+                    'total_present' => 0,
+                    'attendance_rating_scale_values_id' => 0,
+                ];
             }
 
             if (!empty($committee_members)) {

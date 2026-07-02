@@ -13,6 +13,12 @@ class EvaluatorsPerformanceChart extends ChartWidget
 
     protected static ?int $sort = 3;
 
+    public static function canView(): bool
+    {
+        // Check if the user has a specific permission using Spatie or standard auth
+        return auth()->user()->can('View:EvaluatorsPerformanceChart');
+    }
+
     public function getHeading(): ?string
     {
         return 'Evaluators Performance';

@@ -12,6 +12,13 @@ use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 class EvaluationStatsOverview extends StatsOverviewWidget
 {
     use HasPageShield;
+
+    public static function canView(): bool
+    {
+        // Check if the user has a specific permission using Spatie or standard auth
+        return auth()->user()->can('View:EvaluationStatsOverview');
+    }
+
     protected function getStats(): array
     {
         $activeEvaluationPeriod = EvaluationPeriod::where('status_id', 1)->first();
@@ -27,8 +34,12 @@ class EvaluationStatsOverview extends StatsOverviewWidget
         $baseQuery = TrusteeHasEvaluation::where('evaluation_id', $activeEvaluationPeriod->id);
 
         // Filter by role: executives see all, non-executives see only their own
+        $is_evaluator = false;
         if (!get_executive_role(auth()->user()->roles->first()?->name)) {
             $baseQuery->where('evaluator_id', auth()->id());
+
+            $is_evaluator = $baseQuery->where('evaluator_id', auth()->id())->first();
+
         }
 
         $totalEvaluations = (clone $baseQuery)->count();
@@ -55,6 +66,7 @@ class EvaluationStatsOverview extends StatsOverviewWidget
 
             Stat::make('Total Evaluations', $totalEvaluations)
                 ->description('Across all forms')
+                ->visible(fn ($is_evaluator) => ($is_evaluator) ? false : true)
                 ->descriptionIcon('heroicon-m-document-text')
                 ->color('info')
                 ->url($viewUrl),
