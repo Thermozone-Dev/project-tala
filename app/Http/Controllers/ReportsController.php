@@ -127,8 +127,8 @@ class ReportsController extends Controller
             $user = User::find($member['member_id']);
             $roles = $user->roles()->pluck('name')->toArray();
 
-            // Check if LRP
-            if (in_array('Lead Resource Person', $roles)) {
+            // Check if LRP or SVP-Operation (both are Form C7 - committee-only roles)
+            if (in_array('Lead Resource Person', $roles) || in_array('SVP-Operation', $roles)) {
                 $lrps->push([
                     'member_id' => $member['member_id'],
                     'member_name' => $member['member_name'],
@@ -257,9 +257,22 @@ class ReportsController extends Controller
             $rating_average = $questionGroups->avg('average_rating');
 
             $total_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($rating_average);
-            // Pass committee_id if available (for CO/LRP reports filtered by committee)
+
+            // For SVP-Operations: get attendance for both committee and BOT
+            // For others: get attendance for their specific context only
+            $user = User::find($member['member_id']);
+            $user_roles = $user->roles()->pluck('name')->toArray();
+            $is_svp = in_array('SVP-Operation', $user_roles);
+
             $committee_id = isset($member['committee_id']) ? $member['committee_id'] : null;
-            $attendance = $this->get_trustee_attendance_evaluation($member['member_id'], $committee_id);
+
+            if ($is_svp && $committee_id !== null) {
+                // For SVP-Operations in committee context: get BOT attendance (not committee-specific)
+                $attendance = $this->get_trustee_attendance_evaluation($member['member_id'], null);
+            } else {
+                // For others: get attendance for their specific context
+                $attendance = $this->get_trustee_attendance_evaluation($member['member_id'], $committee_id);
+            }
             $attendance_rating = $attendance['summary']['avg_rating'] ?? 0;
             $final_grade = AssesmentComputation::calculate_performance_summary($attendance_rating,$rating_average);
 
@@ -374,6 +387,7 @@ class ReportsController extends Controller
             'Comptroller',
             'Corporate Secretary',
             'Lead Resource Person',
+            'SVP-Operation',
             'EVP-GM'
         ];
 
@@ -650,8 +664,8 @@ class ReportsController extends Controller
             $user = User::find($member['member_id']);
             $roles = $user->roles()->pluck('name')->toArray();
 
-            // Check if LRP
-            if (in_array('Lead Resource Person', $roles)) {
+            // Check if LRP or SVP-Operation (both are Form C7 - committee-only roles)
+            if (in_array('Lead Resource Person', $roles) || in_array('SVP-Operation', $roles)) {
                 $lrps->push([
                     'member_id' => $member['member_id'],
                     'member_name' => $member['member_name'],
