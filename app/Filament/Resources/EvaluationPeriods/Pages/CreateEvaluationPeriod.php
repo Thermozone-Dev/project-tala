@@ -79,9 +79,10 @@ class CreateEvaluationPeriod extends CreateRecord
                         })
                         ->unique('user_id');
 
-                    // Find all LRPs in this committee
-                    $lrps = $committee->committee_has_trustees
-                        ->filter(fn($member) => strtolower($member->role->name) === 'lead resource person');
+                    // Find all LRPs and SVP-Operations in this committee (roles only evaluated within their committees)
+                    $committee_only_roles = ['lead resource person', 'svp-operation'];
+                    $committee_only_members = $committee->committee_has_trustees
+                        ->filter(fn($member) => in_array(strtolower($member->role->name), $committee_only_roles));
 
                     foreach ($board_member_evaluators as $evaluator) {
                         // Form 9: Committee Self Assessment for all members
@@ -92,17 +93,17 @@ class CreateEvaluationPeriod extends CreateRecord
                             'evaluator_id' => $evaluator->user_id,
                         ]);
 
-                        // Form 7 (C7): Each member evaluates all LRPs in the committee
-                        foreach ($lrps as $lrp) {
+                        // Form 7 (C7): Each member evaluates all committee-only members (LRPs, SVP-Operations) in the committee
+                        foreach ($committee_only_members as $member) {
                             // Don't create self-evaluation
-                            if ($evaluator->user_id === $lrp->user_id) {
+                            if ($evaluator->user_id === $member->user_id) {
                                 continue;
                             }
 
                             $this->record->assignments()->create([
                                 'ef_id' => 7,
                                 'committee_id' => $committee->id,
-                                'member_id' => $lrp->user_id,
+                                'member_id' => $member->user_id,
                                 'evaluator_id' => $evaluator->user_id,
                             ]);
                         }
@@ -116,10 +117,12 @@ class CreateEvaluationPeriod extends CreateRecord
                     'corporate officer' => 2,
                     'treasurer' => 3,
                     'comptroller' => 4,
-                    'corporate secretary' => 5,
-                    'lead resource person' => 6,
-                    'vice chairman' => 7,
-                    'chairman' => 8,
+                    'svp-operation' => 6,
+                    'evp-gm' => 7,
+                    'corporate secretary' => 8,
+                    'lead resource person' => 9,
+                    'vice chairman' => 10,
+                    'chairman' => 11,
                 ];
 
                 $board_members = User::role(get_board_members())

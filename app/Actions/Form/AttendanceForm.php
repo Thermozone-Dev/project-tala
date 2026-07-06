@@ -20,29 +20,69 @@ class AttendanceForm
     {
         $committees = [];
 
-        // 1. Create BOT Meetings tab - Get unique BOT members (where committee_id is null)
-        $bot_evaluations = TrusteeHasEvaluation::where('evaluation_id', $evaluation_period->id)
-            ->whereNull('committee_id')
-            ->with('member.roles')
-            ->get()
-            ->unique('member_id');
+        // Get all assignments (evaluators) for this evaluation period
+        $assignments = $evaluation_period->assignments()
+            ->with('evaluator.roles')
+            ->get();
 
+        // Get all trustee evaluations (members being evaluated)
+        $trustee_evaluations = TrusteeHasEvaluation::where('evaluation_id', $evaluation_period->id)
+            ->with('member.roles')
+            ->get();
+
+        // 1. Create BOT Meetings tab - Combine BOT evaluators and members (deduplicated by user id)
+        $bot_evaluators = $assignments->whereNull('committee_id');
+        $bot_members_being_evaluated = $trustee_evaluations->whereNull('committee_id');
+
+        $bot_user_ids = [];
         $bot_members = [];
-        foreach($bot_evaluations as $evaluation) {
-            $member = $evaluation->member;
-            if(!$member){
+
+        // Add evaluators
+        foreach($bot_evaluators as $assignment) {
+            $user = $assignment->evaluator;
+            if(!$user || in_array($user->id, $bot_user_ids)){
                 continue;
             }
-            $role = $member?->roles?->first()?->name ?? 'Member';
+            $role = $user?->roles?->first()?->name ?? 'Member';
 
             // Exclude Lead Resource Persons from BOT meetings
             if (strtolower($role) === 'lead resource person') {
                 continue;
             }
 
+            $bot_user_ids[] = $user->id;
+
             $bot_members[] = [
-                'id' => $member->id,
-                'name' => $member->full_name,
+                'id' => $user->id,
+                'name' => $user->full_name,
+                'role' => $role,
+                'committee_id' => null,
+                'total_meetings' => 0,
+                'physically_present' => 0,
+                'considered_present' => 0,
+                'total_present' => 0,
+                'attendance_rating_scale_values_id' => 0,
+            ];
+        }
+
+        // Add members being evaluated (if not already added as evaluator)
+        foreach($bot_members_being_evaluated as $evaluation) {
+            $user = $evaluation->member;
+            if(!$user || in_array($user->id, $bot_user_ids)){
+                continue;
+            }
+            $role = $user?->roles?->first()?->name ?? 'Member';
+
+            // Exclude Lead Resource Persons from BOT meetings
+            if (strtolower($role) === 'lead resource person') {
+                continue;
+            }
+
+            $bot_user_ids[] = $user->id;
+
+            $bot_members[] = [
+                'id' => $user->id,
+                'name' => $user->full_name,
                 'role' => $role,
                 'committee_id' => null,
                 'total_meetings' => 0,
@@ -61,26 +101,51 @@ class AttendanceForm
             ];
         }
 
-        // 2. Create tabs for each committee - Get unique committee-specific members from evaluations
+        // 2. Create tabs for each committee - Combine committee evaluators and members (deduplicated by user id)
         $all_committees = Committee::get();
 
         foreach($all_committees as $committee) {
-            $committee_evaluations = TrusteeHasEvaluation::where('evaluation_id', $evaluation_period->id)
-                ->where('committee_id', $committee->id)
-                ->with('member.roles')
-                ->get()
-                ->unique('member_id');
+            $committee_evaluators = $assignments->where('committee_id', $committee->id);
+            $committee_members_being_evaluated = $trustee_evaluations->where('committee_id', $committee->id);
 
+            $committee_user_ids = [];
             $committee_members = [];
-            foreach($committee_evaluations as $evaluation) {
-                $member = $evaluation->member;
-                if(!$member){
+
+            // Add evaluators
+            foreach($committee_evaluators as $assignment) {
+                $user = $assignment->evaluator;
+                if(!$user || in_array($user->id, $committee_user_ids)){
                     continue;
                 }
+                $committee_user_ids[] = $user->id;
+                $role = $user->roles->first()?->name ?? 'Member';
+
                 $committee_members[] = [
-                    'id' => $member->id,
-                    'name' => $member->full_name,
-                    'role' => $member->roles->first()?->name ?? 'Member',
+                    'id' => $user->id,
+                    'name' => $user->full_name,
+                    'role' => $role,
+                    'committee_id' => $committee->id,
+                    'total_meetings' => 0,
+                    'physically_present' => 0,
+                    'considered_present' => 0,
+                    'total_present' => 0,
+                    'attendance_rating_scale_values_id' => 0,
+                ];
+            }
+
+            // Add members being evaluated (if not already added as evaluator)
+            foreach($committee_members_being_evaluated as $evaluation) {
+                $user = $evaluation->member;
+                if(!$user || in_array($user->id, $committee_user_ids)){
+                    continue;
+                }
+                $committee_user_ids[] = $user->id;
+                $role = $user->roles->first()?->name ?? 'Member';
+
+                $committee_members[] = [
+                    'id' => $user->id,
+                    'name' => $user->full_name,
+                    'role' => $role,
                     'committee_id' => $committee->id,
                     'total_meetings' => 0,
                     'physically_present' => 0,

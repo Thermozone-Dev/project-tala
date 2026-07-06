@@ -29,10 +29,13 @@ if (! function_exists('get_eval_form_by_role')) {
                 $form =  $model->find(3);
                 break;
 
-            case 'corporate officer':
+            case 'corporate secretary':
                 $form =  $model->find(4);
                 break;
 
+            case 'svp-operation':
+                $form =  $model->find(7);
+                break;
 
             case 'corporate treasurer':
                 $form =  $model->find(5);

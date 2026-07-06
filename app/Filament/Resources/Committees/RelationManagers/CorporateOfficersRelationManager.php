@@ -36,7 +36,8 @@ class CorporateOfficersRelationManager extends RelationManager
             'Corporate Secretary',
             'Treasurer',
             'Comptroller',
-            'EVP-GM'
+            'EVP-GM',
+            'SVP-Operation'
         ];
     }
     public function table(Table $table): Table
@@ -44,7 +45,13 @@ class CorporateOfficersRelationManager extends RelationManager
         return $table
             ->modifyQueryUsing(fn ($query) => $query->whereIn('role_id', Role::whereIn('name', $this->roles())->pluck('id')->toArray()))
             ->columns([
-                TextColumn::make('user.full_name')->label('Name')->searchable()->sortable(),
+                TextColumn::make('user.full_name')->label('Name')
+                    ->searchable([
+                        'first_name',
+                        'middle_name',
+                        'last_name',
+                        'suffix',
+                    ])->sortable(),
                 TextColumn::make('role.name')->label('Role')->searchable()->sortable(),
                 IconColumn::make('is_active')
                     ->label('Active')
