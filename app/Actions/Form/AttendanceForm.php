@@ -93,6 +93,35 @@ class AttendanceForm
             ];
         }
 
+        // Add SVP-Operations from committee evaluations to BOT tab
+        $committee_evaluations = $trustee_evaluations->whereNotNull('committee_id');
+        foreach($committee_evaluations as $evaluation) {
+            $user = $evaluation->member;
+            if(!$user || in_array($user->id, $bot_user_ids)){
+                continue;
+            }
+            $role = $user?->roles?->first()?->name ?? 'Member';
+
+            // Only add SVP-Operations to BOT tab
+            if (strtolower($role) !== 'svp-operation') {
+                continue;
+            }
+
+            $bot_user_ids[] = $user->id;
+
+            $bot_members[] = [
+                'id' => $user->id,
+                'name' => $user->full_name,
+                'role' => $role,
+                'committee_id' => null,
+                'total_meetings' => 0,
+                'physically_present' => 0,
+                'considered_present' => 0,
+                'total_present' => 0,
+                'attendance_rating_scale_values_id' => 0,
+            ];
+        }
+
         if (!empty($bot_members)) {
             $committees[] = [
                 'id' => 'bot',
