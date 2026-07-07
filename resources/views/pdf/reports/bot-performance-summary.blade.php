@@ -16,7 +16,7 @@
                 <div class="page">
                     <div class="row" style="white-space:nowrap;">
                         <div class="col-xs-12 text-right">
-                            <h5><b>{{ strtoupper($data['evaluation_period']) }}</b></h5>
+                            <h5><br><b>{{ strtoupper($data['evaluation_period']) }}</b></h5>
                         </div>
                         <div class="col-xs-12 text-center">
                             <h1><b><u>{{strtoupper($collection['name'])}}</u></b></h1>

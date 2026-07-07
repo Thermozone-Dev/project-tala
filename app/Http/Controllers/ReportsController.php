@@ -78,12 +78,14 @@ class ReportsController extends Controller
         ];
         $file_name = $report->reportType->name.' ('.$evaluation_period.').pdf';
 
+        $header = view('pdf.reports.header')->render();
         $footer = view('pdf.reports.footer')->render();
 
         $pdf = PDF::loadView($pay_load['blade_path'], compact('data'))
             ->setOption('encoding', 'UTF-8')
             ->setOptions(['margin-bottom' => 10])
             ->setOrientation($pay_load['page_orientation'])
+            ->setOption('header-html', $header)
             ->setOption('footer-html', $footer)
             ->setOption('enable-local-file-access', true)
             ->setOption('images', true);
