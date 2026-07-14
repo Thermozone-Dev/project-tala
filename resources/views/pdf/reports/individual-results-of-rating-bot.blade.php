@@ -104,8 +104,8 @@
                                         <th>OVER-ALL RATING</th>
                                         <th>{{$members['attendance']['summary']['total_meetings']}} </th>
                                         <th>{{$members['attendance']['summary']['total_present']}} </th>
-                                        <th>{{$members['attendance']['summary']['avg_attendance_percentage']}}% </th>
-                                        <th>{{$members['attendance']['summary']['avg_rating']}} </th>
+                                        <th>{{number_format($members['attendance']['summary']['avg_attendance_percentage'], 2)}}% </th>
+                                        <th>{{number_format($members['attendance']['summary']['avg_rating'], 2)}} </th>
                                         <th>{{$members['attendance']['summary']['attendance_rating_qualititative']}}</th>
                                     </tr>
                                 </thead>

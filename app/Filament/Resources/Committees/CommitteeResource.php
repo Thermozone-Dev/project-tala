@@ -27,10 +27,10 @@ class CommitteeResource extends Resource
     protected static ?string $model = Committee::class;
 
 
-    public static function shouldRegisterNavigation(): bool
-    {
-        return auth()->user()->hasRole(['Super Admin',]);
-    }
+    // public static function shouldRegisterNavigation(): bool
+    // {
+    //     return auth()->user()->hasRole(['Super Admin',]);
+    // }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 

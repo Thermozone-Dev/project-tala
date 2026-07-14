@@ -217,8 +217,8 @@ class AttendanceEvaluation extends TableWidget
                                 $committee_id = $get('committee_id');
                                 $executive_roles = ['super admin', 'secretariat'];
 
+                                // For BOT: Show all users except LRPs and executives
                                 if ($committee_id === 'bot') {
-                                    // For BOT: Show all users except LRPs and executives
                                     return User::whereHas('roles', function ($query) use ($executive_roles) {
                                         $query->whereNotIn('name', array_merge($executive_roles, ['lead resource person']));
                                     })
@@ -226,21 +226,16 @@ class AttendanceEvaluation extends TableWidget
                                     ->get()
                                     ->mapWithKeys(fn($user) => [$user->id => $user->full_name])
                                     ->toArray();
-                                } elseif ($committee_id) {
-                                    // For specific committee: Show only members of that committee
-                                    $committee = Committee::find($committee_id);
-                                    if (!$committee) {
-                                        return [];
-                                    }
-
-                                    return $committee->committee_has_trustees()
-                                        ->with('user')
-                                        ->get()
-                                        ->mapWithKeys(fn($trustee) => [$trustee->user_id => $trustee->user->full_name])
-                                        ->toArray();
                                 }
 
-                                return [];
+                                // For any committee: Show all users except executives (no committee filtering)
+                                return User::whereHas('roles', function ($query) use ($executive_roles) {
+                                    $query->whereNotIn('name', $executive_roles);
+                                })
+                                ->orWhereDoesntHave('roles')
+                                ->get()
+                                ->mapWithKeys(fn($user) => [$user->id => $user->full_name])
+                                ->toArray();
                             })
                             ->searchable([
                                 'first_name',
