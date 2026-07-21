@@ -124,13 +124,55 @@ class AssesmentComputation
      */
     public static function get_committee_final_grade($average_rating = 0)
     {
-        $qualitative = self::get_assesment_rating_bot_summary($average_rating);
+        $qualitative = self::get_committee_qualitative($average_rating);
 
         return [
             'quantitative' => round($average_rating, 2),
             'qualitative' => $qualitative
         ];
     }
+
+
+
+    public static function get_committee_qualitative($value)
+    {
+        $rating = [
+            'Exceptional' => [3.50, 4.00],
+            'Superior' => [3.00, 3.49],
+            'Satisfactory' => [2.50, 3.49],
+            'Needs Improvement' => [2.00, 2.49],
+            'Unsatisfactory' =>[0, 1.99]
+        ];
+
+        foreach ($rating as $index => [$min, $max]) {
+            if ($value >= $min && $value <= $max) {
+                return $index;
+            }
+        }
+
+        return 'No Qualitative Found';
+
+    }
+
+     public static function get_individual_committee_qualitative($value)
+    {
+        $rating = [
+            'Strongly Disagree' => [0, 1.00],
+            'Somewhat Disagree' => [1.01, 2.00],
+            'Somewhat Agree' => [2.01, 3.00],
+            'Strongly Agree' => [3.01, 4.00],
+        ];
+
+        foreach ($rating as $index => [$min, $max]) {
+            if ($value >= $min && $value <= $max) {
+                return $index;
+            }
+        }
+
+        return 'No Qualitative Found';
+
+    }
+
 
 
 

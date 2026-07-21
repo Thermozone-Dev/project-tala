@@ -279,7 +279,10 @@ class EvaluationMembers extends ListRecords
     }
 
     public function editable_field_status($record){
-        // dd($record);
+        if(get_executive_role(auth()->user()->roles->first()->name)){ //always editable for super admin role and secretariat
+            return true;
+        }
+
         if($record->evaluationPeriod->status_id != 1){ //Inactive Evaluation Period
             return false;
         }
@@ -290,6 +293,6 @@ class EvaluationMembers extends ListRecords
             return false;
         }
 
-        return get_executive_role(auth()->user()->roles->first()->name) ? true : false;
+        // return  ? true : false;
     }
 }

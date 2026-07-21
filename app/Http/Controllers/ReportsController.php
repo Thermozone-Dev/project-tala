@@ -576,7 +576,7 @@ class ReportsController extends Controller
             if (!empty($sectionAverages)) {
                 $sectionRow['total_rating'] = array_sum($sectionAverages);
                 $sectionRow['average_rating'] = round(array_sum($sectionAverages) / count($sectionAverages), 2);
-                $sectionRow['qualitative'] = AssesmentComputation::get_assesment_rating_bot_summary($sectionRow['average_rating']);
+                $sectionRow['qualitative'] = AssesmentComputation::get_committee_qualitative($sectionRow['average_rating']);
             }
 
             $committeeSectionsMatrix[] = $sectionRow;
@@ -609,7 +609,7 @@ class ReportsController extends Controller
         if (!empty($allOverallAverages)) {
             $grandConsolidatedAverage = array_sum($allOverallAverages) / count($allOverallAverages);
             $consolidatedData['grand_consolidated_average'] = round($grandConsolidatedAverage, 2);
-            $consolidatedData['grand_consolidated_qualitative'] = AssesmentComputation::get_assesment_rating_bot_summary($grandConsolidatedAverage);
+            $consolidatedData['grand_consolidated_qualitative'] = AssesmentComputation::get_committee_qualitative($grandConsolidatedAverage);
         }
 
         return $consolidatedData;
@@ -1034,7 +1034,7 @@ class ReportsController extends Controller
                         'question' => $firstAnswer['question'],
                         'total_rating' => $answerValues->sum(),
                         'average_rating' => $answerValues->count() > 0 ? round($answerValues->avg(), 2) : 0,
-                        'qualitative_rating' => AssesmentComputation::get_assesment_rating_bot_summary(
+                        'qualitative_rating' => AssesmentComputation::get_individual_committee_qualitative(
                             $answerValues->count() > 0 ? $answerValues->avg() : 0
                         ),
                         'evaluators' => $questionAnswers->map(fn($answer) => [
@@ -1057,7 +1057,8 @@ class ReportsController extends Controller
                     'questions' => $questions,
                     'section_total_rating' => $sectionTotalAnswers->sum(),
                     'section_average_rating' => $sectionAvg ? round($sectionAvg, 2) : 0,
-                    'section_qualitative' => AssesmentComputation::get_assesment_rating_bot_summary($sectionAvg)
+                    'individual_summary_qualitative' => AssesmentComputation::get_individual_committee_qualitative($sectionAvg),
+                    'section_qualitative' => AssesmentComputation::get_committee_qualitative($sectionAvg)
                 ];
             })->values();
 
@@ -1073,7 +1074,8 @@ class ReportsController extends Controller
                 'sections' => $sections->toArray(),
                 'overall_total_rating' => $allAnswerValues->sum(),
                 'overall_average_rating' => $overallAvg ? round($overallAvg, 2) : 0,
-                'overall_qualitative' => AssesmentComputation::get_assesment_rating_bot_summary($overallAvg)
+                'overall_individual_summary_qualitative' => AssesmentComputation::get_individual_committee_qualitative($overallAvg),
+                'overall_qualitative' => AssesmentComputation::get_committee_qualitative($overallAvg)
             ];
         })->filter()->values(); // Remove null entries
     }
@@ -1174,7 +1176,7 @@ class ReportsController extends Controller
                     'question' => $firstAnswer['question'],
                     'total_rating' => $answerValues->sum(),
                     'average_rating' => $answerValues->count() > 0 ? round($answerValues->avg(), 2) : 0,
-                    'qualitative_rating' => AssesmentComputation::get_assesment_rating_bot_summary(
+                    'qualitative_rating' => AssesmentComputation::get_individual_committee_qualitative(
                         $answerValues->count() > 0 ? $answerValues->avg() : 0
                     ),
                     'evaluators' => $questionAnswers->map(fn($answer) => [
@@ -1197,7 +1199,8 @@ class ReportsController extends Controller
                 'questions' => $questions,
                 'section_total_rating' => $sectionTotalAnswers->sum(),
                 'section_average_rating' => $sectionAvg ? round($sectionAvg, 2) : 0,
-                'section_qualitative' => AssesmentComputation::get_assesment_rating_bot_summary($sectionAvg)
+                'individual_summary_qualitative' => AssesmentComputation::get_individual_committee_qualitative($sectionAvg),
+                'section_qualitative' => AssesmentComputation::get_committee_qualitative($sectionAvg)
             ];
         })->values();
 
@@ -1215,7 +1218,8 @@ class ReportsController extends Controller
                 'sections' => $sections->toArray(),
                 'overall_total_rating' => $allAnswerValues->sum(),
                 'overall_average_rating' => $overallAvg ? round($overallAvg, 2) : 0,
-                'overall_qualitative' => AssesmentComputation::get_assesment_rating_bot_summary($overallAvg)
+                'overall_individual_summary_qualitative' => AssesmentComputation::get_individual_committee_qualitative($overallAvg),
+                'overall_qualitative' => AssesmentComputation::get_committee_qualitative($overallAvg)
             ]
         ]);
     }

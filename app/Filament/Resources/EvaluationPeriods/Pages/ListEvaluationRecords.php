@@ -171,8 +171,7 @@ class ListEvaluationRecords extends ListRecords
                     ->url( function($record){
                         return $this->getResource()::getUrl('view-evaluation',['evaluation_id' => $record->evaluation_id, 'record_id' => $record->id]);
                     })
-                    ->icon(Heroicon::Eye)
-                    ->openUrlInNewTab(),
+                    ->icon(Heroicon::Eye),
 
                 Action::make('Print')
                     ->color('secondary')

@@ -92,7 +92,7 @@
                                             @endif
                                             <th class="text-center" style="padding: 4px; font-size: 10px;">{{ isset($section['section_total_rating']) ? number_format($section['section_total_rating'], 2) : '-' }}</th>
                                             <th class="text-center" style="padding: 4px; font-size: 10px;">{{ isset($section['section_average_rating']) ? number_format($section['section_average_rating'], 2) : '-' }}</th>
-                                            <th class="text-center" style="padding: 4px; font-size: 10px;">{{ $section['section_qualitative'] ?? '-' }}</th>
+                                            <th class="text-center" style="padding: 4px; font-size: 10px;">{{ $section['individual_summary_qualitative'] ?? '-' }}</th>
                                         </tr>
                                     </tbody>
                                 </table>

@@ -153,11 +153,8 @@ class ViewEvaluation extends Page implements HasForms, HasTable
         Action::make('submit_eval')
                 ->visible(function (){
                     $record = TrusteeHasEvaluation::find($this->record_id);
-                    if($record->trustee_evaluation_statuses_id == 1 || $record->trustee_evaluation_statuses_id == 3){ // 1 = In Progress | 3 = Pending
-                        return true;
-                    }
-
-                    return false;
+                    $eval_status = new EvaluationMembers();
+                    return $eval_status->editable_field_status($record);
                 })
                 ->label('Submit')
                 // ->modalHeading('Submit Evaluation')
