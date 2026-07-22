@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\AssesmentComputation;
 use App\Models\AttendanceAnswer;
+use App\Models\Committee;
 use App\Models\Report;
 use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
@@ -49,10 +50,13 @@ class ReportsController extends Controller
                 break;
             case 3: // Individual Results of Rating - CO & LRPs
 
+                $coResults = $this->indiviual_results_of_rating_corporate_officers_collection($report);
+                $lrpResults = $this->indiviual_results_of_rating_lrps_collection($report);
+
                 $pay_load = [
                     'blade_path' => 'pdf.reports.individual-results-of-rating-CO-and-LRPs',
                     'page_orientation' => 'landscape',
-                    'collections' => $this->indiviual_results_of_rating_co_and_lrps_collection($report),
+                    'collections' => array_merge($coResults, $lrpResults),
                 ];
 
                 break;
@@ -116,49 +120,27 @@ class ReportsController extends Controller
             })->values()->toArray()
         ];
 
-        // Get CO/LRP individual results
-        $coLrpMembers = $this->indiviual_results_of_rating_co_and_lrps_collection($report);
+        // Get CO and LRP individual results using new separate methods
+        $coMembers = $this->indiviual_results_of_rating_corporate_officers_collection($report);
+        $lrpMembers = $this->indiviual_results_of_rating_lrps_collection($report);
 
-        // Separate CO and LRP
-        $corporateOfficers = collect();
-        $lrps = collect();
-
-        foreach ($coLrpMembers as $member) {
-            $user = User::find($member['member_id']);
-            $roles = $user->roles()->pluck('name')->toArray();
-
-            // Check if LRP (Form C7 - committee-only role)
-            if (in_array('Lead Resource Person', $roles)) {
-                $lrps->push([
-                    'member_id' => $member['member_id'],
-                    'member_name' => $member['member_name'],
-                    'committee_id' => $member['committee_id'] ?? null,
-                    'committee_name' => $member['committee_name'] ?? 'Unknown',
-                    'rating_average' => $member['rating_average'],
-                    'total_qualitative' => $member['total_qualitative'],
-                    'attendance_rating' => $member['attendance_rating'],
-                    'attendance_avg_rating' => $member['attendance']['summary']['avg_rating'] ?? 0,
-                    'attendance_qualitative' => $member['attendance']['summary']['attendance_rating_qualititative'] ?? 'No Rating',
-                    'final_grade_quantitative' => $member['final_grade']['quantitative'] ?? 0,
-                    'final_grade_qualitative' => $member['final_grade']['qualitative'] ?? 'No Rating'
-                ]);
-            } else {
-                // Corporate Officer - get specific role for this committee
-                $committeeRoles = $user->committees()
-                    ->where('committee_id', $member['committee_id'] ?? null)
-                    ->with('role')
-                    ->get()
-                    ->pluck('role.name')
+        // Format CO results for summary display
+        $corporateOfficersDedup = collect($coMembers)
+            ->unique('member_id')
+            ->map(function ($member) {
+                // Get all corporate officer roles for this user
+                $user = User::find($member['member_id']);
+                $allCOofficerRoles = $user->roles()
+                    ->whereIn('name', ['Corporate Secretary', 'Treasurer', 'Comptroller', 'EVP-GM'])
+                    ->pluck('name')
                     ->toArray();
 
-                $roleForCommittee = !empty($committeeRoles) ? implode(', ', $committeeRoles) : 'Corporate Officer';
+                $rolesDisplay = !empty($allCOofficerRoles) ? implode(', ', $allCOofficerRoles) : 'Corporate Officer';
 
-                $corporateOfficers->push([
+                return [
                     'member_id' => $member['member_id'],
                     'member_name' => $member['member_name'],
-                    'role' => $roleForCommittee,
-                    'committee_id' => $member['committee_id'] ?? null,
-                    'committee_name' => $member['committee_name'] ?? 'Unknown',
+                    'roles' => $rolesDisplay,
                     'rating_average' => $member['rating_average'],
                     'total_qualitative' => $member['total_qualitative'],
                     'attendance_rating' => $member['attendance_rating'],
@@ -166,15 +148,32 @@ class ReportsController extends Controller
                     'attendance_qualitative' => $member['attendance']['summary']['attendance_rating_qualititative'] ?? 'No Rating',
                     'final_grade_quantitative' => $member['final_grade']['quantitative'] ?? 0,
                     'final_grade_qualitative' => $member['final_grade']['qualitative'] ?? 'No Rating'
-                ]);
-            }
-        }
+                ];
+            })
+            ->values();
+
+        // Format LRP results for summary display (grouped by committee)
+        $lrps = collect($lrpMembers)->map(function ($member) {
+            return [
+                'member_id' => $member['member_id'],
+                'member_name' => $member['member_name'],
+                'committee_id' => $member['committee_id'] ?? null,
+                'committee_name' => $member['committee_name'] ?? 'Unknown',
+                'rating_average' => $member['rating_average'],
+                'total_qualitative' => $member['total_qualitative'],
+                'attendance_rating' => $member['attendance_rating'],
+                'attendance_avg_rating' => $member['attendance']['summary']['avg_rating'] ?? 0,
+                'attendance_qualitative' => $member['attendance']['summary']['attendance_rating_qualititative'] ?? 'No Rating',
+                'final_grade_quantitative' => $member['final_grade']['quantitative'] ?? 0,
+                'final_grade_qualitative' => $member['final_grade']['qualitative'] ?? 'No Rating'
+            ];
+        });
 
         $coSummary = [
             'id' => 2,
             'code' => 'CO',
-            'name' => 'Corporate Secretary',
-            'members' => $corporateOfficers->values()->toArray()
+            'name' => 'Corporate Officer',
+            'members' => $corporateOfficersDedup->toArray()
         ];
 
         $lrpSummary = [
@@ -205,8 +204,53 @@ class ReportsController extends Controller
         return $members;
     }
 
+    /**
+     * Build evaluation summary from filtered TrusteeHasEvaluation records
+     * Ensures only the specified form IDs are included
+     */
+    private function build_evaluation_summary_from_assignments($assignments)
+    {
+        return $assignments->groupBy('evaluator_id')->map(function ($evaluatorGroup) {
+            $firstAssignment = $evaluatorGroup->first();
+            $evaluator = $firstAssignment->evaluator;
+
+            return [
+                'evaluator_id' => $evaluator->id,
+                'evaluator_name' => $evaluator->full_name ?? 'N/A',
+                'total_evaluations' => $evaluatorGroup->count(),
+                'evaluations' => $evaluatorGroup->map(function ($assignment) {
+                    $answers = $assignment->assesment_answer->isEmpty()
+                        ? collect()
+                        : $assignment->assesment_answer->map(function ($answer) {
+                            return [
+                                'question_id' => $answer->questionnaire_id ?? null,
+                                'question' => $answer->questionnaire->name ?? 'N/A',
+                                'answer_value' => $answer->ratingScaleValue?->value ?? 0,
+                                'answer_qualitative' => $answer->ratingScaleValue?->qualitative ?? 'No Rating',
+                                'remarks' => $answer->remarks ?? ''
+                            ];
+                        });
+
+                    return [
+                        'member_id' => $assignment->member_id,
+                        'evaluator_id' => $assignment->evaluator_id,
+                        'evaluation_form' => $assignment->form?->title ?? 'N/A',
+                        'evaluation_period' => $assignment->evaluationPeriod?->formatted_coverage ?? 'N/A',
+                        'status' => $assignment->eval_status?->name ?? 'Unknown',
+                        'has_answers' => $assignment->assesment_answer->isNotEmpty(),
+                        'total_answers' => $answers->count(),
+                        'answers' => $answers->toArray()
+                    ];
+                })->toArray()
+            ];
+        })->values()->toArray();
+    }
+
     public function individual_summary_mapper ($members){
-        return $members->map(function ($member) {
+        // Deduplicate by member_id to ensure each member appears only once
+        $uniqueMembers = collect($members)->unique('member_id')->values();
+
+        return $uniqueMembers->map(function ($member) {
             // Group by question and map with evaluator info
             $questionsByEvaluator = collect($member['evaluation_summary'])
                 ->flatMap(function ($evaluatorGroup) {
@@ -258,10 +302,18 @@ class ReportsController extends Controller
 
             $total_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($rating_average);
 
-            // Get attendance for member's specific context (BOT or committee)
-            $committee_id = isset($member['committee_id']) ? $member['committee_id'] : null;
-            $attendance = $this->get_trustee_attendance_evaluation($member['member_id'], $committee_id);
-            $attendance_rating = $attendance['summary']['avg_rating'] ?? 0;
+            // Use pre-calculated attendance if provided, otherwise calculate it
+            if (isset($member['attendance_rating']) && isset($member['attendance_avg_rating'])) {
+                // Use pre-calculated attendance (for CO/LRP filtered views)
+                $attendance_rating = $member['attendance_avg_rating'];
+                $attendance = ['summary' => ['avg_rating' => $member['attendance_avg_rating']]];
+            } else {
+                // Get attendance for member's specific context (BOT or committee)
+                $committee_id = isset($member['committee_id']) ? $member['committee_id'] : null;
+                $attendance = $this->get_trustee_attendance_evaluation($member['member_id'], $committee_id);
+                $attendance_rating = $attendance['summary']['avg_rating'] ?? 0;
+            }
+
             $final_grade = AssesmentComputation::calculate_performance_summary($attendance_rating,$rating_average);
 
             $result = [
@@ -365,7 +417,146 @@ class ReportsController extends Controller
     }
 
     /**
+     * Get individual results of rating for Corporate Officers (C3-C6)
+     * Gets all evaluations by FORM ID to capture all CO evaluations for each member
+     * Organized by: Member -> Question -> Evaluators (no committee context)
+     * Attendance: Only from committees where they hold a corporate officer role
+     * Forms: C3 (EVP-GM), C4 (Corporate Secretary), C5 (Treasurer), C6 (Comptroller)
+     */
+    public function indiviual_results_of_rating_corporate_officers_collection($report){
+        // Corporate officer form IDs: C3=3, C4=4, C5=5, C6=6
+        $coFormIds = [3, 4, 5, 6];
+        $coRoles = [
+            'Treasurer',
+            'Comptroller',
+            'Corporate Secretary',
+            'EVP-GM'
+        ];
+
+        // Get evaluations by FORM ID (not by member role) to capture all CO evaluations
+        $evaluations = $report->evaluationPeriod->assignments
+            ->whereIn('ef_id', $coFormIds)
+            ->load(['member', 'evaluator', 'form', 'evaluationPeriod', 'eval_status', 'assesment_answer.questionnaire', 'assesment_answer.ratingScaleValue'])
+            ->groupBy('member_id')
+            ->map(function ($memberAssignments) use ($report, $coRoles) {
+                $member = $memberAssignments->first()->member;
+
+                // Deduplicate assignments - only keep unique assignment IDs (in case of duplicates)
+                $uniqueAssignments = $memberAssignments->unique('id')->values();
+
+                // Build evaluation_summary directly from filtered assignments (only CO forms)
+                $evaluationSummary = $this->build_evaluation_summary_from_assignments($uniqueAssignments);
+
+                // Get committees where user holds a corporate officer role
+                $coCommittees = User::find($member->id)->committees()
+                    ->whereHas('role', fn($q) => $q->whereIn('name', $coRoles))
+                    ->pluck('committee_id')
+                    ->toArray();
+
+                // Get attendance only from corporate officer committees
+                $attendance_rating = 'No Rating';
+                $attendance_avg = 0;
+
+                if (!empty($coCommittees)) {
+                    $attendance = AttendanceAnswer::where('evaluation_period_id', $report->evaluationPeriod->id)
+                        ->where('trustee_id', $member->id)
+                        ->whereIn('committee_id', $coCommittees)
+                        ->get();
+
+                    if ($attendance->isNotEmpty()) {
+                        $attendance_rating = AssesmentComputation::get_attendance_rating($attendance->avg('ratingScaleValue.value'))?->qualitative ?? 'No Rating';
+                        $attendance_avg = $attendance->avg('ratingScaleValue.value') ?? 0;
+                    }
+                }
+
+                return [
+                    'member_id' => $member->id,
+                    'member_name' => $member->full_name,
+                    'member_email' => $member->email,
+                    'roles' => $member->roles->pluck('name')->toArray(),
+                    'evaluation_summary' => $evaluationSummary,
+                    'attendance_rating' => $attendance_rating,
+                    'attendance_avg_rating' => $attendance_avg,
+                ];
+            })
+            ->values();
+
+        // Map through individual summary mapper - deduplicate by member_id to prevent duplicates
+        $results = $this->individual_summary_mapper($evaluations);
+
+        return $results->toArray();
+    }
+
+    /**
+     * Get individual results of rating for LRPs (Lead Resource Persons - C7)
+     * Organized by: Committee -> Member -> Question -> Evaluators
+     * LRPs appear once per committee they're assigned to
+     * Attendance: Only from the specific committee they're assigned to
+     * Forms: C7 (Lead Resource Person)
+     */
+    public function indiviual_results_of_rating_lrps_collection($report){
+        $lrpFormId = 7; // C7 is LRP form
+
+        // Get evaluations by FORM ID (not by member role) to capture all LRP evaluations
+        $evaluations = $report->evaluationPeriod->assignments
+            ->where('ef_id', $lrpFormId)
+            ->load(['member', 'evaluator', 'form', 'evaluationPeriod', 'eval_status', 'assesment_answer.questionnaire', 'assesment_answer.ratingScaleValue'])
+            ->groupBy('member_id')
+            ->map(function ($memberAssignments) use ($report) {
+                $member = $memberAssignments->first()->member;
+
+                // Get unique committees this member is assigned to from the assignments
+                $uniqueCommittees = $memberAssignments
+                    ->unique('committee_id')
+                    ->values();
+
+                return $uniqueCommittees->map(function ($assignment) use ($member, $report, $memberAssignments) {
+                    $committeeId = $assignment->committee_id;
+                    $committee = Committee::find($committeeId);
+
+                    // Filter assignments for this specific committee to build correct evaluation_summary
+                    $committeeAssignments = $memberAssignments->filter(fn($a) => $a->committee_id == $committeeId);
+                    $evaluationSummary = $this->build_evaluation_summary_from_assignments($committeeAssignments);
+
+                    // Get attendance only from this specific committee
+                    $attendance_rating = 'No Rating';
+                    $attendance_avg = 0;
+
+                    $attendance = AttendanceAnswer::where('evaluation_period_id', $report->evaluationPeriod->id)
+                        ->where('trustee_id', $member->id)
+                        ->where('committee_id', $committeeId)
+                        ->get();
+
+                    if ($attendance->isNotEmpty()) {
+                        $attendance_rating = AssesmentComputation::get_attendance_rating($attendance->avg('ratingScaleValue.value'))?->qualitative ?? 'No Rating';
+                        $attendance_avg = $attendance->avg('ratingScaleValue.value') ?? 0;
+                    }
+
+                    return [
+                        'member_id' => $member->id,
+                        'member_name' => $member->full_name,
+                        'member_email' => $member->email,
+                        'roles' => $member->roles->pluck('name')->toArray(),
+                        'committee_id' => $committeeId,
+                        'committee_name' => $committee?->name ?? 'Unknown Committee',
+                        'evaluation_summary' => $evaluationSummary,
+                        'attendance_rating' => $attendance_rating,
+                        'attendance_avg_rating' => $attendance_avg,
+                    ];
+                });
+            })
+            ->flatten(1)
+            ->values();
+
+        // Map through individual summary mapper
+        $results = $this->individual_summary_mapper($evaluations);
+
+        return $results->toArray();
+    }
+
+    /**
      * Get individual results of rating for CO & LRPs (Corporate Officers & Lead Resource Persons)
+     * DEPRECATED: Use indiviual_results_of_rating_corporate_officers_collection() and indiviual_results_of_rating_lrps_collection() instead
      * Organized by: Committee -> Member -> Question -> Evaluators
      * LRPs can appear multiple times (once per committee they're in)
      */
