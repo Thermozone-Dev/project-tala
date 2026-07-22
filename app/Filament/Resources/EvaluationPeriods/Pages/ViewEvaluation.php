@@ -9,6 +9,7 @@ use App\Actions\SaveAssessmentEvaluation;
 use App\Actions\SaveOtherComments;
 use App\Filament\Resources\Committees\Pages\EvaluationMembers;
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
+use App\Filament\Traits\HandlesEvaluationErrors;
 use App\Models\EvaluationPeriod;
 use App\Models\OtherCommentAnswer;
 use App\Models\QuestionaireAnswer;
@@ -40,6 +41,7 @@ class ViewEvaluation extends Page implements HasForms, HasTable
 
     use InteractsWithForms;
     use InteractsWithTable;
+    use HandlesEvaluationErrors;
 
     public $evaluation_id, $record_id;
 
@@ -75,6 +77,15 @@ class ViewEvaluation extends Page implements HasForms, HasTable
 
     public function mount(): void
     {
+        // Verify both period and record exist
+        if (!$this->verifyEvaluationPeriodExists($this->evaluation_id)) {
+            return;
+        }
+
+        if (!$this->verifyEvaluationRecordExists($this->record_id)) {
+            return;
+        }
+
         $record = TrusteeHasEvaluation::find($this->record_id);
 
         $data = array_merge(

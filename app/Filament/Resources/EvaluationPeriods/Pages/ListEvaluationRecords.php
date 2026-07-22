@@ -4,6 +4,7 @@ namespace App\Filament\Resources\EvaluationPeriods\Pages;
 
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
+use App\Filament\Traits\HandlesEvaluationErrors;
 use App\Filament\Widgets\EvaluationStatsOverview;
 use App\Models\EvaluationPeriod;
 use App\Models\EvaluationForm;
@@ -32,9 +33,21 @@ class ListEvaluationRecords extends ListRecords
 
     protected static string $resource = EvaluationPeriodResource::class;
 
+    use HandlesEvaluationErrors;
+
     public $record,$evaluator_id;
 
     protected static ?string $title = 'Evaluation Records';
+
+    public function mount(): void
+    {
+        // Verify evaluation period exists
+        if (!$this->verifyEvaluationPeriodExists($this->record)) {
+            return;
+        }
+
+        parent::mount();
+    }
 
 
 

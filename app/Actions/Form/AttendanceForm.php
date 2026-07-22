@@ -22,6 +22,10 @@ class AttendanceForm
 
     public function handle($evaluation_period = null, $trustees = [])
     {
+        if (!$evaluation_period) {
+            return [];
+        }
+
         $committees = [];
 
         // Get all assignments (evaluators) for this evaluation period
@@ -47,14 +51,21 @@ class AttendanceForm
             if(!$user || in_array($user->id, $bot_user_ids)){
                 continue;
             }
-            $role = $user?->roles?->first()?->name ?? 'Member';
 
-            // Exclude Lead Resource Persons from BOT meetings
-            if (strtolower($role) === 'lead resource person') {
-                continue;
+            // Exclude only pure LRPs (users with ONLY LRP role)
+            $user_roles = $user->roles->pluck('name')->map(fn($r) => strtolower($r))->toArray();
+            $executive_roles = ['super admin', 'secretariat'];
+
+            if (count($user_roles) === 1 && in_array('lead resource person', $user_roles)) {
+                continue; // Exclude pure LRPs only
+            }
+
+            if (in_array(strtolower($user_roles[0] ?? ''), $executive_roles)) {
+                continue; // Exclude executives
             }
 
             $bot_user_ids[] = $user->id;
+            $role = $user?->roles?->first()?->name ?? 'Member';
 
             $bot_members[] = [
                 'id' => $user->id,
@@ -75,14 +86,21 @@ class AttendanceForm
             if(!$user || in_array($user->id, $bot_user_ids)){
                 continue;
             }
-            $role = $user?->roles?->first()?->name ?? 'Member';
 
-            // Exclude Lead Resource Persons from BOT meetings
-            if (strtolower($role) === 'lead resource person') {
-                continue;
+            // Exclude only pure LRPs (users with ONLY LRP role)
+            $user_roles = $user->roles->pluck('name')->map(fn($r) => strtolower($r))->toArray();
+            $executive_roles = ['super admin', 'secretariat'];
+
+            if (count($user_roles) === 1 && in_array('lead resource person', $user_roles)) {
+                continue; // Exclude pure LRPs only
+            }
+
+            if (in_array(strtolower($user_roles[0] ?? ''), $executive_roles)) {
+                continue; // Exclude executives
             }
 
             $bot_user_ids[] = $user->id;
+            $role = $user?->roles?->first()?->name ?? 'Member';
 
             $bot_members[] = [
                 'id' => $user->id,
@@ -97,21 +115,20 @@ class AttendanceForm
             ];
         }
 
-        // Add SVP-Operations and SVP Administration from committee evaluations to BOT tab
-        $committee_evaluations = $trustee_evaluations->whereNotNull('committee_id');
-        foreach($committee_evaluations as $evaluation) {
-            $user = $evaluation->member;
-            if(!$user || in_array($user->id, $bot_user_ids)){
-                continue;
-            }
-            $role = $user?->roles?->first()?->name ?? 'Member';
+        // Add all users with SVP-Operations or SVP Administration roles from committees to BOT tab
+        $svp_users = User::whereHas('roles', function ($query) {
+            $query->whereIn('name', ['SVP-Operation', 'SVP Administration']);
+        })
+        ->with('roles')
+        ->get();
 
-            // Only add SVP-Operations and SVP Administration to BOT tab
-            if (strtolower($role) !== 'svp-operation' && strtolower($role) !== 'svp administration') {
+        foreach($svp_users as $user) {
+            if(in_array($user->id, $bot_user_ids)){
                 continue;
             }
 
             $bot_user_ids[] = $user->id;
+            $role = $user->roles->first()?->name ?? 'Member';
 
             $bot_members[] = [
                 'id' => $user->id,
@@ -171,15 +188,16 @@ class AttendanceForm
         $all_committees = Committee::get();
 
         foreach($all_committees as $committee) {
-            $committee_evaluators = $assignments->where('committee_id', $committee->id);
-            $committee_members_being_evaluated = $trustee_evaluations->where('committee_id', $committee->id);
-
             $committee_user_ids = [];
             $committee_members = [];
 
-            // Add evaluators
-            foreach($committee_evaluators as $assignment) {
-                $user = $assignment->evaluator;
+            // Get all members directly assigned to this committee (1 member per committee, no duplication)
+            $committee_has_trustees = \App\Models\CommitteeHasTrustee::where('committee_id', $committee->id)
+                ->with('user.roles')
+                ->get();
+
+            foreach($committee_has_trustees as $trustee) {
+                $user = $trustee->user;
                 if(!$user || in_array($user->id, $committee_user_ids)){
                     continue;
                 }
@@ -199,29 +217,7 @@ class AttendanceForm
                 ];
             }
 
-            // Add members being evaluated (if not already added as evaluator)
-            foreach($committee_members_being_evaluated as $evaluation) {
-                $user = $evaluation->member;
-                if(!$user || in_array($user->id, $committee_user_ids)){
-                    continue;
-                }
-                $committee_user_ids[] = $user->id;
-                $role = $user->roles->first()?->name ?? 'Member';
-
-                $committee_members[] = [
-                    'id' => $user->id,
-                    'name' => $user->full_name,
-                    'role' => $role,
-                    'committee_id' => $committee->id,
-                    'total_meetings' => 0,
-                    'physically_present' => 0,
-                    'considered_present' => 0,
-                    'total_present' => 0,
-                    'attendance_rating_scale_values_id' => 0,
-                ];
-            }
-
-            // Add manually added attendees from AttendanceAnswer for this committee
+            // Add manually added attendees from AttendanceAnswer for this committee (if not already added)
             $manual_committee_attendances = AttendanceAnswer::where('evaluation_period_id', $evaluation_period->id)
                 ->where('committee_id', $committee->id)
                 ->with('trustee.roles')
