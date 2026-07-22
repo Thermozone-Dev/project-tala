@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EvaluationPeriods\Tables;
 
+use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -46,7 +47,13 @@ class EvaluationPeriodsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()
+                    ->url(function ($record){
+                        if(!get_executive_role()){
+                            $userID = auth()->user()->id;
+                            return EvaluationPeriodResource::getUrl('evaluation-trustee',['record' => $record->id, 'evaluator_id' => $userID ]);
+                        }
+                    }),
                 EditAction::make(),
             ])
             ->toolbarActions([

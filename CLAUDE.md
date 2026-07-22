@@ -87,3 +87,15 @@ resources/
 - Use **Laravel Pint** for code formatting (`./vendor/bin/pint`)
 - Avoid `dd()` or `dump()` in committed code
 - Use Laravel's built-in validation — never trust raw user input
+
+
+## Form Assignment 
+- Chairman - C1
+- Vice Chairman - C1
+- Trustee - C2
+- Corporate Secretary - C4
+- Treasurer - C5
+- Comptroller - C6
+- EVP-GM - C3
+- LRPs -C7
+

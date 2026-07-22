@@ -4,9 +4,11 @@ namespace App\Filament\Resources\EvaluationPeriods\Pages;
 
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
+use App\Filament\Widgets\EvaluationStatsOverview;
 use App\Models\EvaluationPeriod;
 use App\Models\EvaluationForm;
 use App\Models\Committee;
+use App\Models\Trustee;
 use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
 use Carbon\Carbon;
@@ -34,6 +36,16 @@ class ListEvaluationRecords extends ListRecords
 
     protected static ?string $title = 'Evaluation Records';
 
+
+
+    protected function getHeaderWidgets(): array
+    {
+        return array_filter([
+            EvaluationStatsOverview::make([
+                'evaluator' => $this->evaluator_id,
+            ]),
+        ]);
+    }
 
     public function getBreadcrumbs(): array
     {
