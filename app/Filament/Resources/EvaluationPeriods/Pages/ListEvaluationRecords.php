@@ -168,6 +168,17 @@ class ListEvaluationRecords extends ListRecords
                     }),
             ])->recordActions([
                 Action::make('View Evaluation')
+                    ->label( function ($record){
+                        if(get_executive_role()){
+                            return 'View and Evaluate';
+                        }
+
+                        if($record->trustee_evaluation_statuses_id != 3){
+                            return 'View Evaluation';
+                        }
+
+                        return 'Evaluate';
+                    })
                     ->url( function($record){
                         return $this->getResource()::getUrl('view-evaluation',['evaluation_id' => $record->evaluation_id, 'record_id' => $record->id]);
                     })

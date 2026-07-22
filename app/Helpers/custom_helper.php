@@ -99,8 +99,11 @@ if (! function_exists('check_eval_form_sections')) {
 }
 
 if (! function_exists('get_executive_role')) {
-    function get_executive_role($role)
+    function get_executive_role($role = null)
     {
+        if(!$role){
+               $role =  auth()->user()->roles->first()->name;
+        }
         $executive_roles = ['super admin', 'secretariat'];
 
         if(in_array(strtolower($role), $executive_roles)){
