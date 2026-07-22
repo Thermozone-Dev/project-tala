@@ -258,21 +258,9 @@ class ReportsController extends Controller
 
             $total_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($rating_average);
 
-            // For SVP-Operations and SVP Administration: get attendance for both committee and BOT
-            // For others: get attendance for their specific context only
-            $user = User::find($member['member_id']);
-            $user_roles = $user->roles()->pluck('name')->toArray();
-            $is_svp = in_array('SVP-Operation', $user_roles) || in_array('SVP Administration', $user_roles);
-
+            // Get attendance for member's specific context (BOT or committee)
             $committee_id = isset($member['committee_id']) ? $member['committee_id'] : null;
-
-            if ($is_svp && $committee_id !== null) {
-                // For SVP-Operations in committee context: get BOT attendance (not committee-specific)
-                $attendance = $this->get_trustee_attendance_evaluation($member['member_id'], null);
-            } else {
-                // For others: get attendance for their specific context
-                $attendance = $this->get_trustee_attendance_evaluation($member['member_id'], $committee_id);
-            }
+            $attendance = $this->get_trustee_attendance_evaluation($member['member_id'], $committee_id);
             $attendance_rating = $attendance['summary']['avg_rating'] ?? 0;
             $final_grade = AssesmentComputation::calculate_performance_summary($attendance_rating,$rating_average);
 
