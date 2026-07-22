@@ -80,7 +80,7 @@ class CreateEvaluationPeriod extends CreateRecord
                         ->unique('user_id');
 
                     // Find all LRPs and SVP-Operations in this committee (roles only evaluated within their committees)
-                    $committee_only_roles = ['lead resource person', 'svp-operation'];
+                    $committee_only_roles = ['lead resource person', 'svp-operation', 'svp administration'];
                     $committee_only_members = $committee->committee_has_trustees
                         ->filter(fn($member) => in_array(strtolower($member->role->name), $committee_only_roles));
 

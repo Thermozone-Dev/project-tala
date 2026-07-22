@@ -4,8 +4,6 @@ namespace App\Livewire;
 
 use App\Models\AttendanceAnswer;
 use App\Models\EvaluationPeriod;
-use App\Models\Committee;
-use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -19,8 +17,6 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
 use Filament\Support\Enums\FontWeight;
@@ -28,8 +24,6 @@ use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Support\RawJs;
 use Filament\Tables\Filters\SelectFilter;
-
-use function PHPUnit\Framework\isEmpty;
 
 class AttendanceEvaluation extends TableWidget
 {
@@ -143,6 +137,27 @@ class AttendanceEvaluation extends TableWidget
                         // e.g. if record is locked:
                         // if ($this->record->trustee_evaluation_statuses_id == 2) return false;
                     })
+                    ->extraModalFooterActions([
+                        Action::make('add_attendee_modal')
+                            ->label('Add Attendee')
+                            ->icon(Heroicon::OutlinedPlus)
+                            ->color('info')
+                            ->schema(AttendanceForm::getAddAttendeeSchema())
+                            ->action(function (array $data): void {
+                                $result = AttendanceForm::handleAddAttendeeAction($data, $this->evaluation_period_id);
+
+                                Notification::make()
+                                    ->title($result['success'] ? 'Attendee Added' : 'Duplicate Entry')
+                                    ->color($result['success'] ? 'success' : 'danger')
+                                    ->body($result['message'])
+                                    ->send();
+
+                                if ($result['success']) {
+                                    $this->evaluation_period = EvaluationPeriod::find($this->evaluation_period_id);
+                                    $this->dispatch('refresh-attendance-table');
+                                }
+                            }),
+                    ])
                     ->action(function (array $data): void {
                         $evaluationPeriod = EvaluationPeriod::find($this->evaluation_period_id);
 
@@ -193,97 +208,20 @@ class AttendanceEvaluation extends TableWidget
                             ->send();
                     }),
 
-                Action::make('add_attendee')
-                    ->label('Add Attendee')
-                    ->icon(Heroicon::OutlinedPlus)
-                    ->color('success')
-                    ->schema([
-                        Select::make('committee_id')
-                            ->label('Meeting Category')
-                            ->options(function () {
-                                $options = ['bot' => 'BOT Meetings'];
-                                Committee::all()->each(function ($committee) use (&$options) {
-                                    $options[$committee->id] = $committee->name . ' Meetings';
-                                });
-                                return $options;
-                            })
-                            ->required(),
+                // Action::make('add_attendee')
+                //     ->label('Add Attendee')
+                //     ->icon(Heroicon::OutlinedPlus)
+                //     ->color('success')
+                //     ->schema(AttendanceForm::getAddAttendeeSchema())
+                //     ->action(function (array $data): void {
+                //         $result = AttendanceForm::handleAddAttendeeAction($data, $this->evaluation_period_id);
 
-                        Select::make('trustee_id')
-                            ->label('Board Member')
-                            ->searchable()
-                            ->preload()
-                            ->options(function (Get $get) {
-                                $committee_id = $get('committee_id');
-                                $executive_roles = ['super admin', 'secretariat'];
-
-                                // For BOT: Show all users except LRPs and executives
-                                if ($committee_id === 'bot') {
-                                    return User::whereHas('roles', function ($query) use ($executive_roles) {
-                                        $query->whereNotIn('name', array_merge($executive_roles, ['lead resource person']));
-                                    })
-                                    ->orWhereDoesntHave('roles')
-                                    ->get()
-                                    ->mapWithKeys(fn($user) => [$user->id => $user->full_name])
-                                    ->toArray();
-                                }
-
-                                // For any committee: Show all users except executives (no committee filtering)
-                                return User::whereHas('roles', function ($query) use ($executive_roles) {
-                                    $query->whereNotIn('name', $executive_roles);
-                                })
-                                ->orWhereDoesntHave('roles')
-                                ->get()
-                                ->mapWithKeys(fn($user) => [$user->id => $user->full_name])
-                                ->toArray();
-                            })
-                            ->searchable([
-                                'first_name',
-                                'last_name',
-                                'middle_name'
-                            ])
-                            ->required()
-                            ->reactive(),
-                    ])
-                    ->action(function (array $data): void {
-                        $evaluationPeriod = EvaluationPeriod::find($this->evaluation_period_id);
-                        $committee_id = $data['committee_id'] === 'bot' ? null : (int) $data['committee_id'];
-                        $trustee_id = (int) $data['trustee_id'];
-
-                        // Validate: Check if this trustee already has attendance for this committee
-                        $existingAttendance = AttendanceAnswer::where('trustee_id', $trustee_id)
-                            ->where('evaluation_period_id', $evaluationPeriod->id)
-                            ->where('committee_id', $committee_id)
-                            ->exists();
-
-                        if ($existingAttendance) {
-                            Notification::make()
-                                ->title('Duplicate Entry')
-                                ->danger()
-                                ->body('This attendee already has an attendance record for this meeting type.')
-                                ->send();
-                            return;
-                        }
-
-                        // Create new attendance record
-                        AttendanceAnswer::create([
-                            'trustee_id' => $trustee_id,
-                            'evaluation_period_id' => $evaluationPeriod->id,
-                            'committee_id' => $committee_id,
-                            'total_meetings' => 0,
-                            'physically_present' => 0,
-                            'considered_present' => 0,
-                            'total_present' => 0,
-                        ]);
-
-                        Notification::make()
-                            ->title('Attendee Added')
-                            ->success()
-                            ->body('Attendee has been successfully added.')
-                            ->send();
-
-
-                    }),
+                //         Notification::make()
+                //             ->title($result['success'] ? 'Attendee Added' : 'Duplicate Entry')
+                //             ->color($result['success'] ? 'success' : 'danger')
+                //             ->body($result['message'])
+                //             ->send();
+                //     }),
 
             ])
             ->recordActions([

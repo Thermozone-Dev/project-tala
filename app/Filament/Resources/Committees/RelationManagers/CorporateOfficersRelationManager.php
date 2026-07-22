@@ -37,7 +37,8 @@ class CorporateOfficersRelationManager extends RelationManager
             'Treasurer',
             'Comptroller',
             'EVP-GM',
-            'SVP-Operation'
+            'SVP-Operation',
+            'SVP Administration'
         ];
     }
     public function table(Table $table): Table

@@ -37,6 +37,10 @@ if (! function_exists('get_eval_form_by_role')) {
                 $form =  $model->find(7);
                 break;
 
+            case 'svp administration':
+                $form =  $model->find(7);
+                break;
+
             case 'corporate treasurer':
                 $form =  $model->find(5);
                 break;
