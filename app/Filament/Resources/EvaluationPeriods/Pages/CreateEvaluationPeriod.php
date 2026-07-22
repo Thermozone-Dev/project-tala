@@ -4,6 +4,7 @@ namespace App\Filament\Resources\EvaluationPeriods\Pages;
 
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
 use App\Models\Committee;
+use App\Models\CommitteeHasTrustee;
 use App\Models\EvaluationPeriod;
 use App\Models\User;
 use Filament\Notifications\Notification;
@@ -79,8 +80,8 @@ class CreateEvaluationPeriod extends CreateRecord
                         })
                         ->unique('user_id');
 
-                    // Find all LRPs and SVP-Operations in this committee (roles only evaluated within their committees)
-                    $committee_only_roles = ['lead resource person', 'svp-operation', 'svp administration'];
+                    // Find all LRPs in this committee (roles only evaluated within their committees)
+                    $committee_only_roles = ['lead resource person'];
                     $committee_only_members = $committee->committee_has_trustees
                         ->filter(fn($member) => in_array(strtolower($member->role->name), $committee_only_roles));
 
@@ -112,18 +113,21 @@ class CreateEvaluationPeriod extends CreateRecord
 
                 // 3. Cross-evaluation: Board members evaluate all non-executive roles
                 // Define role priority (higher index = higher priority)
+                // Board hierarchy: Chairman > Vice Chairman > Trustee (only highest evaluates)
                 $role_priority = [
                     'trustee' => 1,
                     'corporate officer' => 2,
                     'treasurer' => 3,
                     'comptroller' => 4,
-                    'svp-operation' => 6,
                     'evp-gm' => 7,
                     'corporate secretary' => 8,
                     'lead resource person' => 9,
                     'vice chairman' => 10,
                     'chairman' => 11,
                 ];
+
+                // Board hierarchy: only the highest board role is evaluated
+                $board_hierarchy = ['chairman', 'vice chairman', 'trustee'];
 
                 $board_members = User::role(get_board_members())
                     ->with('roles')
@@ -158,61 +162,93 @@ class CreateEvaluationPeriod extends CreateRecord
                             continue;
                         }
 
-                        // Get the highest priority role
-                        $highest_priority_role = null;
-                        $highest_priority_value = -1;
+                        // Get evaluator's committees for LRP evaluation
+                        $evaluator_committees = $evaluator->committees()
+                            ->pluck('committee_id')
+                            ->toArray();
+
+                        $evaluatee_committees = $evaluatee->committees()
+                            ->pluck('committee_id')
+                            ->toArray();
+
+                        // Separate board roles from other roles
+                        $board_roles = [];
+                        $non_board_roles = [];
 
                         foreach ($evaluatee_roles as $role) {
-                            $priority = $role_priority[strtolower($role->name)] ?? 0;
-                            if ($priority > $highest_priority_value) {
-                                $highest_priority_value = $priority;
-                                $highest_priority_role = $role;
+                            $role_name = strtolower($role->name);
+                            if (in_array($role_name, $board_hierarchy)) {
+                                $board_roles[] = $role;
+                            } else {
+                                $non_board_roles[] = $role;
                             }
                         }
 
-                        if (!$highest_priority_role) {
-                            continue;
-                        }
+                        $assigned_forms = [];
+                        $roles_to_evaluate = [];
 
-                        // Check if evaluator can evaluate this person
-                        $can_evaluate = false;
-
-                        if ($is_in_governance) {
-                            // Governance members can evaluate all non-executive board members
-                            $can_evaluate = true;
-                        } else {
-                            // Non-governance members can only evaluate LRPs in their committees
-                            if (strtolower($highest_priority_role->name) === 'lead resource person') {
-                                $evaluator_committees = $evaluator->committees()
-                                    ->pluck('committee_id')
-                                    ->toArray();
-
-                                $evaluatee_committees = $evaluatee->committees()
-                                    ->pluck('committee_id')
-                                    ->toArray();
-
-                                // Check if they share any committee
-                                $can_evaluate = count(array_intersect($evaluator_committees, $evaluatee_committees)) > 0;
+                        // If has board roles, add only the highest one (prevent duplication)
+                        if (!empty($board_roles)) {
+                            foreach ($board_hierarchy as $hierarchy_role) {
+                                $board_role = collect($board_roles)
+                                    ->first(fn($role) => strtolower($role->name) === $hierarchy_role);
+                                if ($board_role) {
+                                    $roles_to_evaluate[] = $board_role;
+                                    break; // Only take the highest
+                                }
                             }
                         }
 
-                        if ($can_evaluate) {
-                            $eval_form = get_eval_form_by_role($highest_priority_role->name);
-                            if ($eval_form) {
-                                // Check if assignment already exists to avoid duplicates
-                                $exists = $this->record->assignments()
-                                    ->where('evaluator_id', $evaluator->getKey())
-                                    ->where('member_id', $evaluatee->getKey())
-                                    ->where('ef_id', $eval_form)
+                        // Add all non-board roles
+                        $roles_to_evaluate = array_merge($roles_to_evaluate, $non_board_roles);
+
+                        // Evaluate each role
+                        foreach ($roles_to_evaluate as $evaluatee_role) {
+                            $role_name = strtolower($evaluatee_role->name);
+                            $can_evaluate = false;
+
+                            // Special rule for LRP: Both governance and non-governance members must be in same committee
+                            if ($role_name === 'lead resource person') {
+                                // Check if evaluatee has a committee assignment for LRP role
+                                $lrp_has_committee = CommitteeHasTrustee::where('user_id', $evaluatee->getKey())
+                                    ->whereHas('role', fn($q) => $q->where('name', 'Lead Resource Person'))
                                     ->exists();
 
-                                if (!$exists) {
-                                    $this->record->assignments()->create([
-                                        'ef_id' => $eval_form,
-                                        'committee_id' => null,
-                                        'member_id' => $evaluatee->getKey(),
-                                        'evaluator_id' => $evaluator->getKey(),
-                                    ]);
+                                if ($lrp_has_committee) {
+                                    // Both must be in the same committee
+                                    $can_evaluate = count(array_intersect($evaluator_committees, $evaluatee_committees)) > 0;
+                                }
+                                // If LRP has no committee, skip evaluation (don't evaluate unassigned LRPs)
+                            } else if ($is_in_governance) {
+                                // Governance members can evaluate: Board roles, Corporate roles, EVP-GM
+                                if (in_array($role_name, array_merge($board_hierarchy, [
+                                    'corporate secretary', 'treasurer', 'comptroller', 'evp-gm'
+                                ]))) {
+                                    $can_evaluate = true;
+                                }
+                            }
+
+                            // Get the form for this role and create assignment if applicable
+                            if ($can_evaluate) {
+                                $eval_form = get_eval_form_by_role($evaluatee_role->name);
+                                if ($eval_form && !in_array($eval_form, $assigned_forms)) {
+                                    // Check if assignment already exists to avoid duplicates
+                                    $exists = $this->record->assignments()
+                                        ->where('evaluator_id', $evaluator->getKey())
+                                        ->where('member_id', $evaluatee->getKey())
+                                        ->where('ef_id', $eval_form)
+                                        ->exists();
+
+                                    if (!$exists) {
+                                        $this->record->assignments()->create([
+                                            'ef_id' => $eval_form,
+                                            'committee_id' => null,
+                                            'member_id' => $evaluatee->getKey(),
+                                            'evaluator_id' => $evaluator->getKey(),
+                                        ]);
+
+                                        $assigned_forms[] = $eval_form;
+                                    }
                                 }
                             }
                         }

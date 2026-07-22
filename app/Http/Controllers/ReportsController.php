@@ -127,8 +127,8 @@ class ReportsController extends Controller
             $user = User::find($member['member_id']);
             $roles = $user->roles()->pluck('name')->toArray();
 
-            // Check if LRP or SVP-Operation or SVP Administration (both are Form C7 - committee-only roles)
-            if (in_array('Lead Resource Person', $roles) || in_array('SVP-Operation', $roles) || in_array('SVP Administration', $roles)) {
+            // Check if LRP (Form C7 - committee-only role)
+            if (in_array('Lead Resource Person', $roles)) {
                 $lrps->push([
                     'member_id' => $member['member_id'],
                     'member_name' => $member['member_name'],
@@ -387,8 +387,6 @@ class ReportsController extends Controller
             'Comptroller',
             'Corporate Secretary',
             'Lead Resource Person',
-            'SVP-Operation',
-            'SVP Administration',
             'EVP-GM'
         ];
 
@@ -665,8 +663,8 @@ class ReportsController extends Controller
             $user = User::find($member['member_id']);
             $roles = $user->roles()->pluck('name')->toArray();
 
-            // Check if LRP or SVP-Operation or SVP Administration (both are Form C7 - committee-only roles)
-            if (in_array('Lead Resource Person', $roles) || in_array('SVP-Operation', $roles) || in_array('SVP Administration', $roles)) {
+            // Check if LRP (Form C7 - committee-only role)
+            if (in_array('Lead Resource Person', $roles)) {
                 $lrps->push([
                     'member_id' => $member['member_id'],
                     'member_name' => $member['member_name'],
