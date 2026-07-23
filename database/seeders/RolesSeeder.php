@@ -24,7 +24,8 @@ class RolesSeeder extends Seeder
             'Treasurer',
             'Comptroller',
             'EVP-GM',
-            'SVP-Operation'
+            'SVP-Operation',
+            'SVP Administration'
         ];
 
         foreach ($roles as $role) {

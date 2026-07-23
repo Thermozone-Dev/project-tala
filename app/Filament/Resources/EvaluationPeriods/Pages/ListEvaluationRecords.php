@@ -4,9 +4,12 @@ namespace App\Filament\Resources\EvaluationPeriods\Pages;
 
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
+use App\Filament\Traits\HandlesEvaluationErrors;
+use App\Filament\Widgets\EvaluationStatsOverview;
 use App\Models\EvaluationPeriod;
 use App\Models\EvaluationForm;
 use App\Models\Committee;
+use App\Models\Trustee;
 use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
 use Carbon\Carbon;
@@ -30,10 +33,32 @@ class ListEvaluationRecords extends ListRecords
 
     protected static string $resource = EvaluationPeriodResource::class;
 
+    use HandlesEvaluationErrors;
+
     public $record,$evaluator_id;
 
     protected static ?string $title = 'Evaluation Records';
 
+    public function mount(): void
+    {
+        // Verify evaluation period exists
+        if (!$this->verifyEvaluationPeriodExists($this->record)) {
+            return;
+        }
+
+        parent::mount();
+    }
+
+
+
+    protected function getHeaderWidgets(): array
+    {
+        return array_filter([
+            EvaluationStatsOverview::make([
+                'evaluator' => $this->evaluator_id,
+            ]),
+        ]);
+    }
 
     public function getBreadcrumbs(): array
     {
@@ -168,11 +193,21 @@ class ListEvaluationRecords extends ListRecords
                     }),
             ])->recordActions([
                 Action::make('View Evaluation')
+                    ->label( function ($record){
+                        if(get_executive_role()){
+                            return 'View and Evaluate';
+                        }
+
+                        if($record->trustee_evaluation_statuses_id != 3){
+                            return 'View Evaluation';
+                        }
+
+                        return 'Evaluate';
+                    })
                     ->url( function($record){
                         return $this->getResource()::getUrl('view-evaluation',['evaluation_id' => $record->evaluation_id, 'record_id' => $record->id]);
                     })
-                    ->icon(Heroicon::Eye)
-                    ->openUrlInNewTab(),
+                    ->icon(Heroicon::Eye),
 
                 Action::make('Print')
                     ->color('secondary')
