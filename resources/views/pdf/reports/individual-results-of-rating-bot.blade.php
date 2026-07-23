@@ -16,8 +16,8 @@
                     <div class="row">
                         <div class="col-xs-12 text-center">
                         </div>
-                        <div class="col-xs-12" style="margin: 10px 0; overflow-x: auto;">
-                            <table style="width: 100%; table-layout: auto; word-wrap: break-word; word-break: break-word;">
+                        <div class="col-xs-12" style="margin: 10px 0; margin-bottom: 20px; overflow-x: auto;">
+                            <table style="width: 100%; table-layout: auto; word-wrap: break-word; word-break: break-word; margin-bottom: 15px;">
                                 <thead class="header-color">
                                     <tr>
                                         <h1 class="text-center"><b><u>{{strtoupper($members['member_name'])}}</u></b></h1>

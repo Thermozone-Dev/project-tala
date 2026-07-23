@@ -36,9 +36,9 @@
 
                 @if (isset($assessment['sections']) && is_array($assessment['sections']) && count($assessment['sections']) > 0)
                     @foreach ($assessment['sections'] as $section)
-                        <div class="row" style="white-space:nowrap; margin: 0;">
+                        <div class="row" style="white-space:nowrap; margin: 0; margin-bottom: 20px;">
                             <div class="col-xs-12" style="white-space:nowrap; padding: 0;">
-                                <table style="width: 100%; table-layout: auto; margin: 0;">
+                                <table style="width: 100%; table-layout: auto; margin: 0; margin-bottom: 15px;">
                                     <thead class="header-color">
                                         <tr>
                                             <th colspan="{{ (isset($section['questions'][0]['evaluators']) ? count($section['questions'][0]['evaluators']) : 0) + 5 }}" class="text-left" style="padding: 3px;">

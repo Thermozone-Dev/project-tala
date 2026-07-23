@@ -173,6 +173,33 @@ class AssesmentComputation
 
     }
 
+    /**
+     * Get attendance qualitative rating based on quantitative value (0-5 scale)
+     * Attendance Rating Ranges:
+     * 4.01 to 5 = Excellent
+     * 3.01 to 4 = Superior
+     * 2.01 to 3 = Very Good
+     * 1.01 to 2 = Good
+     * 0 to 1 = Satisfactory
+     */
+    public static function get_attendance_qualitative($value)
+    {
+        $rating = [
+            'Excellent' => [4.01, 5.00],
+            'Superior' => [3.01, 4.00],
+            'Very Good' => [2.01, 3.00],
+            'Good' => [1.01, 2.00],
+            'Satisfactory' => [0, 1.00]
+        ];
+
+        foreach ($rating as $index => [$min, $max]) {
+            if ($value >= $min && $value <= $max) {
+                return $index;
+            }
+        }
+
+        return 'No Rating';
+    }
 
 
 

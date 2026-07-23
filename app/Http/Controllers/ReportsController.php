@@ -303,10 +303,10 @@ class ReportsController extends Controller
             $total_qualitative = AssesmentComputation::get_assesment_rating_bot_summary($rating_average);
 
             // Use pre-calculated attendance if provided, otherwise calculate it
-            if (isset($member['attendance_rating']) && isset($member['attendance_avg_rating'])) {
-                // Use pre-calculated attendance (for CO/LRP filtered views)
-                $attendance_rating = $member['attendance_avg_rating'];
-                $attendance = ['summary' => ['avg_rating' => $member['attendance_avg_rating']]];
+            if (isset($member['attendance'])) {
+                // Use pre-calculated full attendance structure (for CO/LRP filtered views)
+                $attendance = $member['attendance'];
+                $attendance_rating = $attendance['summary']['avg_rating'] ?? 0;
             } else {
                 // Get attendance for member's specific context (BOT or committee)
                 $committee_id = isset($member['committee_id']) ? $member['committee_id'] : null;
@@ -399,15 +399,16 @@ class ReportsController extends Controller
             ];
         })->values();
 
-        $attendance_rating_qualitative = AssesmentComputation::get_attendance_rating($attendance->avg('rating_scale'));
+        $avgRatingScale = $attendance->avg('rating_scale') ?? 0;
+        $attendance_rating_qualitative = AssesmentComputation::get_attendance_qualitative($avgRatingScale);
         $attendance_summary = [
             'total_meetings' => $attendance->sum('total_meetings'),
             'physically_present' => $attendance->sum('physically_present'),
             'considered_present' => $attendance->sum('considered_present'),
             'total_present' => $attendance->sum('total_present'),
             'avg_attendance_percentage' => $attendance->avg('attendance_percentage'),
-            'avg_rating' => $attendance->avg('rating_scale'),
-            'attendance_rating_qualititative' => $attendance_rating_qualitative?->qualitative ?? 'No Rating Found',
+            'avg_rating' => $avgRatingScale,
+            'attendance_rating_qualititative' => $attendance_rating_qualitative ?? 'No Rating Found',
         ];
 
         return [
@@ -447,27 +448,92 @@ class ReportsController extends Controller
                 // Build evaluation_summary directly from filtered assignments (only CO forms)
                 $evaluationSummary = $this->build_evaluation_summary_from_assignments($uniqueAssignments);
 
-                // Get committees where user holds a corporate officer role
-                $coCommittees = User::find($member->id)->committees()
+                // Get committees from the CO assignments for this member
+                $coCommitteesFromAssignments = $uniqueAssignments->pluck('committee_id')->filter()->unique()->toArray();
+                $hasBotAssignments = $uniqueAssignments->contains(fn($a) => $a->committee_id === null);
+
+                // Also get committees where user holds a corporate officer role
+                $coCommitteesFromRoles = User::find($member->id)->committees()
                     ->whereHas('role', fn($q) => $q->whereIn('name', $coRoles))
                     ->pluck('committee_id')
                     ->toArray();
 
-                // Get attendance only from corporate officer committees
-                $attendance_rating = 'No Rating';
-                $attendance_avg = 0;
+                // Combine both sources - use committees from assignments primarily
+                $coCommittees = !empty($coCommitteesFromAssignments) ? $coCommitteesFromAssignments : $coCommitteesFromRoles;
 
+                // Build full attendance structure for CO (from CO committees + BOT if applicable)
+                $attendanceData = null;
+                $attendanceRecords = collect();
+
+                // Query attendance from CO committees
                 if (!empty($coCommittees)) {
-                    $attendance = AttendanceAnswer::where('evaluation_period_id', $report->evaluationPeriod->id)
-                        ->where('trustee_id', $member->id)
-                        ->whereIn('committee_id', $coCommittees)
-                        ->get();
-
-                    if ($attendance->isNotEmpty()) {
-                        $attendance_rating = AssesmentComputation::get_attendance_rating($attendance->avg('ratingScaleValue.value'))?->qualitative ?? 'No Rating';
-                        $attendance_avg = $attendance->avg('ratingScaleValue.value') ?? 0;
-                    }
+                    $attendanceRecords = $attendanceRecords->merge(
+                        AttendanceAnswer::where('evaluation_period_id', $report->evaluationPeriod->id)
+                            ->where('trustee_id', $member->id)
+                            ->whereIn('committee_id', $coCommittees)
+                            ->with('ratingScaleValue', 'commitee')
+                            ->get()
+                    );
                 }
+
+                // Also query BOT meetings attendance if CO has BOT assignments
+                if ($hasBotAssignments) {
+                    $attendanceRecords = $attendanceRecords->merge(
+                        AttendanceAnswer::where('evaluation_period_id', $report->evaluationPeriod->id)
+                            ->where('trustee_id', $member->id)
+                            ->whereNull('committee_id')
+                            ->with('ratingScaleValue', 'commitee')
+                            ->get()
+                    );
+                }
+
+                // Deduplicate attendance records
+                $attendanceRecords = $attendanceRecords->unique('id')->values();
+
+                if ($attendanceRecords->isNotEmpty()) {
+                        // Build attendance array with proper structure
+                        $attendanceArray = $attendanceRecords->map(function ($attendance) {
+                            $attendance_percentage = AssesmentComputation::get_attendance_percentage(
+                                $attendance->total_meetings ?? 0,
+                                $attendance->total_present ?? 0
+                            );
+
+                            $category = $attendance->committee_id === null
+                                ? 'BOT Meetings'
+                                : ($attendance->commitee?->name . ' Meetings' ?? 'Unknown Committee');
+
+                            return [
+                                'committee_id' => $attendance->committee_id,
+                                'category' => $category,
+                                'total_meetings' => $attendance->total_meetings ?? 0,
+                                'physically_present' => $attendance->physically_present ?? 0,
+                                'considered_present' => $attendance->considered_present ?? 0,
+                                'total_present' => $attendance->total_present ?? 0,
+                                'attendance_percentage' => $attendance_percentage,
+                                'rating_scale' => $attendance->ratingScaleValue?->value ?? 0,
+                                'rating_scale_equivalent' => $attendance->ratingScaleValue?->qualitative ?? 'No Rating'
+                            ];
+                        })->toArray();
+
+                        // Build summary
+                        $avgRatingScale = $attendanceRecords->avg('ratingScaleValue.value') ?? 0;
+                        $attendanceSummary = [
+                            'total_meetings' => $attendanceRecords->sum('total_meetings'),
+                            'physically_present' => $attendanceRecords->sum('physically_present'),
+                            'considered_present' => $attendanceRecords->sum('considered_present'),
+                            'total_present' => $attendanceRecords->sum('total_present'),
+                            'avg_attendance_percentage' => $attendanceRecords->avg(
+                                fn($record) => AssesmentComputation::get_attendance_percentage($record->total_meetings, $record->total_present)
+                            ),
+                            'avg_rating' => $avgRatingScale,
+                            'attendance_rating_qualititative' => AssesmentComputation::get_attendance_qualitative($avgRatingScale) ?? 'No Rating'
+                        ];
+
+                        $attendanceData = [
+                            'attendance' => $attendanceArray,
+                            'summary' => $attendanceSummary
+                        ];
+                    }
 
                 return [
                     'member_id' => $member->id,
@@ -475,8 +541,7 @@ class ReportsController extends Controller
                     'member_email' => $member->email,
                     'roles' => $member->roles->pluck('name')->toArray(),
                     'evaluation_summary' => $evaluationSummary,
-                    'attendance_rating' => $attendance_rating,
-                    'attendance_avg_rating' => $attendance_avg,
+                    'attendance' => $attendanceData ?? ['attendance' => [], 'summary' => ['avg_rating' => 0, 'attendance_rating_qualititative' => 'No Rating']],
                 ];
             })
             ->values();
@@ -502,7 +567,7 @@ class ReportsController extends Controller
             ->where('ef_id', $lrpFormId)
             ->load(['member', 'evaluator', 'form', 'evaluationPeriod', 'eval_status', 'assesment_answer.questionnaire', 'assesment_answer.ratingScaleValue'])
             ->groupBy('member_id')
-            ->map(function ($memberAssignments) use ($report) {
+            ->map(function ($memberAssignments) use ($report, $lrpFormId) {
                 $member = $memberAssignments->first()->member;
 
                 // Get unique committees this member is assigned to from the assignments
@@ -510,7 +575,7 @@ class ReportsController extends Controller
                     ->unique('committee_id')
                     ->values();
 
-                return $uniqueCommittees->map(function ($assignment) use ($member, $report, $memberAssignments) {
+                return $uniqueCommittees->map(function ($assignment) use ($member, $memberAssignments, $report) {
                     $committeeId = $assignment->committee_id;
                     $committee = Committee::find($committeeId);
 
@@ -518,18 +583,47 @@ class ReportsController extends Controller
                     $committeeAssignments = $memberAssignments->filter(fn($a) => $a->committee_id == $committeeId);
                     $evaluationSummary = $this->build_evaluation_summary_from_assignments($committeeAssignments);
 
-                    // Get attendance only from this specific committee
-                    $attendance_rating = 'No Rating';
-                    $attendance_avg = 0;
-
-                    $attendance = AttendanceAnswer::where('evaluation_period_id', $report->evaluationPeriod->id)
+                    // Build full attendance structure for this specific LRP committee
+                    $attendanceData = null;
+                    $attendanceRecord = AttendanceAnswer::with('ratingScaleValue', 'commitee')
+                        ->where('evaluation_period_id', $report->evaluationPeriod->id)
                         ->where('trustee_id', $member->id)
                         ->where('committee_id', $committeeId)
-                        ->get();
+                        ->first();
 
-                    if ($attendance->isNotEmpty()) {
-                        $attendance_rating = AssesmentComputation::get_attendance_rating($attendance->avg('ratingScaleValue.value'))?->qualitative ?? 'No Rating';
-                        $attendance_avg = $attendance->avg('ratingScaleValue.value') ?? 0;
+                    if ($attendanceRecord) {
+                        $attendance_percentage = AssesmentComputation::get_attendance_percentage(
+                            $attendanceRecord->total_meetings ?? 0,
+                            $attendanceRecord->total_present ?? 0
+                        );
+
+                        $attendanceArray = [[
+                            'committee_id' => $attendanceRecord->committee_id,
+                            'category' => $attendanceRecord->commitee?->name . ' Meetings' ?? 'Unknown Committee',
+                            'total_meetings' => $attendanceRecord->total_meetings ?? 0,
+                            'physically_present' => $attendanceRecord->physically_present ?? 0,
+                            'considered_present' => $attendanceRecord->considered_present ?? 0,
+                            'total_present' => $attendanceRecord->total_present ?? 0,
+                            'attendance_percentage' => $attendance_percentage,
+                            'rating_scale' => $attendanceRecord->ratingScaleValue?->value ?? 0,
+                            'rating_scale_equivalent' => $attendanceRecord->ratingScaleValue?->qualitative ?? 'No Rating'
+                        ]];
+
+                        $avgRatingScale = $attendanceRecord->ratingScaleValue?->value ?? 0;
+                        $attendanceSummary = [
+                            'total_meetings' => $attendanceRecord->total_meetings,
+                            'physically_present' => $attendanceRecord->physically_present,
+                            'considered_present' => $attendanceRecord->considered_present,
+                            'total_present' => $attendanceRecord->total_present,
+                            'avg_attendance_percentage' => $attendance_percentage,
+                            'avg_rating' => $avgRatingScale,
+                            'attendance_rating_qualititative' => AssesmentComputation::get_attendance_qualitative($avgRatingScale) ?? 'No Rating'
+                        ];
+
+                        $attendanceData = [
+                            'attendance' => $attendanceArray,
+                            'summary' => $attendanceSummary
+                        ];
                     }
 
                     return [
@@ -540,8 +634,7 @@ class ReportsController extends Controller
                         'committee_id' => $committeeId,
                         'committee_name' => $committee?->name ?? 'Unknown Committee',
                         'evaluation_summary' => $evaluationSummary,
-                        'attendance_rating' => $attendance_rating,
-                        'attendance_avg_rating' => $attendance_avg,
+                        'attendance' => $attendanceData ?? ['attendance' => [], 'summary' => ['avg_rating' => 0, 'attendance_rating_qualititative' => 'No Rating']],
                     ];
                 });
             })

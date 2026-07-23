@@ -24,8 +24,8 @@
                     </div>
 
                     <div class="row" style="white-space:nowrap;">
-                        <div class="col-xs-12" style="white-space:nowrap; margin: 10px 0">
-                            <table>
+                        <div class="col-xs-12" style="white-space:nowrap; margin: 10px 0; margin-bottom: 20px;">
+                            <table style="margin-bottom: 15px;">
                                 <thead class="header-color">
                                 <tr>
                                     <th rowspan="2" style="width: 3%;">#</th>

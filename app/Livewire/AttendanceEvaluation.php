@@ -57,6 +57,11 @@ class AttendanceEvaluation extends TableWidget
 
                 TextColumn::make('trustee.full_name')
                     ->label('Member')
+                    ->searchable([
+                        'first_name',
+                        'last_name',
+                        'middle_name'
+                    ])
                     // ->searchable()
                     ->sortable(),
 
