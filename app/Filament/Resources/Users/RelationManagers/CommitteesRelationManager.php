@@ -34,6 +34,33 @@ class CommitteesRelationManager extends RelationManager
                     ->falseIcon(Heroicon::OutlinedXCircle),
             ])
             ->recordActions([
+                Action::make('update_role')
+                    ->visible(fn () => $this->getPageClass() == EditUser::class)
+                    ->label('Update Role')
+                    ->icon(Heroicon::OutlinedPencil)
+                    ->modal()
+                    ->modalWidth('sm')
+                    ->modalHeading(fn ($record) => 'Update Role for ' . $record->committee->name)
+                    ->form([
+                        Grid::make(1)
+                            ->schema([
+                                Select::make('role_id')
+                                    ->label('Role')
+                                    ->options(function ($livewire) {
+                                        $member = $livewire->getOwnerRecord();
+                                        $role_ids = $member->roles()->pluck('id');
+                                        return Role::whereIn('id', $role_ids)->orderBy('id', 'asc')->pluck('name', 'id')->toArray();
+                                    })
+                                    ->default(fn ($record) => $record->role_id)
+                                    ->required(),
+                            ])
+                    ])
+                    ->action(function ($record, array $data) {
+                        $record->update([
+                            'role_id' => $data['role_id'],
+                        ]);
+                    })
+                    ->successNotificationTitle('Role Updated'),
                 Action::make('toggle_active')
                     ->visible(fn () => $this->getPageClass() == EditUser::class)
                     ->label(fn ($record) => $record->is_active ? 'Deactivate' : 'Activate')

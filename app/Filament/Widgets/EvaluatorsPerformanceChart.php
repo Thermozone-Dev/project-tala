@@ -11,7 +11,7 @@ class EvaluatorsPerformanceChart extends ChartWidget
 {
     use HasPageShield;
 
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 5;
 
     public static function canView(): bool
     {

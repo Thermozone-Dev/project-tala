@@ -172,7 +172,7 @@ class ReportsController extends Controller
         $coSummary = [
             'id' => 2,
             'code' => 'CO',
-            'name' => 'Corporate Officer',
+            'name' => 'Corporate Officers',
             'members' => $corporateOfficersDedup->toArray()
         ];
 
@@ -214,6 +214,11 @@ class ReportsController extends Controller
             $firstAssignment = $evaluatorGroup->first();
             $evaluator = $firstAssignment->evaluator;
 
+            // Skip if evaluator doesn't exist
+            if (!$evaluator) {
+                return null;
+            }
+
             return [
                 'evaluator_id' => $evaluator->id,
                 'evaluator_name' => $evaluator->full_name ?? 'N/A',
@@ -243,7 +248,7 @@ class ReportsController extends Controller
                     ];
                 })->toArray()
             ];
-        })->values()->toArray();
+        })->filter()->values()->toArray();
     }
 
     public function individual_summary_mapper ($members){
@@ -434,6 +439,11 @@ class ReportsController extends Controller
             'EVP-GM'
         ];
 
+        // Verify evaluation period exists
+        if (!$report || !$report->evaluationPeriod) {
+            return [];
+        }
+
         // Get evaluations by FORM ID (not by member role) to capture all CO evaluations
         $evaluations = $report->evaluationPeriod->assignments
             ->whereIn('ef_id', $coFormIds)
@@ -441,6 +451,11 @@ class ReportsController extends Controller
             ->groupBy('member_id')
             ->map(function ($memberAssignments) use ($report, $coRoles) {
                 $member = $memberAssignments->first()->member;
+
+                // Skip if member doesn't exist
+                if (!$member) {
+                    return null;
+                }
 
                 // Deduplicate assignments - only keep unique assignment IDs (in case of duplicates)
                 $uniqueAssignments = $memberAssignments->unique('id')->values();
@@ -544,6 +559,7 @@ class ReportsController extends Controller
                     'attendance' => $attendanceData ?? ['attendance' => [], 'summary' => ['avg_rating' => 0, 'attendance_rating_qualititative' => 'No Rating']],
                 ];
             })
+            ->filter() // Remove null values
             ->values();
 
         // Map through individual summary mapper - deduplicate by member_id to prevent duplicates
@@ -562,6 +578,11 @@ class ReportsController extends Controller
     public function indiviual_results_of_rating_lrps_collection($report){
         $lrpFormId = 7; // C7 is LRP form
 
+        // Verify evaluation period exists
+        if (!$report || !$report->evaluationPeriod) {
+            return [];
+        }
+
         // Get evaluations by FORM ID (not by member role) to capture all LRP evaluations
         $evaluations = $report->evaluationPeriod->assignments
             ->where('ef_id', $lrpFormId)
@@ -569,6 +590,11 @@ class ReportsController extends Controller
             ->groupBy('member_id')
             ->map(function ($memberAssignments) use ($report, $lrpFormId) {
                 $member = $memberAssignments->first()->member;
+
+                // Skip if member doesn't exist
+                if (!$member) {
+                    return [];
+                }
 
                 // Get unique committees this member is assigned to from the assignments
                 $uniqueCommittees = $memberAssignments
@@ -578,6 +604,11 @@ class ReportsController extends Controller
                 return $uniqueCommittees->map(function ($assignment) use ($member, $memberAssignments, $report) {
                     $committeeId = $assignment->committee_id;
                     $committee = Committee::find($committeeId);
+
+                    // Skip if committee not found
+                    if (!$committee && $committeeId !== null) {
+                        return null;
+                    }
 
                     // Filter assignments for this specific committee to build correct evaluation_summary
                     $committeeAssignments = $memberAssignments->filter(fn($a) => $a->committee_id == $committeeId);
@@ -639,6 +670,7 @@ class ReportsController extends Controller
                 });
             })
             ->flatten(1)
+            ->filter() // Remove null values
             ->values();
 
         // Map through individual summary mapper

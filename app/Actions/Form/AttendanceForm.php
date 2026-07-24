@@ -20,6 +20,44 @@ class AttendanceForm
 {
     use AsAction;
 
+    /**
+     * Sort members by role hierarchy: Trustees > Corporate Officers > LRPs
+     * Also groups by committee for easier navigation
+     */
+    private function sortMembersByRoleHierarchy($members)
+    {
+        $roleHierarchy = [
+            'chairman' => 1,
+            'vice chairman' => 2,
+            'trustee' => 3,
+            'treasurer' => 4,
+            'comptroller' => 4,
+            'corporate secretary' => 4,
+            'evp-gm' => 4,
+            'svp-operation' => 4,
+            'svp administration' => 4,
+            'lead resource person' => 5,
+        ];
+
+        usort($members, function ($a, $b) use ($roleHierarchy) {
+            $roleA = strtolower($a['role'] ?? '');
+            $roleB = strtolower($b['role'] ?? '');
+
+            $orderA = $roleHierarchy[$roleA] ?? 99;
+            $orderB = $roleHierarchy[$roleB] ?? 99;
+
+            // Sort by role hierarchy first
+            if ($orderA !== $orderB) {
+                return $orderA <=> $orderB;
+            }
+
+            // Then sort alphabetically by name within same role
+            return strcasecmp($a['name'], $b['name']);
+        });
+
+        return $members;
+    }
+
     public function handle($evaluation_period = null, $trustees = [])
     {
         if (!$evaluation_period) {
@@ -177,6 +215,9 @@ class AttendanceForm
         }
 
         if (!empty($bot_members)) {
+            // Sort BOT members by role hierarchy
+            $bot_members = $this->sortMembersByRoleHierarchy($bot_members);
+
             $committees[] = [
                 'id' => 'bot',
                 'name' => 'BOT Meetings',
@@ -245,6 +286,9 @@ class AttendanceForm
             }
 
             if (!empty($committee_members)) {
+                // Sort committee members by role hierarchy
+                $committee_members = $this->sortMembersByRoleHierarchy($committee_members);
+
                 $committees[] = [
                     'id' => $committee->id,
                     'name' => $committee->name . ' Meetings',
