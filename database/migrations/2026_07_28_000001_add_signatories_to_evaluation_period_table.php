@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('evaluation_period', function (Blueprint $table) {
-            $table->foreignId('corporate_secretary_sign')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('corporsecretariatate_secretary_sign')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('corporate_secretary_sign')->constrained('users');
+            $table->foreignId('corporsecretariatate_secretary_sign')->constrained('users');
         });
     }
 
