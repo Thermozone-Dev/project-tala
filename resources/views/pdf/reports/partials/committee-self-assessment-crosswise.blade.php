@@ -217,15 +217,25 @@
                     <div>Prepared by:</div><br>
                     <br>
                     <div>______________________________</div>
-                    <div><b>MS. CLARENCE R. MEJIA</b></div>
-                    <div>Head, Office the Board Secretariat</div>
+                    @if(isset($data['evaluation_period_obj']) && $data['evaluation_period_obj']->secretariatUser)
+                        <div><b>{{ strtoupper($data['evaluation_period_obj']->secretariatUser->full_name) }}</b></div>
+                        <div>Head, Office the Board Secretariat</div>
+                    @else
+                        <div><b>_____________________________</b></div>
+                        <div style="font-size: 9px; color: #999;">(No signatory encoded)</div>
+                    @endif
                 </div>
                 <div class="col-xs-6">
                     <div>Noted by:</div><br>
                     <br>
                     <div>______________________________</div>
-                    <div><b>ATTY DEXTER HAROLD E EMPERADOR</b></div>
-                    <div>Corporate Secretary</div>
+                    @if(isset($data['evaluation_period_obj']) && $data['evaluation_period_obj']->corporateSecretarySign)
+                        <div><b>{{ strtoupper($data['evaluation_period_obj']->corporateSecretarySign->full_name) }}</b></div>
+                        <div>Corporate Secretary</div>
+                    @else
+                        <div><b>_____________________________</b></div>
+                        <div style="font-size: 9px; color: #999;">(No signatory encoded)</div>
+                    @endif
                 </div>
             </div>
         </div>

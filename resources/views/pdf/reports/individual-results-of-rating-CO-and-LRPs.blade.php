@@ -197,8 +197,13 @@
                             <br>
                             <div>Noted by:</div><br>
                             <div>___________________________________</div>
-                            <div><b>ATTY DEXTER HAROLD E EMPERADOR</b></div>
-                            <div>Corporate Secretary</div>
+                            @if(isset($data['evaluation_period_obj']) && $data['evaluation_period_obj']->corporateSecretarySign)
+                                <div><b>{{ strtoupper($data['evaluation_period_obj']->corporateSecretarySign->full_name) }}</b></div>
+                                <div>Corporate Secretary</div>
+                            @else
+                                <div><b>_____________________________</b></div>
+                                <div style="font-size: 9px; color: #999;">(No signatory encoded)</div>
+                            @endif
                         </div>
                     </div>
                 </div>

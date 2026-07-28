@@ -73,14 +73,15 @@ class ReportsController extends Controller
                 return;
         }
 
-        $evaluation_period = Carbon::parse($report->evaluationPeriod->date_from)->format('F d, Y') . ' TO ' . Carbon::parse($report->evaluationPeriod->date_to)->format('F d, Y');
+        $evaluation_period_formatted = Carbon::parse($report->evaluationPeriod->date_from)->format('F d, Y') . ' TO ' . Carbon::parse($report->evaluationPeriod->date_to)->format('F d, Y');
         $data = [
-            'evaluation_period' => $evaluation_period,
+            'evaluation_period' => $evaluation_period_formatted,
+            'evaluation_period_obj' => $report->evaluationPeriod,
             'rating_scales'     => $this->get_rating_scale(),
             'report_type'       => $report->reportType->name,
             'collections'       => $pay_load['collections'],
         ];
-        $file_name = $report->reportType->name.' ('.$evaluation_period.').pdf';
+        $file_name = $report->reportType->name.' ('.$evaluation_period_formatted.').pdf';
 
         $footer = view('pdf.reports.footer')->render();
 
