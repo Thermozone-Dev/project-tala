@@ -10,12 +10,10 @@ return new class extends Migration
     {
         Schema::table('evaluation_period', function (Blueprint $table) {
             $table->unsignedBigInteger('corporate_secretary_sign')
-                ->nullable()
-                ->after('created_by');
+                ->nullable();
 
             $table->unsignedBigInteger('secretariat')
-                ->nullable()
-                ->after('corporate_secretary_sign');
+                ->nullable();
 
             $table->foreign('corporate_secretary_sign', 'evaluation_period_ibfk_3')
                 ->references('id')
