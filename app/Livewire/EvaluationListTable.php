@@ -76,6 +76,7 @@ class EvaluationListTable extends TableWidget
             ->columns([
                 TextColumn::make('first_name')
                     ->label('Trustee Name')
+                    ->wrap()
                     ->formatStateUsing(fn ($_, $record) => $record->getFullNameAttribute())
                     ->sortable(),
 

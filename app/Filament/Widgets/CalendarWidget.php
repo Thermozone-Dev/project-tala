@@ -16,7 +16,7 @@ class CalendarWidget extends BaseCalendarWidget
 {
     use HasPageShield;
 
-    protected static ?int $sort = 7;
+    protected static ?int $sort = 2;
 
     protected bool $eventClickEnabled = true;
 
