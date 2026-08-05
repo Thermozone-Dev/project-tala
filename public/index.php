@@ -2,6 +2,9 @@
 
 use Illuminate\Http\Request;
 
+// Increase memory limit for large schema generation
+ini_set('memory_limit', '512M');
+
 define('LARAVEL_START', microtime(true));
 
 // Determine if the application is in maintenance mode...

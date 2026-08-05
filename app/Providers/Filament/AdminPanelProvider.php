@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\MyCustomLogin;
 use App\Filament\Resources\Committees\CommitteeResource;
 use App\Livewire\CustomPersonalInfo;
 use App\Livewire\CustomUpdatePassword;
@@ -84,7 +85,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
-            ->login()
+            ->login(MyCustomLogin::class)
             ->registration()
             ->profile()
             ->multiFactorAuthentication([

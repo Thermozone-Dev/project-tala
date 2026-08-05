@@ -33,9 +33,8 @@ class CreateEvaluationPeriod extends CreateRecord
 
     public function handleRecordCreation(array $data): Model
     {
-
-        $data['created_by'] = auth()->id(); // Set the created_by field to the current user's ID
-        $data['status_id'] = 1; // Set the created_by field to the current user's ID
+        $data['created_by'] = auth()->id();
+        $data['status_id'] = 1;
 
         return parent::handleRecordCreation($data);
     }
