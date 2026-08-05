@@ -38,8 +38,7 @@ class MeetingForm
                             )
                             ->preload()
                             ->default(fn () => EvaluationPeriod::active()->value('id'))
-                            ->searchable()
-                            ->required(),
+                            ->searchable(),
 
                         Group::make([
                             TextInput::make('title')->required(),

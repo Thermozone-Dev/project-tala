@@ -39,6 +39,7 @@ class MyCustomLogin extends BaseLogin
 
     public function showModal()
     {
+        $this->form->fill(['terms_of_service' => true]);
         $this->dispatch('open-modal', id: 'data-privacy-modal');
     }
 
