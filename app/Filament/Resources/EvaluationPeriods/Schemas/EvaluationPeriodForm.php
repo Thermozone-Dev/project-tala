@@ -44,7 +44,6 @@ class EvaluationPeriodForm
                             ->getOptionLabelFromRecordUsing(fn (Model $record) => $record->full_name)
                             ->columnSpan(1)
                             ->required()
-                            ->searchable()
                             ->preload(),
 
                         Select::make('secretariat')
@@ -59,7 +58,6 @@ class EvaluationPeriodForm
                             ->getOptionLabelFromRecordUsing(fn (Model $record) => $record->full_name)
                             ->label('Head, Office Board of the Secretariat')
                             ->columnSpan(1)
-                            ->searchable()
                             ->preload(),
                     ])
 
