@@ -19,9 +19,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('evaluation_period', function (Blueprint $table) {
-            $table->dropForeign('evaluation_period_corporate_secretary_sign_foreign');
-            $table->dropForeign('evaluation_period_corporatesecretariatate_secretary_sign_foreign');
+            // $table->dropForeign('evaluation_period_corporate_secretary_sign_foreign');
+            // $table->dropForeign('evaluation_period_corporatesecretariatate_secretary_sign_foreign');
 
+            $table->dropForeign(['corporate_secretary_sign']);
+            $table->dropForeign(['corporatesecretariatate_secretary_sign']);
             // $table->dropForeign('evaluation_period_ibfk_4');
             $table->dropColumn(['corporate_secretary_sign', 'corporatesecretariatate_secretary_sign',]);
         });
