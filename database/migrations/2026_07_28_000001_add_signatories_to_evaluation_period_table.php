@@ -19,9 +19,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('evaluation_period', function (Blueprint $table) {
-            $table->dropForeign('evaluation_period_ibfk_3');
-            $table->dropForeign('evaluation_period_ibfk_4');
-            $table->dropColumn(['corporate_secretary_sign', 'secretariat']);
+            // $table->dropForeign('evaluation_period_ibfk_3');
+            // $table->dropForeign('evaluation_period_ibfk_4');
+            $table->dropColumn(['corporate_secretary_sign', 'corporatesecretariatate_secretary_sign',]);
         });
     }
 };
