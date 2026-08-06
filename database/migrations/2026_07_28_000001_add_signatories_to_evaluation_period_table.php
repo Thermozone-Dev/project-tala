@@ -22,10 +22,14 @@ return new class extends Migration
             // $table->dropForeign('evaluation_period_corporate_secretary_sign_foreign');
             // $table->dropForeign('evaluation_period_corporatesecretariatate_secretary_sign_foreign');
 
-            $table->dropForeign('corporate_secretary_sign');
-            $table->dropForeign('corporsecretariatate_secretary_sign');
+            $table->dropForeign(['corporate_secretary_sign']);
+            $table->dropForeign(['corporsecretariatate_secretary_sign']);
+
+
+
+            // $table->dropForeign('corporsecretariatate_secretary_sign');
             // $table->dropForeign('evaluation_period_ibfk_4');
-            $table->dropColumn(['corporate_secretary_sign', 'corporatesecretariatate_secretary_sign',]);
+            $table->dropColumn(['corporate_secretary_sign', 'corporsecretariatate_secretary_sign',]);
         });
     }
 };
