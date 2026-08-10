@@ -11,6 +11,12 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
+use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Contracts\View\View;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
 class ReportsController extends Controller
 {
@@ -21,6 +27,7 @@ class ReportsController extends Controller
         // dd($request);
         $report_id = $request->report;
         $download = $request->download;
+        $excel = $request->boolean('excel');
         $this->report = Report::find($report_id);
         // $this->report = Report::find(2);
 
@@ -28,12 +35,14 @@ class ReportsController extends Controller
         if (!$this->report) return abort(404);
 
         $report = $this->report; // Assign to local variable for use in all methods
+        $evaluation_period_formatted = Carbon::parse($report->evaluationPeriod->date_from)->format('F d, Y') . ' TO ' . Carbon::parse($report->evaluationPeriod->date_to)->format('F d, Y');
 
         switch ($report->report_type_id) {
             case 1: // BOT Performance Summary
 
                 $pay_load = [
                     'blade_path' => 'pdf.reports.bot-performance-summary',
+                    'excel_blade_path' => 'excel.bot-performance-summary',
                     'page_orientation' => 'portrait',
                     'collections' => $this->bot_performance_summary_collection($report),
                 ];
@@ -43,6 +52,7 @@ class ReportsController extends Controller
 
                 $pay_load = [
                     'blade_path' => 'pdf.reports.individual-results-of-rating-bot',
+                    'excel_blade_path' => 'excel.individual-results-of-rating-bot',
                     'page_orientation' => 'landscape',
                     'collections' => $this->indiviual_results_of_rating_bot_collection(),
                 ];
@@ -55,6 +65,7 @@ class ReportsController extends Controller
 
                 $pay_load = [
                     'blade_path' => 'pdf.reports.individual-results-of-rating-CO-and-LRPs',
+                    'excel_blade_path' => 'excel.individual-results-of-rating-CO-and-LRPs',
                     'page_orientation' => 'landscape',
                     'collections' => array_merge($coResults, $lrpResults),
                 ];
@@ -64,16 +75,18 @@ class ReportsController extends Controller
 
                 $pay_load = [
                     'blade_path' => 'pdf.reports.summary-results-of-committee-assessment',
+                    'excel_blade_path' => 'excel.summary-results-of-committee-assessment',
                     'page_orientation' => 'landscape',
+                    'evaluation_period' => $evaluation_period_formatted,
+                    'evaluation_period_obj' => $report->evaluationPeriod,
                     'collections' => $this->summary_of_committee_individual_self_assesment(),
                 ];
 
                 break;
             default:
-                return;
+                abort(404);
         }
 
-        $evaluation_period_formatted = Carbon::parse($report->evaluationPeriod->date_from)->format('F d, Y') . ' TO ' . Carbon::parse($report->evaluationPeriod->date_to)->format('F d, Y');
         $data = [
             'evaluation_period' => $evaluation_period_formatted,
             'evaluation_period_obj' => $report->evaluationPeriod,
@@ -81,6 +94,29 @@ class ReportsController extends Controller
             'report_type'       => $report->reportType->name,
             'collections'       => $pay_load['collections'],
         ];
+
+        if ($excel) {
+
+            if (!isset($pay_load['excel_blade_path'])) {
+                abort(404, 'Excel export is not available for this report.');
+            }
+
+            if($pay_load['excel_blade_path'] == 'excel.summary-results-of-committee-assessment'){
+                return $this->downloadCommitteeAssessmentExcel(
+                    $pay_load,
+                    $pay_load['excel_blade_path'],
+                    $report->reportType->name
+                );
+            }
+
+            return $this->downloadExcelReport(
+                $data,
+                $pay_load['excel_blade_path'],
+                $report->reportType->name,
+                $pay_load['excel_column_widths'] ?? []
+            );
+        }
+
         $file_name = $report->reportType->name.' ('.$evaluation_period_formatted.').pdf';
 
         $footer = view('pdf.reports.footer')->render();
@@ -326,6 +362,7 @@ class ReportsController extends Controller
             $result = [
                 'member_id' => $member['member_id'],
                 'member_name' => $member['member_name'],
+                'member_lastname' => $member['member_lastname'],
                 'member_email' => $member['member_email'],
                 'total_rating' => $total_rating,
                 'total_average' => $total_average,
@@ -555,6 +592,7 @@ class ReportsController extends Controller
                 return [
                     'member_id' => $member->id,
                     'member_name' => $member->full_name,
+                    'member_lastname' => $member->last_name,
                     'member_email' => $member->email,
                     'roles' => $member->roles->pluck('name')->toArray(),
                     'evaluation_summary' => $evaluationSummary,
@@ -659,6 +697,7 @@ class ReportsController extends Controller
                     return [
                         'member_id' => $member->id,
                         'member_name' => $member->full_name,
+                        'member_lastname' => $member->last_name,
                         'member_email' => $member->email,
                         'roles' => $member->roles->pluck('name')->toArray(),
                         'committee_id' => $committeeId,
@@ -815,6 +854,7 @@ class ReportsController extends Controller
                     return [
                         'member_id' => $member->id,
                         'member_name' => $member->full_name,
+                        'member_lastname' => $member->last_name,
                         'member_email' => $member->email,
                         'roles' => $member->roles->pluck('name')->toArray(),
                         'committee_id' => $committeeId,
@@ -1364,6 +1404,7 @@ class ReportsController extends Controller
             return [
                 'member_id' => $member->id,
                 'member_name' => $member->full_name,
+                'member_lastname' => $member->last_name,
                 'member_email' => $member->email,
                 'roles' => $member->roles->pluck('name')->toArray(),
                 'evaluation_summary' => $this->get_evaluation_result_as_member($member->id)
@@ -1680,5 +1721,173 @@ class ReportsController extends Controller
                 'overall_qualitative' => AssesmentComputation::get_committee_qualitative($overallAvg)
             ]
         ]);
+    }
+
+    private function downloadExcelReport(
+        array $data,
+        string $bladePath,
+        string $reportName,
+        array $columnWidths = []
+    ) {
+        $fileName = $reportName . ' (' . $data['evaluation_period'] . ').xlsx';
+
+        return Excel::download(
+
+            new class($data, $bladePath, $columnWidths) implements WithMultipleSheets {
+
+                public function __construct(
+                    private array $data,
+                    private string $bladePath,
+                    private array $columnWidths
+                ) {
+                }
+
+                public function sheets(): array
+                {
+                    $sheets = [];
+
+                    foreach ($this->data['collections'] as $index => $collection) {
+
+                        $sheets[] = new class(
+                            $collection,
+                            $this->data,
+                            $this->bladePath,
+                            $this->columnWidths,
+                            $index
+                        ) implements FromView, WithTitle, WithColumnWidths {
+
+                            public function __construct(
+                                private $collection,
+                                private array $data,
+                                private string $bladePath,
+                                private array $columnWidths,
+                                private $index
+                            ) {
+                            }
+
+                            public function title(): string
+                            {
+                                return $this->collection['code'] ?? $this->collection['member_lastname'] ?? 'Sheet ' . ( (int)$this->index + 1);
+                            }
+
+                            public function view(): View
+                            {
+                                return view($this->bladePath, [
+                                    'collection' => $this->collection,
+                                    'data' => $this->data,
+                                ]);
+                            }
+
+                            public function columnWidths(): array
+                            {
+                                $widths = [];
+
+                                foreach (range('A', 'Z') as $column) {
+                                    $widths[$column] = 20;
+                                }
+
+                                $widths['A'] = 6;
+                                $widths['B'] = 40;
+
+                                return $widths;
+                            }
+                        };
+                    }
+
+                    return $sheets;
+                }
+            },
+
+            $fileName
+        );
+    }
+
+    private function downloadCommitteeAssessmentExcel(
+        array $payLoad,
+        string $bladePath,
+        string $reportName
+    ) {
+        $data = $payLoad['collections'];
+
+        $fileName = $reportName
+            . ' (' . $payLoad['evaluation_period'] . ').xlsx';
+
+        $committees = collect($data['detailed'] ?? [])
+            ->pluck('committee_name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return Excel::download(
+
+            new class(
+                $payLoad,
+                $bladePath,
+                $committees
+            ) implements WithMultipleSheets {
+
+                public function __construct(
+                    private array $data,
+                    private string $bladePath,
+                    private $committees
+                ) {}
+
+                public function sheets(): array
+                {
+                    $sheets = [];
+
+                    foreach ($this->committees as $committeeName) {
+
+                        $sheets[] = new class(
+                            $this->data,
+                            $this->bladePath,
+                            $committeeName
+                        ) implements FromView, WithTitle, WithColumnWidths {
+
+                            public function __construct(
+                                private array $data,
+                                private string $bladePath,
+                                private string $committeeName
+                            ) {}
+
+                            public function title(): string
+                            {
+                                return $this->committeeName;
+                            }
+
+                            public function view(): View
+                            {
+                                return view($this->bladePath, [
+                                    'data' => $this->data,
+                                    'committeeName' => $this->committeeName,
+                                ]);
+                            }
+
+                            public function columnWidths(): array
+                            {
+                                return [
+                                    'A' => 8,
+                                    'B' => 45,
+                                    'C' => 18,
+                                    'D' => 18,
+                                    'E' => 18,
+                                    'F' => 18,
+                                    'G' => 18,
+                                    'H' => 18,
+                                    'I' => 18,
+                                    'J' => 18,
+                                    'K' => 18,
+                                    'L' => 18,
+                                ];
+                            }
+                        };
+                    }
+
+                    return $sheets;
+                }
+            },
+
+            $fileName
+        );
     }
 }
