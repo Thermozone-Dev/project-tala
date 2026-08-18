@@ -9,6 +9,7 @@ use App\Models\Report;
 use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
 use Carbon\Carbon;
+use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -1731,6 +1732,16 @@ class ReportsController extends Controller
     ) {
         $fileName = $reportName . ' (' . $data['evaluation_period'] . ').xlsx';
 
+        if (collect($data['collections'] ?? [])->isEmpty()) {
+
+            Notification::make()
+                ->title('No data is available for this report.')
+                ->warning()
+                ->send();
+
+            return redirect()->back();
+        }
+
         return Excel::download(
 
             new class($data, $bladePath, $columnWidths) implements WithMultipleSheets {
@@ -1817,6 +1828,15 @@ class ReportsController extends Controller
             ->filter()
             ->unique()
             ->values();
+
+        if ($committees->isEmpty()) {
+            Notification::make()
+                ->title('No committee assessment data is available for this evaluation period.')
+                ->warning()
+                ->send();
+
+            return redirect()->back();
+        }
 
         return Excel::download(
 
