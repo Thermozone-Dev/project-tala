@@ -13,6 +13,12 @@ class EvaluationStatsOverview extends StatsOverviewWidget
 {
     use HasPageShield;
 
+    public $evaluator = null;
+
+
+    protected static ?int $sort = 3;
+
+
     public static function canView(): bool
     {
         // Check if the user has a specific permission using Spatie or standard auth
@@ -33,9 +39,14 @@ class EvaluationStatsOverview extends StatsOverviewWidget
         // Build base query with role-based filtering
         $baseQuery = TrusteeHasEvaluation::where('evaluation_id', $activeEvaluationPeriod->id);
 
+        // Filter by evaluator if provided
+        if ($this->evaluator) {
+            $baseQuery->where('evaluator_id', $this->evaluator);
+        }
+
         // Filter by role: executives see all, non-executives see only their own
         $is_evaluator = false;
-        if (!get_executive_role(auth()->user()->roles->first()?->name)) {
+        if (!get_executive_role(auth()->user()->roles->first()?->name) && !$this->evaluator) {
             $baseQuery->where('evaluator_id', auth()->id());
 
             $is_evaluator = $baseQuery->where('evaluator_id', auth()->id())->first();

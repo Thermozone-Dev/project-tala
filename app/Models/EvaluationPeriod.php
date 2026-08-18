@@ -17,7 +17,9 @@ class EvaluationPeriod extends Model
         'date_from',
         'date_to',
         'status_id',
-        'created_by'
+        'created_by',
+        'corporate_secretary_sign',
+        'secretariat',
     ];
 
     protected $dates = [
@@ -44,6 +46,16 @@ class EvaluationPeriod extends Model
     public function attendance()
     {
         return $this->hasMany(AttendanceAnswer::class, 'evaluation_period_id');
+    }
+
+    public function corporateSecretarySign()
+    {
+        return $this->belongsTo(User::class, 'corporate_secretary_sign');
+    }
+
+    public function secretariatUser()
+    {
+        return $this->belongsTo(User::class, 'secretariat');
     }
 
 

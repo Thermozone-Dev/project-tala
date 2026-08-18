@@ -11,7 +11,7 @@ class EvaluationStatusChart extends ChartWidget
 {
     use HasPageShield;
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 4;
 
     public static function canView(): bool
     {

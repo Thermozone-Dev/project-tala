@@ -21,7 +21,9 @@ class UsersTable
                 IconColumn::make('is_active')->label('Active')->boolean(),
                 TextColumn::make('full_name')
                     ->label('Full Name')
-                    ->sortable()
+                    ->sortable([
+                        'last_name'
+                    ])
                     ->searchable([
                         'first_name',
                         'middle_name',

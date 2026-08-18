@@ -8,6 +8,32 @@
         <title>{{$data['report_type']}}</title>
         <link rel="stylesheet" href="{{ base_path('public/css/bootstrap_trimmed.min.css') }}" />
         <link rel="stylesheet" href="{{ base_path('public/css/custom.css') }}" />
+        <style>
+            /* Disable header repetition - treat thead as regular row group */
+            thead { display: table-row-group; }
+            tfoot { display: table-row-group; }
+
+            /* Prevent rows from breaking - keep entire row together */
+            tr { page-break-inside: avoid; }
+            tbody tr { page-break-inside: avoid; }
+
+            /* PDF Header Class - Fixed height with responsive text */
+            .pdf-header {
+                height: 60px;
+                padding: 2px !important;
+                vertical-align: middle;
+                word-break: break-word;
+                overflow-wrap: break-word;
+                line-height: 1.2;
+                font-size: 15px;
+
+            }
+
+            /* Body cells - minimal styling */
+            tbody td, tbody th {
+                vertical-align: top;
+            }
+        </style>
     </head>
     <body>
         <div class="container-fluid">
@@ -16,28 +42,28 @@
                     <div class="row">
                         <div class="col-xs-12 text-center">
                         </div>
-                        <div class="col-xs-12" style="margin: 10px 0; overflow-x: auto;">
-                            <table style="width: 100%; table-layout: auto; word-wrap: break-word; word-break: break-word;">
+                        <div class="col-xs-12" style="margin: 10px 0; margin-bottom: 20px; overflow-x: auto;">
+                            <table style="width: 100%; table-layout: auto; word-wrap: break-word; word-break: break-word; margin-bottom: 15px;">
                                 <thead class="header-color">
                                     <tr>
                                         <h1 class="text-center"><b><u>{{strtoupper($members['member_name'])}}</u></b></h1>
                                     </tr>
                                     <tr>
-                                        <th style="width: 3%; padding: 8px;">#</th>
-                                        <th style="padding: 8px; min-width: 200px;">BOT Performance (70%)</th>
+                                        <th class="pdf-header" style="width: 3%;">#</th>
+                                        <th class="pdf-header" style="min-width: 200px;">BOT Performance (70%)</th>
                                         @foreach ($members['evaluators_summary'] as $evaluator)
-                                            <th style="padding: 8px; min-width: 100px;">{{$evaluator['evaluator_name']}}</th>
+                                            <th class="pdf-header" style="min-width: 100px;">{{$evaluator['evaluator_name']}}</th>
                                         @endforeach
-                                        <th style="padding: 8px; min-width: 80px;">Total</th>
-                                        <th style="padding: 8px; min-width: 90px;">Average</th>
-                                        <th style="padding: 8px; min-width: 130px;">Qualitative Rating</th>
+                                        <th class="pdf-header" style="min-width: 80px;">Total</th>
+                                        <th class="pdf-header" style="min-width: 90px;">Average</th>
+                                        <th class="pdf-header" style="min-width: 130px;">Qualitative Rating</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($members['questions'] as $key => $question)
                                         <tr>
                                             <td class="text-center" style="padding: 8px;">{{$key+1}}</td>
-                                            <td style="padding: 8px; word-wrap: break-word; word-break: break-word;">{{$question['question']}}</td>
+                                            <td style="padding: 4px; word-wrap: break-word; word-break: break-word;">{{$question['question']}}</td>
                                             @foreach ($question['evaluators'] as $evaluator)
                                                 <td class="text-center" style="padding: 8px;">{{number_format($evaluator['answer_value'],2)}}</td>
                                             @endforeach
@@ -48,7 +74,7 @@
                                     @endforeach
 
                                 </tbody>
-                                <thead class="header-color">
+                                <tfoot class="header-color">
                                     <tr>
                                         <th colspan="2" rowspan="2" >OVER-ALL RATING</th>
                                         @foreach ($members['evaluators_summary'] as $evaluator )
@@ -67,7 +93,7 @@
                                         <th>{{number_format($members['rating_average'],2)}}</th>
                                         <th>{{ucfirst($members['total_qualitative'])}}</th>
                                     </tr>
-                                </thead>
+                                </tfoot>
                             </table>
                         </div>
                     </div>
@@ -99,16 +125,16 @@
                                         </tr>
                                     @endforeach
                                 </tbody>
-                                <thead class="header-color">
+                                <tfoot class="header-color">
                                     <tr>
                                         <th>OVER-ALL RATING</th>
                                         <th>{{$members['attendance']['summary']['total_meetings']}} </th>
                                         <th>{{$members['attendance']['summary']['total_present']}} </th>
-                                        <th>{{$members['attendance']['summary']['avg_attendance_percentage']}}% </th>
-                                        <th>{{$members['attendance']['summary']['avg_rating']}} </th>
+                                        <th>{{number_format($members['attendance']['summary']['avg_attendance_percentage'], 2)}}% </th>
+                                        <th>{{number_format($members['attendance']['summary']['avg_rating'], 2)}} </th>
                                         <th>{{$members['attendance']['summary']['attendance_rating_qualititative']}}</th>
                                     </tr>
-                                </thead>
+                                </tfoot>
                             </table>
                         </div>
 
@@ -143,6 +169,8 @@
                                         <td class="text-center">30&</td>
                                         <td class="text-center">{{number_format($members['final_grade']['attendance_grade'] ?? 0,2)}}</td>
                                     </tr>
+                                </tbody>
+                                <tfoot>
                                     <tr class="header-color">
                                         <th colspan="3">Total Score</th>
                                         <th colspan="3" style="font-size: 1.5em">{{number_format($members['final_grade']['quantitative'] ?? 0,2)}}</th>
@@ -151,7 +179,7 @@
                                         <th colspan="3">Qualitative Rating</th>
                                         <th colspan="3" style="font-size: 1.5em">{{$members['final_grade']['qualitative']}}</th>
                                     </tr>
-                                </tbody>
+                                </tfoot>
                             </table>
                         </div>
                     </div>

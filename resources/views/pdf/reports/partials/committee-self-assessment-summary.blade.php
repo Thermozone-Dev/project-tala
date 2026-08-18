@@ -23,10 +23,10 @@
                 </div>
 
                 @if (isset($summary['sections_summary']) && is_array($summary['sections_summary']) && count($summary['sections_summary']) > 0)
-                    <div class="row" style="white-space:nowrap; margin: 0;">
+                    <div class="row" style="white-space:nowrap; margin: 0; margin-bottom: 20px;">
                         <div class="col-xs-6" style="white-space:nowrap; padding: 0;">
                             <h4 style="text-transform: uppercase"><b>summary rating</b></h4>
-                            <table style="width: 100%; table-layout: auto; margin: 0;">
+                            <table style="width: 100%; table-layout: auto; margin: 0; margin-bottom: 15px;">
                                 <thead class="header-color">
                                     <tr>
                                         <th style="width: 60%; padding: 3px; font-size: 11px; text-transform:uppercase">Governance Anchors</th>
@@ -77,10 +77,10 @@
                 @endif
 
                 {{-- Assessment Guide --}}
-                <div class="row" style="white-space:nowrap; margin: 15px 0 0 0;">
+                <div class="row" style="white-space:nowrap; margin: 15px 0 0 0; margin-bottom: 20px;">
                     <div class="col-xs-6" style="padding: 0;">
                         <h4 style="margin: 0 0 5px 0; font-size: 11px;"><b>ASSESSMENT GUIDE</b></h4>
-                        <table style="width: 100%; table-layout: auto; border-collapse: collapse; margin: 0;">
+                        <table style="width: 100%; table-layout: auto; border-collapse: collapse; margin: 0; margin-bottom: 15px;">
                             <thead class="header-color">
                                 <tr>
                                     <th style="padding: 4px; border: 1px solid #333; font-size: 10px;">Quantitative Rating</th>
@@ -124,15 +124,25 @@
                         <br>
                         <div>Prepared by:</div><br>
                         <div>______________________________</div>
-                        <div><b>MS. CLARENCE R. MEJIA</b></div>
-                        <div>Head, Office the Board Secretariat</div>
+                        @if(isset($data['evaluation_period_obj']) && $data['evaluation_period_obj']->secretariatUser)
+                            <div><b>{{ strtoupper($data['evaluation_period_obj']->secretariatUser->full_name) }}</b></div>
+                            <div>Head, Office the Board Secretariat</div>
+                        @else
+                            <div><b>_____________________________</b></div>
+                            <div style="font-size: 9px; color: #999;">(No signatory encoded)</div>
+                        @endif
                     </div>
                     <div class="col-xs-6">
                         <br>
                         <div>Noted by:</div><br>
                         <div>______________________________</div>
-                        <div><b>ATTY DEXTER HAROLD E EMPERADOR</b></div>
-                        <div>Corporate Secretary</div>
+                        @if(isset($data['evaluation_period_obj']) && $data['evaluation_period_obj']->corporateSecretarySign)
+                            <div><b>{{ strtoupper($data['evaluation_period_obj']->corporateSecretarySign->full_name) }}</b></div>
+                            <div>Corporate Secretary</div>
+                        @else
+                            <div><b>_____________________________</b></div>
+                            <div style="font-size: 9px; color: #999;">(No signatory encoded)</div>
+                        @endif
                     </div>
                 </div>
             </div>

@@ -13,12 +13,12 @@
 
             {{-- BOT SUMMARY & ASSESSMENT GUIDE (Side by Side) --}}
             @if ((isset($data['collections']['crosswise']['bot_sections']) && is_array($data['collections']['crosswise']['bot_sections']) && count($data['collections']['crosswise']['bot_sections']) > 0) || (isset($data['collections']['crosswise']['committee_sections_matrix']) && is_array($data['collections']['crosswise']['committee_sections_matrix']) && count($data['collections']['crosswise']['committee_sections_matrix']) > 0))
-                <div class="row" style="white-space:nowrap; margin: 0;">
+                <div class="row" style="white-space:nowrap; margin: 0; margin-bottom: 20px;">
                     {{-- BOT Self Assessment Summary with Sections --}}
                     <div class="col-xs-6" style="padding: 0; padding-right: 5px;">
                         <h4 style="margin: 0 0 5px 0; font-size: 11px;"><b>BOT SELF-ASSESSMENT SUMMARY</b></h4>
                         @if (isset($data['collections']['crosswise']['bot_sections']) && is_array($data['collections']['crosswise']['bot_sections']) && count($data['collections']['crosswise']['bot_sections']) > 0)
-                        <table style="width: 100%; table-layout: auto; border-collapse: collapse; margin: 0;">
+                        <table style="width: 100%; table-layout: auto; border-collapse: collapse; margin: 0; margin-bottom: 15px;">
                             <thead class="header-color">
                                 <tr>
                                     <th style="padding: 4px; border: 1px solid #333; font-size: 10px;">Section</th>
@@ -71,7 +71,7 @@
                     {{-- Assessment Guide (7x3 Blank Table) --}}
                     <div class="col-xs-6" style="padding: 0; padding-left: 5px;">
                         <h4 style="margin: 0 0 5px 0; font-size: 11px;"><b>ASSESSMENT GUIDE</b></h4>
-                        <table style="width: 100%; table-layout: auto; border-collapse: collapse; margin: 0;">
+                        <table style="width: 100%; table-layout: auto; border-collapse: collapse; margin: 0; margin-bottom: 15px;">
                             <thead class="header-color">
                                 <tr>
                                     <th colspan="3" style="padding: 4px; border: 1px solid #333; font-size: 10px; text-align: center;">
@@ -117,10 +117,10 @@
 
                 {{-- COMMITTEE SELF ASSESSMENT MATRIX (Sections vs Committees) --}}
                 @if (isset($data['collections']['crosswise']['committee_sections_matrix']) && is_array($data['collections']['crosswise']['committee_sections_matrix']) && count($data['collections']['crosswise']['committee_sections_matrix']) > 0)
-                    <div class="row" style="white-space:nowrap; margin: 15px 0 0 0;">
+                    <div class="row" style="white-space:nowrap; margin: 15px 0 0 0; margin-bottom: 20px;">
                         <div class="col-xs-12" style="padding: 0; overflow-x: auto;">
                             <h4 style="margin: 0 0 5px 0; font-size: 11px;"><b>COMMITTEE SELF-ASSESSMENT SUMMARY</b></h4>
-                            <table style="width: 100%; table-layout: auto; border-collapse: collapse; margin: 0;">
+                            <table style="width: 100%; table-layout: auto; border-collapse: collapse; margin: 0; margin-bottom: 15px;">
                                 <thead>
                                     <tr class="header-color">
                                         <th style="padding: 4px; border: 1px solid #333; font-size: 10px;">Section</th>
@@ -217,15 +217,25 @@
                     <div>Prepared by:</div><br>
                     <br>
                     <div>______________________________</div>
-                    <div><b>MS. CLARENCE R. MEJIA</b></div>
-                    <div>Head, Office the Board Secretariat</div>
+                    @if(isset($data['evaluation_period_obj']) && $data['evaluation_period_obj']->secretariatUser)
+                        <div><b>{{ strtoupper($data['evaluation_period_obj']->secretariatUser->full_name) }}</b></div>
+                        <div>Head, Office the Board Secretariat</div>
+                    @else
+                        <div><b>_____________________________</b></div>
+                        <div style="font-size: 9px; color: #999;">(No signatory encoded)</div>
+                    @endif
                 </div>
                 <div class="col-xs-6">
                     <div>Noted by:</div><br>
                     <br>
                     <div>______________________________</div>
-                    <div><b>ATTY DEXTER HAROLD E EMPERADOR</b></div>
-                    <div>Corporate Secretary</div>
+                    @if(isset($data['evaluation_period_obj']) && $data['evaluation_period_obj']->corporateSecretarySign)
+                        <div><b>{{ strtoupper($data['evaluation_period_obj']->corporateSecretarySign->full_name) }}</b></div>
+                        <div>Corporate Secretary</div>
+                    @else
+                        <div><b>_____________________________</b></div>
+                        <div style="font-size: 9px; color: #999;">(No signatory encoded)</div>
+                    @endif
                 </div>
             </div>
         </div>

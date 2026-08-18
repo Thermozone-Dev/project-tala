@@ -73,7 +73,9 @@ class MembersRelationManager extends RelationManager
                         'middle_name',
                         'last_name',
                         'suffix',
-                    ])->sortable(),
+                    ])->sortable([
+                        'last_name'
+                    ]),
                 TextColumn::make('user.email')->label('Email')->searchable()->sortable(),
                 TextColumn::make('role.name')->label('Role')->searchable()->sortable(),
 

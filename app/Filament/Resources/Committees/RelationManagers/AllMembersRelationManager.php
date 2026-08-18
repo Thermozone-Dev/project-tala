@@ -37,7 +37,9 @@ class AllMembersRelationManager extends RelationManager
                         'middle_name',
                         'last_name',
                         'suffix',
-                    ])->sortable(),
+                    ])->sortable([
+                        'last_name'
+                    ]),
                 TextColumn::make('role.name')->label('Role')->searchable()->sortable(),
                 IconColumn::make('is_active')
                     ->label('Active')

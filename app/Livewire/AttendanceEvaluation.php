@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Actions\AssesmentComputation;
 use App\Actions\Form\AttendanceForm;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
@@ -23,8 +24,6 @@ use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Support\RawJs;
 use Filament\Tables\Filters\SelectFilter;
-
-use function PHPUnit\Framework\isEmpty;
 
 class AttendanceEvaluation extends TableWidget
 {
@@ -58,6 +57,11 @@ class AttendanceEvaluation extends TableWidget
 
                 TextColumn::make('trustee.full_name')
                     ->label('Member')
+                    ->searchable([
+                        'first_name',
+                        'last_name',
+                        'middle_name'
+                    ])
                     // ->searchable()
                     ->sortable(),
 
@@ -138,6 +142,27 @@ class AttendanceEvaluation extends TableWidget
                         // e.g. if record is locked:
                         // if ($this->record->trustee_evaluation_statuses_id == 2) return false;
                     })
+                    ->extraModalFooterActions([
+                        Action::make('add_attendee_modal')
+                            ->label('Add Attendee')
+                            ->icon(Heroicon::OutlinedPlus)
+                            ->color('info')
+                            ->schema(AttendanceForm::getAddAttendeeSchema())
+                            ->action(function (array $data): void {
+                                $result = AttendanceForm::handleAddAttendeeAction($data, $this->evaluation_period_id);
+
+                                Notification::make()
+                                    ->title($result['success'] ? 'Attendee Added' : 'Duplicate Entry')
+                                    ->color($result['success'] ? 'success' : 'danger')
+                                    ->body($result['message'])
+                                    ->send();
+
+                                if ($result['success']) {
+                                    $this->evaluation_period = EvaluationPeriod::find($this->evaluation_period_id);
+                                    $this->dispatch('refresh-attendance-table');
+                                }
+                            }),
+                    ])
                     ->action(function (array $data): void {
                         $evaluationPeriod = EvaluationPeriod::find($this->evaluation_period_id);
 
@@ -188,79 +213,97 @@ class AttendanceEvaluation extends TableWidget
                             ->send();
                     }),
 
+                // Action::make('add_attendee')
+                //     ->label('Add Attendee')
+                //     ->icon(Heroicon::OutlinedPlus)
+                //     ->color('success')
+                //     ->schema(AttendanceForm::getAddAttendeeSchema())
+                //     ->action(function (array $data): void {
+                //         $result = AttendanceForm::handleAddAttendeeAction($data, $this->evaluation_period_id);
+
+                //         Notification::make()
+                //             ->title($result['success'] ? 'Attendee Added' : 'Duplicate Entry')
+                //             ->color($result['success'] ? 'success' : 'danger')
+                //             ->body($result['message'])
+                //             ->send();
+                //     }),
+
             ])
             ->recordActions([
                 EditAction::make()
-                ->mutateDataUsing(function (array $data): array {
+                    ->mutateDataUsing(function (array $data): array {
 
-                    $percentage = AssesmentComputation::get_attendance_percentage($data['total_meetings'], $data['total_present']);
-                    $rating = AssesmentComputation::get_attendance_rating($percentage);
-                    $data['attendance_rating_scale_values_id'] = $rating->id;
+                        $percentage = AssesmentComputation::get_attendance_percentage($data['total_meetings'], $data['total_present']);
+                        $rating = AssesmentComputation::get_attendance_rating($percentage);
+                        $data['attendance_rating_scale_values_id'] = $rating->id;
 
-                    return $data;
-                })
-                ->schema([
-                    Placeholder::make('trustee.full_name')->weight(FontWeight::Bold),
-                    Placeholder::make('commitee.name')->label('Committee')->weight(FontWeight::Bold),
-                    TextInput::make('total_meetings')
-                        ->minValue(0)
-                        ->required()
-                        ->default(0)
-                        ->label('Total Meetings')
-                        ->numeric(),
-                    TextInput::make('physically_present')
-                        ->numeric()
-                        ->minValue(0)
-                        ->label('Physically Present')
-                        ->reactive()
-                        ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
-                        ->afterStateUpdated(function ($state, callable $get, callable $set){
-                            $physical = (int) $get('physically_present');
-                            $considered = (int) $get('considered_present');
-                            $set('total_present', $physical + $considered);
-                        }),
-                    TextInput::make('considered_present')
-                        ->numeric()
-                        ->minValue(0)
-                        ->label('Considered Present')
-                        ->reactive()
-                        ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
-                        ->afterStateUpdated(function ($state, callable $get, callable $set){
-                            $physical = (int) $get('physically_present');
-                            $considered = (int) $get('considered_present');
-                            $set('total_present', $physical + $considered);
-                        }),
-                    TextInput::make('total_present')
-                        ->numeric()
-                        ->label('Total Number of Attendance')
-                        ->readOnly()
-                        ->default(0)
-                        ->rules([
-                            function (callable $get){
-                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+                        return $data;
+                    })
+                    ->schema([
+                        Placeholder::make('trustee.full_name')->weight(FontWeight::Bold),
+                        Placeholder::make('commitee.name')->label('Committee')->weight(FontWeight::Bold),
+                        TextInput::make('total_meetings')
+                            ->minValue(0)
+                            ->required()
+                            ->default(0)
+                            ->label('Total Meetings')
+                            ->numeric(),
+                        TextInput::make('physically_present')
+                            ->numeric()
+                            ->minValue(0)
+                            ->label('Physically Present')
+                            ->reactive()
+                            ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
+                            ->afterStateUpdated(function ($state, callable $get, callable $set){
+                                $physical = (int) $get('physically_present');
+                                $considered = (int) $get('considered_present');
+                                $set('total_present', $physical + $considered);
+                            }),
+                        TextInput::make('considered_present')
+                            ->numeric()
+                            ->minValue(0)
+                            ->label('Considered Present')
+                            ->reactive()
+                            ->mask(RawJs::make('$input.replace(/[^0-9]/g, "")'))
+                            ->afterStateUpdated(function ($state, callable $get, callable $set){
+                                $physical = (int) $get('physically_present');
+                                $considered = (int) $get('considered_present');
+                                $set('total_present', $physical + $considered);
+                            }),
+                        TextInput::make('total_present')
+                            ->numeric()
+                            ->label('Total Number of Attendance')
+                            ->readOnly()
+                            ->default(0)
+                            ->rules([
+                                function (callable $get){
+                                    return function (string $attribute, $value, \Closure $fail) use ($get) {
 
-                                    $physical = (int) $get('physically_present');
-                                    $considered = (int) $get('considered_present');
-                                    $totalMeetings = (int) $get('total_meetings');
+                                        $physical = (int) $get('physically_present');
+                                        $considered = (int) $get('considered_present');
+                                        $totalMeetings = (int) $get('total_meetings');
 
-                                    $totalPresent = $physical + $considered;
+                                        $totalPresent = $physical + $considered;
 
-                                    if ($totalPresent > $totalMeetings) {
-                                        $fail('Total present cannot exceed total meetings.');
-                                    }
+                                        if ($totalPresent > $totalMeetings) {
+                                            $fail('Total present cannot exceed total meetings.');
+                                        }
 
-                                    if ($physical > $totalMeetings) {
-                                        $fail('Physically present cannot exceed total meetings.');
-                                    }
+                                        if ($physical > $totalMeetings) {
+                                            $fail('Physically present cannot exceed total meetings.');
+                                        }
 
-                                    if ($considered > $totalMeetings) {
-                                        $fail('Considered present cannot exceed total meetings.');
-                                    }
-                                };
-                            }
-                        ])
-                        ->dehydrated(true)
-                ]),
+                                        if ($considered > $totalMeetings) {
+                                            $fail('Considered present cannot exceed total meetings.');
+                                        }
+                                    };
+                                }
+                            ])
+                            ->dehydrated(true),
+
+                        ]),
+                    DeleteAction::make(),
+
 
                 //
             ])

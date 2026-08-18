@@ -76,6 +76,7 @@ class EvaluationListTable extends TableWidget
             ->columns([
                 TextColumn::make('first_name')
                     ->label('Trustee Name')
+                    ->wrap()
                     ->formatStateUsing(fn ($_, $record) => $record->getFullNameAttribute())
                     ->sortable(),
 
@@ -115,7 +116,7 @@ class EvaluationListTable extends TableWidget
             ->recordUrl(fn ($record) => EvaluationPeriodResource::getUrl('evaluation-trustee',['record' => $this->evaluation_period_id, 'evaluator_id' => $record->id]), true)
             ->recordActions([
                 Action::make('view_evaluation')
-                    ->label('View Evaluations')
+                    ->label('Open Evaluations')
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => EvaluationPeriodResource::getUrl('evaluation-trustee',['record' => $this->evaluation_period_id, 'evaluator_id' => $record->id]) ),
             ])
