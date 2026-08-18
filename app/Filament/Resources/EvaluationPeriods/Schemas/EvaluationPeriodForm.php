@@ -9,6 +9,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class EvaluationPeriodForm
 {
@@ -17,11 +19,9 @@ class EvaluationPeriodForm
         return $schema
             ->components([
                 DatePicker::make('date_from')
-                    ->default('06/25/2024')
                     ->minDate(fn () => EvaluationPeriod::orderBy('date_to', 'desc')->value('date_to') ?? null)
                     ->required(),
                 DatePicker::make('date_to')
-                    ->default('06/25/2026')
                     ->minDate( fn (Get $get) => $get('date_from') )
                     ->required(),
                 Select::make('status_id')
@@ -34,32 +34,30 @@ class EvaluationPeriodForm
                     ->schema([
                         Select::make('corporate_secretary_sign')
                             ->label('Corporate Secretary')
+                            ->relationship(
+                                name: 'corporateSecretarySign',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query) => $query->whereHas('roles', fn($q) =>
+                                    $q->whereIn('name', ['Corporate Secretary'])
+                                ),
+                            )
+                            ->getOptionLabelFromRecordUsing(fn (Model $record) => $record->full_name)
                             ->columnSpan(1)
-                            ->options(function () {
-                                return \App\Models\User::whereHas('roles', fn($q) =>
-                                    $q->where('name', 'Corporate Secretary')
-                                )->get()->mapWithKeys(fn($user) => [
-                                    $user->id => $user->full_name
-                                ]);
-                            })
                             ->required()
-                            ->searchable()
                             ->preload(),
 
                         Select::make('secretariat')
+                            ->relationship(
+                                name: 'secretariatUser',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query) => $query->whereHas('roles', fn($q) =>
+                                    $q->whereIn('name', ['secretariat'])
+                                ),
+                            )
+                            ->required()
+                            ->getOptionLabelFromRecordUsing(fn (Model $record) => $record->full_name)
                             ->label('Head, Office Board of the Secretariat')
                             ->columnSpan(1)
-                            ->required()
-                            ->options(function () {
-                                return \App\Models\User::whereHas('roles', fn($q) =>
-                                    $q->where('name', 'secretariat')
-                                )
-                                ->whereHas('roles', fn($q) => $q->whereIn('name', ['Corporate Secretary','secretariat']))
-                                ->get()->mapWithKeys(fn($user) => [
-                                    $user->id => $user->full_name
-                                ]);
-                            })
-                            ->searchable()
                             ->preload(),
                     ])
 
