@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\EvaluationFormPDF;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\DocumentHighlightController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -13,6 +14,10 @@ Route::middleware('auth')->group(function () {
 
     // Reports
     Route::get('preview-report', [ReportsController::class, 'preview_report'])->name('preview-report');
+
+    // Documents
+    Route::post('documents/attach-pdf', [DocumentHighlightController::class, 'attachPdf'])->name('documents.attach-pdf');
+    Route::get('documents/{document}/highlight/{highlight}/pdf', [DocumentHighlightController::class, 'openPdf'])->name('documents.open-pdf');
 });
 
 Route::redirect('/login', '/admin/login', 301)->name('login');

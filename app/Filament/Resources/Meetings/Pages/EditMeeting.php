@@ -4,9 +4,11 @@ namespace App\Filament\Resources\Meetings\Pages;
 
 use App\Filament\Resources\Meetings\MeetingResource;
 use App\Models\MeetingAttendee;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 
 class EditMeeting extends EditRecord
@@ -16,6 +18,11 @@ class EditMeeting extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('manageDocuments')
+                ->label('Manage Documents')
+                ->icon(Heroicon::OutlinedDocumentText)
+                ->url(fn () => MeetingResource::getUrl('manage-documents', ['record' => $this->record]))
+                ->color('gray'),
             ViewAction::make(),
             DeleteAction::make(),
         ];

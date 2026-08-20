@@ -7,7 +7,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\IconPosition;
 use Filament\Support\Icons\Heroicon;
-
+use Filament\Infolists\Components\ViewEntry;
 class MeetingInfolist
 {
     public static function configure(Schema $schema): Schema
