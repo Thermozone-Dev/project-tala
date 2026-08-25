@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Meetings\Pages;
 use App\Filament\Resources\Meetings\MeetingResource;
 use App\Models\MeetingDocument;
 use App\Models\DocumentHighlight;
+use App\Services\DocumentService;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
@@ -13,7 +14,6 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class ManageDocumentAttachments extends Page implements HasTable
 {
@@ -56,13 +56,15 @@ class ManageDocumentAttachments extends Page implements HasTable
                 Actions\DeleteAction::make()
                     ->label('Delete')
                     ->action(function (DocumentHighlight $record) {
+                        $documentService = new DocumentService();
+
                         // Delete PDF file
                         if ($record->pdf_path && Storage::disk('private')->exists($record->pdf_path)) {
                             Storage::disk('private')->delete($record->pdf_path);
                         }
 
                         // Remove anchor from document HTML
-                        $htmlPath = $this->document->getEditedHtmlPath();
+                        $htmlPath = $documentService->getEditedHtmlPath($this->document);
                         if (file_exists($htmlPath)) {
                             $htmlContent = file_get_contents($htmlPath);
 

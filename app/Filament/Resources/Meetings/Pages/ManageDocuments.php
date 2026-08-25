@@ -8,6 +8,7 @@ use App\Models\MeetingDocument;
 use App\Services\DocumentService;
 use Filament\Actions;
 use Filament\Actions\Action;
+use Illuminate\Support\Facades\View;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -39,11 +40,14 @@ class ManageDocuments extends Page implements HasForms, HasTable
                 ->label('Upload Document')
                 ->form([
                     FileUpload::make('document')
-                        ->label('Upload Word Document (.docx, .doc)')
-                        ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'])
-                        ->required()
+                        ->label('Upload Word Document (.docx)')
+                        ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+                        ->required('Please select a document to upload.')
                         ->disk('private')
-                        ->storeFiles(false),
+                        ->storeFiles(false)
+                        ->validationMessages([
+                            'document.mimes' => 'The system only accepts .docx format.',
+                        ]),
                 ])
                 ->action(function (array $data) {
                     $uploadedFiles = $data['document'] ?? [];
@@ -85,9 +89,14 @@ class ManageDocuments extends Page implements HasForms, HasTable
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
-                    ->modalContent(fn (MeetingDocument $record) => view('livewire.document-highlights-modal', [
-                        'document' => $record,
-                    ]))
+                    ->modalContent(function (MeetingDocument $record) {
+                        $documentService = new DocumentService();
+                        $htmlContent = $documentService->getEditableContent($record);
+                        return view('livewire.document-highlights-modal', [
+                            'document' => $record,
+                            'htmlContent' => $htmlContent,
+                        ]);
+                    })
                     ->modalHeading(fn (MeetingDocument $record) => $record->original_filename)
                     ->modalSubmitActionLabel('Close'),
                 Action::make('manage-attachments')

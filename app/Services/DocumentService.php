@@ -105,4 +105,63 @@ class DocumentService
             }
         }
     }
+
+    /**
+     * Get the path to the edited HTML file for a document
+     */
+    public function getEditedHtmlPath(MeetingDocument $document): string
+    {
+        $basePath = Storage::disk('private')->path('meeting-documents');
+        return $basePath . '/' . $document->id . '-edited.html';
+    }
+
+    /**
+     * Get editable content - either from edited HTML file or parse the original Word document
+     */
+    public function getEditableContent(MeetingDocument $document): string
+    {
+        // Check if there's an edited version stored as HTML
+        $editedHtmlPath = $this->getEditedHtmlPath($document);
+        if (file_exists($editedHtmlPath)) {
+            return file_get_contents($editedHtmlPath);
+        }
+
+        // Parse the original Word file
+        if ($document->file_path) {
+            $filePath = Storage::disk('private')->path($document->file_path);
+            $parser = new WordDocumentParser();
+            return $parser->parseDocumentFile($filePath);
+        }
+
+        return '';
+    }
+
+    /**
+     * Save edited content as HTML file
+     * Sanitizes with Purifier
+     */
+    public function saveEditedContent(MeetingDocument $document, string $htmlContent): bool
+    {
+        // Sanitize the HTML with Purifier
+        $sanitizedHtml = \Mews\Purifier\Facades\Purifier::clean($htmlContent, 'default');
+
+        if (empty(strip_tags($sanitizedHtml))) {
+            return false;
+        }
+
+        try {
+            // Save edited HTML to file
+            $editedHtmlPath = $this->getEditedHtmlPath($document);
+            $directory = dirname($editedHtmlPath);
+
+            if (!is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
+
+            file_put_contents($editedHtmlPath, $sanitizedHtml);
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
 }

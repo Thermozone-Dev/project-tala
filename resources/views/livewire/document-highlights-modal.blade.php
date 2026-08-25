@@ -1,10 +1,5 @@
 <div class="space-y-6">
     <!-- Document Content Preview -->
-    @php
-        $editedHtmlPath = $document->getEditedHtmlPath();
-        $htmlContent = file_exists($editedHtmlPath) ? file_get_contents($editedHtmlPath) : null;
-    @endphp
-
     @if($htmlContent)
         <div class="prose prose-sm dark:prose-invert max-w-none pdf-content border rounded p-3 bg-gray-50 dark:bg-gray-800 max-h-96 overflow-y-auto" id="document-viewer">
             {!! $htmlContent !!}

@@ -5,13 +5,13 @@ namespace App\Filament\Resources\Meetings\Pages;
 use App\Filament\Resources\Meetings\MeetingResource;
 use App\Models\Meeting;
 use App\Models\MeetingDocument;
+use App\Services\DocumentService;
 use Filament\Actions\Action;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
-use Mews\Purifier\Facades\Purifier;
 
 class EditDocument extends Page implements HasForms
 {
@@ -22,6 +22,7 @@ class EditDocument extends Page implements HasForms
 
     public Meeting $meeting;
     public MeetingDocument $document;
+
     public function mount(Meeting $record, MeetingDocument $document): void
     {
         $this->meeting = $record;
@@ -30,7 +31,8 @@ class EditDocument extends Page implements HasForms
 
     public function getDocumentContent(): string
     {
-        return $this->document->getEditableContent();
+        $documentService = new DocumentService();
+        return $documentService->getEditableContent($this->document);
     }
 
     public function getTitle(): string|Htmlable
@@ -69,11 +71,8 @@ class EditDocument extends Page implements HasForms
             return;
         }
 
-        // Sanitize content to prevent XSS
-        $sanitizedContent = Purifier::clean($content, 'default');
-
-        // Save edited content to HTML file
-        $success = $this->document->saveEditedContent($sanitizedContent);
+        $documentService = new DocumentService();
+        $success = $documentService->saveEditedContent($this->document, $content);
 
         if ($success) {
             Notification::make()

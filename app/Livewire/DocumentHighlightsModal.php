@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\MeetingDocument;
+use App\Services\DocumentService;
 use Livewire\Component;
 
 class DocumentHighlightsModal extends Component
@@ -14,10 +15,17 @@ class DocumentHighlightsModal extends Component
         $this->document = $document;
     }
 
+    public function getDocumentHtml(): string
+    {
+        $documentService = new DocumentService();
+        return $documentService->getEditableContent($this->document);
+    }
+
     public function render()
     {
         return view('livewire.document-highlights-modal', [
             'document' => $this->document,
+            'htmlContent' => $this->getDocumentHtml(),
         ]);
     }
 }

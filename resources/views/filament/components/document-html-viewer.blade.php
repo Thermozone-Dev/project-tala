@@ -1,9 +1,4 @@
-@props(['document'])
-
-@php
-    $editedHtmlPath = $document->getEditedHtmlPath();
-    $htmlContent = file_exists($editedHtmlPath) ? file_get_contents($editedHtmlPath) : null;
-@endphp
+@props(['htmlContent'])
 
 <style>
     /* Anchor links styling */
