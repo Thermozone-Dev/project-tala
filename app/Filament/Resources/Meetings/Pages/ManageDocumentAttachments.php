@@ -145,7 +145,7 @@ class ManageDocumentAttachments extends Page implements HasTable
             Actions\Action::make('back')
                 ->label('Back')
                 ->icon('heroicon-o-arrow-left')
-                ->url(fn() => MeetingResource::getUrl('manage-documents', ['record' => $this->document->meeting_id]))
+                ->url(fn() => MeetingResource::getUrl('edit', ['record' => $this->document->meeting_id]))
                 ->color('gray'),
         ];
     }

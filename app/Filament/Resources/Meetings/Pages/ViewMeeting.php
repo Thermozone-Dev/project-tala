@@ -15,11 +15,6 @@ class ViewMeeting extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('manageDocuments')
-                ->label('Manage Documents')
-                ->icon(Heroicon::OutlinedDocumentText)
-                ->url(fn () => MeetingResource::getUrl('manage-documents', ['record' => $this->record]))
-                ->color('gray'),
             EditAction::make(),
         ];
     }

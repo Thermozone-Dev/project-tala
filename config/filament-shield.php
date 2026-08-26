@@ -236,7 +236,9 @@ return [
     */
 
     'custom_permissions' => [
-         'Attendance:EvaluationPeriod' => 'Evaluate attendance period',
+        'Attendance:EvaluationPeriod' => 'Evaluate attendance period',
+        'view_meeting_documents' => 'View Meeting Documents',
+        'manage_meeting_documents' => 'Manage Meeting Documents',
     ],
 
     /*

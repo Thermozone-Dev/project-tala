@@ -12,6 +12,8 @@ class MeetingDocument extends Model
         'meeting_id',
         'filename',
         'original_filename',
+        'title',
+        'uploaded_by',
         'file_path',
         'file_size',
     ];
@@ -19,6 +21,11 @@ class MeetingDocument extends Model
     public function meeting(): BelongsTo
     {
         return $this->belongsTo(Meeting::class);
+    }
+
+    public function uploadedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
     }
 
     public function highlights(): HasMany

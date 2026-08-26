@@ -146,7 +146,7 @@
                     e.preventDefault();
                     const href = this.getAttribute('href');
                     if (href && href.includes('/documents/')) {
-                        window.open(href, '_blank', 'noopener,noreferrer');
+                        window.open(href, '_blank', 'noopener,noreferlrer');
                     }
                 });
             });
