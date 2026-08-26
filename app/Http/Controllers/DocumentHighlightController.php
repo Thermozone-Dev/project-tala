@@ -69,6 +69,45 @@ class DocumentHighlightController extends Controller
         return Storage::disk('private')->response($highlight->pdf_path);
     }
 
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|image|mimes:jpeg,png,gif,webp|max:10240', // 10MB
+            'document_id' => 'required|exists:meeting_documents,id',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('document-images', $filename, 'private');
+
+            $url = route('documents.get-image', [
+                'filename' => $filename
+            ]);
+
+            return response()->json([
+                'location' => $url,
+                'message' => 'Image uploaded successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Image upload failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getImage($filename)
+    {
+        $path = 'document-images/' . $filename;
+
+        if (!Storage::disk('private')->exists($path)) {
+            abort(404, 'Image not found');
+        }
+
+        return Storage::disk('private')->response($path);
+    }
+
     public function deleteAttachment(Request $request)
     {
         $request->validate([

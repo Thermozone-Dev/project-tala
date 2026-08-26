@@ -101,12 +101,39 @@
         /* margin: 10px 0 !important; */
     }
 
-    /* Image styling */
-    .pdf-content div[style*="text-align: center"] img {
+    /* Image styling - inline-block respects text-align */
+    .pdf-content img {
         max-width: 100% !important;
         height: auto !important;
-        display: block !important;
-        margin: 0 auto !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+        margin: 10px 5px !important;
+    }
+
+    /* Paragraph styling to ensure proper text alignment */
+    .pdf-content p[style*="text-align: center"] {
+        text-align: center !important;
+    }
+
+    .pdf-content p[style*="text-align: right"] {
+        text-align: right !important;
+    }
+
+    .pdf-content p[style*="text-align: left"] {
+        text-align: left !important;
+    }
+
+    .pdf-content p[style*="text-align: justify"] {
+        text-align: justify !important;
+    }
+
+    .pdf-content div[style*="text-align: center"] {
+        text-align: center !important;
+    }
+
+    .pdf-content div[style*="text-align: center"] img {
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 </style>
 

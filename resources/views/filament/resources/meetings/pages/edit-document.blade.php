@@ -58,8 +58,49 @@
                 // Disable Grammarly interference
                 browser_spellcheck: false,
                 // TinyMCE 7: Use only essential plugins that are available
-                plugins: 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code fullscreen table help wordcount',
-                toolbar: 'undo redo | formatselect | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | highlightText attachPdf',
+                plugins: 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code fullscreen table help wordcount image',
+                toolbar: 'undo redo | formatselect | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image link | highlightText attachPdf',
+                // Image upload configuration
+                image_upload_url: '{{ route("documents.upload-image") }}',
+                images_upload_handler: function(blobInfo, progress) {
+                    return new Promise(function(resolve, reject) {
+                        const formData = new FormData();
+                        formData.append('file', blobInfo.blob(), blobInfo.filename());
+                        formData.append('document_id', '{{ $document->id }}');
+
+                        const xhr = new XMLHttpRequest();
+                        xhr.withCredentials = false;
+
+                        xhr.upload.onprogress = function(e) {
+                            progress(e.loaded / e.total * 100);
+                        };
+
+                        xhr.onload = function() {
+                            if (xhr.status === 403) {
+                                reject({message: 'HTTP Error: ' + xhr.status, remove: true});
+                                return;
+                            }
+                            if (xhr.status < 200 || xhr.status >= 300) {
+                                reject('HTTP Error: ' + xhr.status);
+                                return;
+                            }
+                            const json = JSON.parse(xhr.responseText);
+                            if (!json || typeof json.location != 'string') {
+                                reject('Invalid JSON: ' + xhr.responseText);
+                                return;
+                            }
+                            resolve(json.location);
+                        };
+
+                        xhr.onerror = function() {
+                            reject({message: 'Image upload failed', remove: true});
+                        };
+
+                        xhr.open('POST', formData.get('file') ? '{{ route("documents.upload-image") }}' : '');
+                        xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                        xhr.send(formData);
+                    });
+                },
                 // Color picker configuration
                 color_cpicker_callback: function(callback, value) {
                     callback(value);
@@ -183,19 +224,6 @@
                     location.reload();
                 }, 1500);
             };
-
-            // Listen for header action button click (if exists)
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('[data-testid="action-button"]') ||
-                    (e.target.textContent && e.target.textContent.includes('Save Document'))) {
-                    const btn = e.target.closest('button');
-                    if (btn && btn.textContent.includes('Save Document')) {
-                        saveTinyMceContent();
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                }
-            });
 
             function showPdfAttachmentModal(selectedText, editor) {
                 // Store editor reference globally for modal button
@@ -579,14 +607,6 @@
             /* Document content base size */
             .document-content {
                 font-size: 14px !important;
-            }
-
-            /* Image styling */
-            div[style*="text-align: center"] img {
-                max-width: 100% !important;
-                height: auto !important;
-                display: block !important;
-                margin: 0 auto !important;
             }
         </style>
     @endpush
