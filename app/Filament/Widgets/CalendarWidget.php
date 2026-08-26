@@ -56,9 +56,7 @@ class CalendarWidget extends BaseCalendarWidget
                 $meeting->scheduled_at,
                 $bgColor,
                 $textColor,
-                Auth::user()->hasRole(['Super Admin', 'Secretariat'])
-                    ? MeetingResource::getUrl('view', ['record' => $meeting->id])
-                    : $meeting->meeting_link
+                MeetingResource::getUrl('view', ['record' => $meeting->id])
             );
         }
 

@@ -12,10 +12,16 @@ use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Activity as ActivityLogModel;
+use Illuminate\Database\Eloquent\Model;
 
 class ActivitiesRelationManager extends RelationManager
 {
     protected static string $relationship = 'activities';
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return auth()->user()->can("Update:Meeting");
+    }
 
     public function form(Schema $schema): Schema
     {
