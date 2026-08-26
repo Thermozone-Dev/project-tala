@@ -64,8 +64,14 @@ class ManageDocumentAttachments extends Page implements HasTable
                             ->disk('private')
                             ->directory('document-pdfs')
                             ->acceptedFileTypes(['application/pdf'])
-                            ->maxSize(51200) // 50MB in KB
+                            ->maxSize(52428800) // 50MB in bytes
                             ->required()
+                            ->rules([
+                                'required',
+                                'file',
+                                'mimes:pdf',
+                                'max:51200', // 50MB in KB for Laravel validation
+                            ])
                             ->helperText('Max file size: 50 MB'),
                     ])
                     ->action(function (DocumentHighlight $record, array $data) {
