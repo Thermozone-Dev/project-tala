@@ -363,7 +363,7 @@
                         if (data.success) {
                             // Create anchor link
                             const pdfUrl = `{{ url('/documents') }}/${documentId}/highlight/${data.highlight_id}/pdf`;
-                            const highlightedHtml = `<a href="${pdfUrl}">${highlightedText}</a>`;
+                            const highlightedHtml = `<a href="${pdfUrl}" target="_blank" rel="noopener noreferrer" class="pdf-link">${highlightedText}</a>`;
 
                             // Restore bookmark and insert link
                             if (window.selectionBookmark) {

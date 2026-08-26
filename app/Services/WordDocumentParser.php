@@ -191,7 +191,7 @@ class WordDocumentParser
         $config->set('HTML.Allowed',
             'div[style],p[style],br,strong,em,u,span[style],h1,h2,h3,h4,h5,h6,' .
             'ul,ol,li,table[style],tr,td[style],th[style],tbody,thead,' .
-            'img[src|alt|width|height|style],a[href|style|target]'
+            'img[src|alt|width|height|style],a[href|style|target|rel|class]'
         );
 
         // Allow comprehensive CSS for formatting

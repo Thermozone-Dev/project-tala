@@ -175,8 +175,8 @@ class DocumentService
         // Allow formatting elements and attributes needed for document editing
         $config->set('HTML.Allowed',
             'div[style],p[style],br,strong,em,u,span[style],h1[style],h2[style],h3[style],h4[style],h5[style],h6[style],' .
-            'ul,ol,li,table[style],tr,td[style],th[style],tbody,thead,' .
-            'img[src|alt|width|height|style],a[href|style|target]'
+            'ul[style],ol[style],li[style],table[style],tr,td[style],th[style],tbody,thead,' .
+            'img[src|alt|width|height|style],a[href|style|target|rel|class]'
         );
 
         // Allow comprehensive CSS properties for formatting

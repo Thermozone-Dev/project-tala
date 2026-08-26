@@ -97,8 +97,9 @@ class ManageDocuments extends Page implements HasForms, HasTable
                             'htmlContent' => $htmlContent,
                         ]);
                     })
-                    ->modalHeading(fn (MeetingDocument $record) => $record->original_filename)
-                    ->modalSubmitActionLabel('Close'),
+                    ->modalCancelActionLabel(fn () => 'Close')
+                    ->modalSubmitAction(false)
+                    ->modalHeading(fn (MeetingDocument $record) => $record->original_filename),
                 Action::make('manage-attachments')
                     ->label('Attachments')
                     ->icon('heroicon-o-link')

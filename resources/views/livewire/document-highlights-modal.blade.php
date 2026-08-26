@@ -1,7 +1,7 @@
-<div class="space-y-6">
+<div>
     <!-- Document Content Preview -->
     @if($htmlContent)
-        <div class="prose prose-sm dark:prose-invert max-w-none pdf-content border rounded p-3 bg-gray-50 dark:bg-gray-800 max-h-96 overflow-y-auto" id="document-viewer">
+        <div class="prose prose-sm dark:prose-invert max-w-none pdf-content px-6 bg-gray-50 dark:bg-gray-800 max-h-96 overflow-y-auto rounded" id="document-viewer">
             {!! $htmlContent !!}
         </div>
     @else
@@ -12,7 +12,6 @@
 <style>
     .pdf-content {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        line-height: 1.6;
         color: #333;
         font-size: 14px;
     }
@@ -21,20 +20,42 @@
         color: #0066cc !important;
         text-decoration: underline !important;
         cursor: pointer !important;
+        pointer-events: auto !important;
     }
 
     .pdf-content a:hover {
         color: #0052a3 !important;
     }
 
+    .pdf-content a[href*="/documents/"] {
+        pointer-events: auto !important;
+    }
+
     /* List styling */
-    .pdf-content ul, .pdf-content ol {
+    .pdf-content ul {
+        list-style-type: disc !important;
+        margin: 15px 0 !important;
+        padding-left: 40px !important;
+    }
+
+    .pdf-content ol {
+        list-style-type: decimal !important;
         margin: 15px 0 !important;
         padding-left: 40px !important;
     }
 
     .pdf-content li {
         margin: 8px 0 !important;
+        line-height: 1.6 !important;
+        display: list-item !important;
+    }
+
+    .pdf-content ul li {
+        list-style-type: disc !important;
+    }
+
+    .pdf-content ol li {
+        list-style-type: decimal !important;
     }
 
     /* Heading styling */
@@ -77,7 +98,7 @@
 
     /* Paragraph styling */
     .pdf-content p {
-        margin: 10px 0 !important;
+        /* margin: 10px 0 !important; */
     }
 
     /* Image styling */
