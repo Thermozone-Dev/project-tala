@@ -17,6 +17,7 @@ Route::middleware('auth')->group(function () {
 
     // Documents
     Route::post('documents/attach-pdf', [DocumentHighlightController::class, 'attachPdf'])->name('documents.attach-pdf');
+    Route::delete('documents/delete-attachment', [DocumentHighlightController::class, 'deleteAttachment'])->name('documents.delete-attachment');
     Route::get('documents/{document}/highlight/{highlight}/pdf', [DocumentHighlightController::class, 'openPdf'])->name('documents.open-pdf');
 });
 

@@ -15,13 +15,25 @@
             <script>
                 // Store document content in a global variable (before TinyMCE initializes)
                 window.documentContent = {!! json_encode($this->getDocumentContent() ?? '') !!};
+                // Track upload state
+                window.uploadsInProgress = 0;
             </script>
 
+            <!-- PDF Attachment Progress Section -->
+            <div id="attachmentSection" style="display: none;" class="mt-6 p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                <h3 class="text-lg font-semibold mb-4 text-blue-900 dark:text-blue-100">PDF Attachments</h3>
+
+                <!-- Active Uploads -->
+                <div id="uploadQueue" class="space-y-3">
+                    <!-- Upload items will be added here -->
+                </div>
+
+                <!-- Completed Uploads -->
+                <div id="completedUploads" class="mt-4 space-y-2">
+                    <!-- Completed items will be added here -->
+                </div>
+            </div>
             <div class="mt-6 flex gap-3 justify-end">
-                <a href="{{ $this->meeting->id }}/manage-documents"
-                   class="inline-flex items-center justify-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
-                    Cancel
-                </a>
                 <button type="button" id="save-document-btn" onclick="saveTinyMceContent(); return false;"
                         class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer">
                     Save Document
@@ -36,7 +48,7 @@
         <script>
             tinymce.init({
                 selector: '#tinymce-editor',
-                height: 500,
+                height: 550,
                 menubar: false,
                 branding: false,
                 // GPL License for self-hosted TinyMCE 7
@@ -47,11 +59,58 @@
                 browser_spellcheck: false,
                 // TinyMCE 7: Use only essential plugins that are available
                 plugins: 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code fullscreen table help wordcount',
-                toolbar: 'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link | code | highlightText attachPdf',
+                toolbar: 'undo redo | formatselect | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | highlightText attachPdf',
+                // Color picker configuration
+                color_cpicker_callback: function(callback, value) {
+                    callback(value);
+                },
+                // Content CSS for styling
+                content_style: `
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.6; }
+                    p { margin: 10px 0; }
+                    p[style*="text-align: center"] { text-align: center !important; }
+                    p[style*="text-align: right"] { text-align: right !important; }
+                    p[style*="text-align: justify"] { text-align: justify !important; }
+                    p[style*="text-align: left"] { text-align: left !important; }
+                    h1, h2, h3, h4, h5, h6 { margin: 15px 0 10px 0; }
+                    ul, ol { margin: 15px 0; padding-left: 40px; }
+                    li { margin: 5px 0; }
+                    table { border-collapse: collapse; margin: 15px 0; }
+                    th, td { border: 1px solid #999; padding: 10px; }
+                    th { background-color: #f2f2f2; }
+                `,
+                // Allow style attribute to preserve alignment and other formatting
+                valid_children: '+p[style],+div[style],+h1[style],+h2[style],+h3[style],+h4[style],+h5[style],+h6[style]',
+                extended_valid_elements: 'p[style|class],div[style|class],h1[style|class],h2[style|class],h3[style|class],h4[style|class],h5[style|class],h6[style|class]',
                 // Security: Block dangerous elements
                 invalid_elements: 'script,iframe,embed,object,style,input,form,button',
-                extended_valid_elements: '',
-                valid_attributes: 'href,src,alt,title,class,id,data-*',
+                valid_attributes: 'href,src,alt,title,class,id,data-*,style',
+                // Force style preservation
+                force_br_newlines: false,
+                paste_as_text: false,
+                // Define formats to recognize inline styles
+                formats: {
+                    alignleft: {
+                        selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,li',
+                        styles: { 'text-align': 'left' },
+                        toggle: true
+                    },
+                    aligncenter: {
+                        selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,li',
+                        styles: { 'text-align': 'center' },
+                        toggle: true
+                    },
+                    alignright: {
+                        selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,li',
+                        styles: { 'text-align': 'right' },
+                        toggle: true
+                    },
+                    alignjustify: {
+                        selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,li',
+                        styles: { 'text-align': 'justify' },
+                        toggle: true
+                    }
+                },
                 // Security settings
                 allow_html_in_named_anchor: false,
                 relative_urls: false,
@@ -155,6 +214,7 @@
                         <div class="mb-4">
                             <label class="block text-sm font-medium mb-2">Upload PDF File</label>
                             <input type="file" id="pdfInput" accept=".pdf" class="w-full border rounded-lg p-2">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Maximum file size: <strong>50 MB</strong></p>
                         </div>
                         <div class="mb-4">
                             <label class="block text-sm font-medium mb-2">Notes (Optional)</label>
@@ -172,6 +232,32 @@
                 `;
 
                 document.body.appendChild(modal);
+
+                // Add real-time file size validation
+                const fileInput = document.getElementById('pdfInput');
+                fileInput.addEventListener('change', function() {
+                    const MAX_FILE_SIZE = 125 * 1024 * 1024;
+                    const file = this.files[0];
+
+                    if (file && file.size > MAX_FILE_SIZE) {
+                        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                        const errorDiv = document.createElement('div');
+                        errorDiv.id = 'file-size-error';
+                        errorDiv.style.cssText = 'background-color: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 12px;';
+                        errorDiv.innerHTML = `⚠️ <strong>File too large:</strong> ${fileSizeMB}MB (max: 125MB)`;
+
+                        // Remove existing error if any
+                        const existingError = document.getElementById('file-size-error');
+                        if (existingError) existingError.remove();
+
+                        // Add error message after file input
+                        fileInput.parentElement.appendChild(errorDiv);
+                    } else {
+                        // Remove error message if file is valid
+                        const existingError = document.getElementById('file-size-error');
+                        if (existingError) existingError.remove();
+                    }
+                });
             }
 
             function closePdfModal() {
@@ -182,60 +268,166 @@
             function attachPdf(documentId, highlightedText, editor) {
                 const pdfInput = document.getElementById('pdfInput');
                 const noteInput = document.getElementById('noteInput');
+                const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 
                 if (!pdfInput.files.length) {
                     alert('Please select a PDF file');
                     return;
                 }
 
+                const file = pdfInput.files[0];
+
+                // Validate file type
+                if (file.type !== 'application/pdf') {
+                    alert('Only PDF files are allowed.');
+                    return;
+                }
+
+                // Validate file size
+                if (file.size > MAX_FILE_SIZE) {
+                    const maxSizeMB = MAX_FILE_SIZE / (1024 * 1024);
+                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+
+                    // Show prominent error notification
+                    const errorMsg = `❌ FILE TOO LARGE\n\nYour file is ${fileSizeMB}MB\nMaximum allowed: ${maxSizeMB}MB\n\nPlease select a smaller PDF file.`;
+                    alert(errorMsg);
+
+                    // Also update the modal with the error
+                    const modal = document.getElementById('pdf-attachment-modal');
+                    if (modal) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.style.cssText = 'background-color: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 4px; margin-bottom: 12px;';
+                        errorDiv.innerHTML = `<strong>⚠️ Error:</strong> File size (${fileSizeMB}MB) exceeds maximum of ${maxSizeMB}MB`;
+                        modal.querySelector('div').insertBefore(errorDiv, modal.querySelector('div').firstChild);
+                    }
+                    return;
+                }
+
+                // Close modal immediately after selecting attach
+                closePdfModal();
+
+                // Show attachment section
+                document.getElementById('attachmentSection').style.display = 'block';
+
+                // Create upload item
+                const uploadId = 'upload-' + Date.now();
+                const uploadItem = document.createElement('div');
+                uploadItem.id = uploadId;
+                uploadItem.className = 'p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700';
+                uploadItem.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <p class="font-medium text-sm">${highlightedText.substring(0, 50)}${highlightedText.length > 50 ? '...' : ''}</p>
+                            <p class="text-xs text-gray-500">${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)</p>
+                        </div>
+                        <span class="text-xs font-semibold text-blue-600 dark:text-blue-400">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                `;
+                document.getElementById('uploadQueue').appendChild(uploadItem);
+
+                // Increment uploads in progress
+                window.uploadsInProgress++;
+                updateSaveButtonState();
+
+                // Upload with progress
                 const formData = new FormData();
                 formData.append('document_id', documentId);
                 formData.append('highlighted_text', highlightedText);
-                formData.append('pdf_file', pdfInput.files[0]);
+                formData.append('pdf_file', file);
                 formData.append('notes', noteInput.value);
 
-                // Send to server
-                fetch('{{ route("documents.attach-pdf") }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Create simple anchor link - styling handled by CSS
-                        const pdfUrl = `{{ url('/documents') }}/${documentId}/highlight/${data.highlight_id}/pdf`;
-                        const highlightedHtml = `<a href="${pdfUrl}">${highlightedText}</a>`;
+                const xhr = new XMLHttpRequest();
 
-                        // Restore the exact bookmark position and replace selection
-                        if (window.selectionBookmark) {
-                            editor.selection.moveToBookmark(window.selectionBookmark);
+                // Track progress
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        const uploadEl = document.getElementById(uploadId);
+                        if (uploadEl) {
+                            uploadEl.querySelector('span').textContent = Math.round(percentComplete) + '%';
+                            uploadEl.querySelector('div div').style.width = percentComplete + '%';
                         }
-
-                        // Replace the selected text with link version
-                        editor.selection.setContent(highlightedHtml);
-                        editor.setDirty(true);
-
-                        // Clear stored selection
-                        window.selectionBookmark = null;
-                        window.selectedText = null;
-
-                        alert('PDF attached successfully!');
-                        closePdfModal();
-                    } else {
-                        alert('Error: ' + (data.message || 'Failed to attach PDF'));
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error attaching PDF');
                 });
+
+                // Handle completion
+                xhr.onload = function() {
+                    window.uploadsInProgress--;
+                    const uploadEl = document.getElementById(uploadId);
+
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.success) {
+                            // Create anchor link
+                            const pdfUrl = `{{ url('/documents') }}/${documentId}/highlight/${data.highlight_id}/pdf`;
+                            const highlightedHtml = `<a href="${pdfUrl}">${highlightedText}</a>`;
+
+                            // Restore bookmark and insert link
+                            if (window.selectionBookmark) {
+                                editor.selection.moveToBookmark(window.selectionBookmark);
+                            }
+                            editor.selection.setContent(highlightedHtml);
+                            editor.setDirty(true);
+
+                            // Move to completed
+                            uploadEl.className = 'bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-700 col-6 p-5';
+                            uploadEl.dataset.highlightId = data.highlight_id;
+                            uploadEl.innerHTML = `
+                                <div class="flex space-between p-5">
+                                    <p class="text-xs text-green-700 dark:text-green-300">${file.name}</p>
+                                </div>
+                            `;
+
+                            // Clear inputs
+                            window.selectionBookmark = null;
+                            window.selectedText = null;
+                        }
+                    } else {
+                        uploadEl.className = 'p-3 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-700';
+                        uploadEl.innerHTML = `
+                            <p class="text-sm font-medium text-red-900 dark:text-red-100">Upload failed</p>
+                            <p class="text-xs text-red-700 dark:text-red-300">${xhr.responseText}</p>
+                        `;
+                    }
+
+                    updateSaveButtonState();
+                };
+
+                xhr.onerror = function() {
+                    window.uploadsInProgress--;
+                    const uploadEl = document.getElementById(uploadId);
+                    uploadEl.className = 'p-3 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-700';
+                    uploadEl.innerHTML = `<p class="text-sm font-medium text-red-900 dark:text-red-100">Upload failed</p>`;
+                    updateSaveButtonState();
+                };
+
+                // Send request
+                xhr.open('POST', '{{ route("documents.attach-pdf") }}');
+                xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                xhr.send(formData);
+            }
+
+            function updateSaveButtonState() {
+                const saveBtn = document.getElementById('save-document-btn');
+                if (window.uploadsInProgress > 0) {
+                    saveBtn.disabled = true;
+                    saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    saveBtn.textContent = 'Uploading... (' + window.uploadsInProgress + ')';
+                } else {
+                    saveBtn.disabled = false;
+                    saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    saveBtn.textContent = 'Save Document';
+                }
             }
 
         </script>
-        <style>
+    @endpush
+
+    @push('styles')
+        <style scoped>
             #tinymce-editor {
                 min-height: 500px !important;
                 display: block !important;
@@ -310,6 +502,93 @@
             a:hover {
                 color: #0052a3 !important;
             }
+
+            /* ul, ol {
+                margin: 15px 0 !important;
+                padding-left: 40px !important;
+            }
+
+            li {
+                padding: 8px 0 !important;
+                line-height: 1.6 !important;
+            } */
+
+            /* Heading styling */
+            h1, h2, h3, h4, h5, h6 {
+                margin-top: 15px !important;
+                margin-bottom: 10px !important;
+                line-height: 1.4 !important;
+                font-weight: bold !important;
+            }
+
+            h1 { font-size: 28px !important; }
+            h2 { font-size: 24px !important; }
+            h3 { font-size: 20px !important; }
+            h4 { font-size: 18px !important; }
+            h5 { font-size: 16px !important; }
+            h6 { font-size: 14px !important; }
+
+            /* Table styling */
+            table {
+                border-collapse: collapse !important;
+                width: 100% !important;
+                margin: 15px 0 !important;
+            }
+
+            table, th, td {
+                border: 1px solid #999 !important;
+            }
+
+            th {
+                background-color: #f2f2f2 !important;
+                padding: 12px !important;
+                text-align: left !important;
+                font-weight: bold !important;
+            }
+
+            td {
+                padding: 12px !important;
+                vertical-align: top !important;
+            }
+
+            /* Text alignment */
+            p[style*="text-align: center"] {
+                text-align: center !important;
+            }
+
+            p[style*="text-align: right"] {
+                text-align: right !important;
+            }
+
+            p[style*="text-align: justify"] {
+                text-align: justify !important;
+            }
+
+            /* Font size */
+            span[style*="font-size"] {
+                line-height: 1.6 !important;
+            }
+
+            /* Paragraph spacing */
+            p {
+                margin: 10px 0 !important;
+                line-height: 1.6 !important;
+                font-size: 14px !important;
+            }
+
+            /* Document content base size */
+            .document-content {
+                font-size: 14px !important;
+            }
+
+            /* Image styling */
+            div[style*="text-align: center"] img {
+                max-width: 100% !important;
+                height: auto !important;
+                display: block !important;
+                margin: 0 auto !important;
+            }
         </style>
     @endpush
 </x-filament-panels::page>
+

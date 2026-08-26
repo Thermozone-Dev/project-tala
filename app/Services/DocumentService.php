@@ -70,7 +70,7 @@ class DocumentService
         }
 
         // Delete edited HTML version if it exists
-        $editedPath = $document->getEditedHtmlPath();
+        $editedPath = $this->getEditedHtmlPath($document);
         if (file_exists($editedPath)) {
             unlink($editedPath);
         }
@@ -138,12 +138,12 @@ class DocumentService
 
     /**
      * Save edited content as HTML file
-     * Sanitizes with Purifier
+     * Sanitizes with permissive Purifier config to preserve formatting
      */
     public function saveEditedContent(MeetingDocument $document, string $htmlContent): bool
     {
-        // Sanitize the HTML with Purifier
-        $sanitizedHtml = \Mews\Purifier\Facades\Purifier::clean($htmlContent, 'default');
+        // Sanitize with permissive config that preserves formatting
+        $sanitizedHtml = $this->sanitizeWithPermissiveConfig($htmlContent);
 
         if (empty(strip_tags($sanitizedHtml))) {
             return false;
@@ -163,5 +163,39 @@ class DocumentService
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Sanitize HTML with permissive config for editing
+     */
+    private function sanitizeWithPermissiveConfig(string $html): string
+    {
+        $config = \HTMLPurifier_Config::createDefault();
+
+        // Allow formatting elements and attributes needed for document editing
+        $config->set('HTML.Allowed',
+            'div[style],p[style],br,strong,em,u,span[style],h1[style],h2[style],h3[style],h4[style],h5[style],h6[style],' .
+            'ul,ol,li,table[style],tr,td[style],th[style],tbody,thead,' .
+            'img[src|alt|width|height|style],a[href|style|target]'
+        );
+
+        // Allow comprehensive CSS properties for formatting
+        $config->set('CSS.AllowedProperties',
+            'text-align,text-indent,color,font-size,font-weight,font-style,text-decoration,' .
+            'margin,margin-left,margin-right,margin-top,margin-bottom,' .
+            'padding,padding-left,padding-right,padding-top,padding-bottom,' .
+            'line-height,border,border-collapse,width,height,' .
+            'background-color,vertical-align'
+        );
+
+        // Disable auto-formatting that might strip styles
+        $config->set('HTML.Trusted', false);
+        $config->set('CSS.Trusted', false);
+
+        // Allow data URIs for images and safe URL schemes
+        $config->set('URI.AllowedSchemes', ['http' => true, 'https' => true, 'data' => true]);
+
+        $purifier = new \HTMLPurifier($config);
+        return $purifier->purify($html);
     }
 }

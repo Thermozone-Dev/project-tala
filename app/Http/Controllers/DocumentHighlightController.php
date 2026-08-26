@@ -15,8 +15,12 @@ class DocumentHighlightController extends Controller
         $request->validate([
             'document_id' => 'required|exists:meeting_documents,id',
             'highlighted_text' => 'required|string|max:1000',
-            'pdf_file' => 'required|file|mimes:pdf|max:10240',
+            'pdf_file' => 'required|file|mimes:pdf|max:128000', // 125MB in KB
             'notes' => 'nullable|string|max:500',
+        ], [
+            'pdf_file.max' => 'The PDF file cannot exceed 125MB.',
+            'pdf_file.mimes' => 'Only PDF files are allowed.',
+            'pdf_file.required' => 'Please select a PDF file to attach.',
         ]);
 
         // Security: Check for malicious patterns in highlighted text
@@ -63,5 +67,75 @@ class DocumentHighlightController extends Controller
         }
 
         return Storage::disk('private')->response($highlight->pdf_path);
+    }
+
+    public function deleteAttachment(Request $request)
+    {
+        $request->validate([
+            'highlight_id' => 'required|exists:document_highlights,id',
+            'document_id' => 'required|exists:meeting_documents,id',
+        ]);
+
+        $highlight = DocumentHighlight::findOrFail($request->highlight_id);
+        $document = MeetingDocument::findOrFail($request->document_id);
+
+        // Verify the highlight belongs to this document
+        if ($highlight->meeting_document_id !== $document->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
+        // Delete the PDF file from storage
+        if ($highlight->pdf_path && Storage::disk('private')->exists($highlight->pdf_path)) {
+            Storage::disk('private')->delete($highlight->pdf_path);
+        }
+
+        // Remove the anchor tag from the edited HTML
+        $this->removeAnchorFromDocument($document, $highlight);
+
+        // Delete the highlight record
+        $highlight->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attachment removed successfully',
+        ]);
+    }
+
+    /**
+     * Remove anchor tag from document HTML
+     */
+    private function removeAnchorFromDocument(MeetingDocument $document, DocumentHighlight $highlight): void
+    {
+        try {
+            $basePath = Storage::disk('private')->path('meeting-documents');
+            $editedHtmlPath = $basePath . '/' . $document->id . '-edited.html';
+
+            if (file_exists($editedHtmlPath)) {
+                $content = file_get_contents($editedHtmlPath);
+
+                // Remove only the anchor tag for this specific highlight using its unique ID in the URL
+                // Matches: <a href="..../highlight/{highlight_id}/pdf...">any text</a>
+                // Uses the highlight ID to target the exact anchor
+                $highlightId = $highlight->id;
+                $pattern = '/<a\s+[^>]*href="[^"]*highlight\/' . preg_quote($highlightId) . '\/pdf[^"]*"[^>]*>(.+?)<\/a>/si';
+
+                $newContent = preg_replace($pattern, '$1', $content);
+
+                // Only write if something was actually replaced
+                if ($newContent !== $content) {
+                    file_put_contents($editedHtmlPath, $newContent);
+                }
+            }
+        } catch (\Exception $e) {
+            // Log but don't fail - the highlight record still gets deleted
+            \Log::warning('Error removing anchor from document', [
+                'document_id' => $document->id,
+                'highlight_id' => $highlight->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

@@ -43,11 +43,11 @@ class EditDocument extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('save')
-                ->label('Save Document')
-                ->color('success')
-                ->icon('heroicon-o-check')
-                ->action('handleSaveAction'),
+            // Action::make('save')
+            //     ->label('Save Document')
+            //     ->color('success')
+            //     ->icon('heroicon-o-check')
+            //     ->action('handleSaveAction'),
             Action::make('back')
                 ->label('Back')
                 ->url(MeetingResource::getUrl('manage-documents', ['record' => $this->meeting]))

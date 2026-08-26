@@ -47,8 +47,13 @@ class DocumentStyleMapper
             // Add font size if available
             if (method_exists($fontStyle, 'getSize')) {
                 $size = $fontStyle->getSize();
+                // PhpWord returns size in half-points (e.g., 24 for 12pt)
                 if ($size && $size > 0) {
-                    $text = "<span style=\"font-size: {$size}pt;\">$text</span>";
+                    $sizeInPt = $size;
+                    // Only apply if it's noticeably different from default (12pt)
+                    if ($sizeInPt != 12) {
+                        $text = "<span style=\"font-size: {$sizeInPt}pt;\">$text</span>";
+                    }
                 }
             }
         } catch (\Exception $e) {
@@ -75,21 +80,37 @@ class DocumentStyleMapper
                 return 'li';
             }
 
-            // Check by style name
+            // Check by style or paragraph properties
             if (method_exists($element, 'getStyle')) {
                 $style = $element->getStyle();
                 if ($style && method_exists($style, 'getStyleName')) {
                     $styleName = $style->getStyleName();
 
-                    if (stripos($styleName, 'Heading 1') !== false) {
+                    if (stripos($styleName, 'Heading 1') !== false || stripos($styleName, 'h1') !== false) {
                         return 'h1';
                     }
-                    if (stripos($styleName, 'Heading 2') !== false) {
+                    if (stripos($styleName, 'Heading 2') !== false || stripos($styleName, 'h2') !== false) {
                         return 'h2';
                     }
-                    if (stripos($styleName, 'Heading 3') !== false) {
+                    if (stripos($styleName, 'Heading 3') !== false || stripos($styleName, 'h3') !== false) {
                         return 'h3';
                     }
+                    if (stripos($styleName, 'Heading 4') !== false || stripos($styleName, 'h4') !== false) {
+                        return 'h4';
+                    }
+                    if (stripos($styleName, 'Heading 5') !== false || stripos($styleName, 'h5') !== false) {
+                        return 'h5';
+                    }
+                    if (stripos($styleName, 'Heading 6') !== false || stripos($styleName, 'h6') !== false) {
+                        return 'h6';
+                    }
+                }
+            }
+
+            // Check for list item numbering style
+            if (method_exists($element, 'getStyle') && method_exists($element->getStyle(), 'getNumStyle')) {
+                if ($element->getStyle()->getNumStyle()) {
+                    return 'li';
                 }
             }
         } catch (\Exception $e) {
@@ -110,25 +131,71 @@ class DocumentStyleMapper
             if (method_exists($element, 'getParagraphStyle')) {
                 $pStyle = $element->getParagraphStyle();
                 if ($pStyle) {
-                    // Text alignment
+                    // Text alignment - check multiple possible methods
+                    $alignment = null;
+
+                    // Try different methods to get alignment
                     if (method_exists($pStyle, 'getAlignment')) {
                         $alignment = $pStyle->getAlignment();
-                        if ($alignment === 'center') {
+                    }
+
+                    if (!$alignment && method_exists($pStyle, 'getJustification')) {
+                        $alignment = $pStyle->getJustification();
+                    }
+
+                    // Map alignment values
+                    if ($alignment) {
+                        $alignmentStr = (string)$alignment;
+                        $alignmentLower = strtolower($alignmentStr);
+
+                        // Use strict string comparison
+                        if ($alignmentLower === 'center') {
                             $styles[] = 'text-align: center';
-                        } elseif ($alignment === 'right') {
+                        } elseif ($alignmentLower === 'right') {
                             $styles[] = 'text-align: right';
-                        } elseif ($alignment === 'justify') {
+                        } elseif ($alignmentLower === 'distribute' || $alignmentLower === 'justify' || $alignmentLower === 'both') {
                             $styles[] = 'text-align: justify';
+                        } elseif ($alignmentLower === 'left') {
+                            // Only add explicit left if there are other styles
+                            if (!empty($styles)) {
+                                $styles[] = 'text-align: left';
+                            }
                         }
                     }
 
-                    // Indentation
+                    // Indentation (convert twips to pixels: 1 twip = 0.05pt = ~0.66px)
                     if (method_exists($pStyle, 'getIndentation')) {
                         $indent = $pStyle->getIndentation();
-                        if ($indent && method_exists($indent, 'getLeft')) {
-                            $left = $indent->getLeft();
-                            if ($left > 0) {
-                                $styles[] = "margin-left: " . ($left / 20) . "mm";
+                        if ($indent) {
+                            if (method_exists($indent, 'getLeft')) {
+                                $left = $indent->getLeft();
+                                if ($left && $left > 0) {
+                                    // Convert twips to pixels (1 twip = 1/1440 inch, ~0.0667px)
+                                    $leftPx = round($left * 0.05);
+                                    if ($leftPx > 0) {
+                                        $styles[] = "margin-left: {$leftPx}px";
+                                    }
+                                }
+                            }
+                            if (method_exists($indent, 'getRight')) {
+                                $right = $indent->getRight();
+                                if ($right && $right > 0) {
+                                    // Convert twips to pixels
+                                    $rightPx = round($right * 0.05);
+                                    if ($rightPx > 0) {
+                                        $styles[] = "margin-right: {$rightPx}px";
+                                    }
+                                }
+                            }
+                            // First line indentation
+                            if (method_exists($indent, 'getFirstLine')) {
+                                $firstLine = $indent->getFirstLine();
+                                if ($firstLine && $firstLine > 0) {
+                                    $firstLinePx = round($firstLine * 0.05);
+                                    if ($firstLinePx > 0) {
+                                        $styles[] = "text-indent: {$firstLinePx}px";
+                                    }
+                                }
                             }
                         }
                     }
@@ -136,8 +203,7 @@ class DocumentStyleMapper
                     // Line spacing
                     if (method_exists($pStyle, 'getLineSpacing')) {
                         $lineSpacing = $pStyle->getLineSpacing();
-                        if ($lineSpacing) {
-                            // Convert to CSS line-height
+                        if ($lineSpacing && $lineSpacing !== 1) {
                             $styles[] = "line-height: {$lineSpacing}";
                         }
                     }
@@ -209,7 +275,8 @@ class DocumentStyleMapper
         // Fallback to plain getText()
         if (!$result['hasContent'] && method_exists($element, 'getText')) {
             $text = $element->getText();
-            if (!empty(trim($text))) {
+            // Ensure text is a string before processing
+            if (is_string($text) && !empty(trim($text))) {
                 $result['hasContent'] = true;
                 $result['text'] = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
             }

@@ -14,6 +14,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 
 class ManageDocumentAttachments extends Page implements HasTable
 {
@@ -53,6 +54,45 @@ class ManageDocumentAttachments extends Page implements HasTable
                     ->sortable(),
             ])
             ->actions([
+                Actions\Action::make('replace')
+                    ->label('Replace PDF')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->form([
+                        \Filament\Forms\Components\FileUpload::make('pdf_file')
+                            ->label('New PDF File')
+                            ->disk('private')
+                            ->directory('document-pdfs')
+                            ->acceptedFileTypes(['application/pdf'])
+                            ->maxSize(51200) // 50MB in KB
+                            ->required()
+                            ->helperText('Max file size: 50 MB'),
+                    ])
+                    ->action(function (DocumentHighlight $record, array $data) {
+                        $newFilePath = $data['pdf_file'];
+
+                        if ($newFilePath) {
+                            // Delete old PDF file
+                            if ($record->pdf_path && Storage::disk('private')->exists($record->pdf_path)) {
+                                Storage::disk('private')->delete($record->pdf_path);
+                            }
+
+                            // Get the filename from the path
+                            $filename = basename($newFilePath);
+
+                            // Update database record with the new file path
+                            $record->update([
+                                'pdf_filename' => $filename,
+                                'pdf_path' => $newFilePath,
+                            ]);
+
+                            Notification::make()
+                                ->success()
+                                ->title('PDF Replaced')
+                                ->body('The attachment has been successfully replaced.')
+                                ->send();
+                        }
+                    }),
                 Actions\DeleteAction::make()
                     ->label('Delete')
                     ->action(function (DocumentHighlight $record) {
