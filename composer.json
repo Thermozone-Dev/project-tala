@@ -15,6 +15,7 @@
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
         "lorisleiva/laravel-actions": "^2.9",
+        "maatwebsite/excel": "^3.1",
         "spatie/laravel-activitylog": "^4.11"
     },
     "require-dev": {
