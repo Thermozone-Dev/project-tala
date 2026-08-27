@@ -1,0 +1,155 @@
+<div>
+    <!-- Document Content Preview -->
+    @if($htmlContent)
+        <div class="prose prose-sm dark:prose-invert max-w-none pdf-content px-6 bg-gray-50 dark:bg-gray-800 max-h-96 overflow-y-auto rounded" id="document-viewer">
+            {!! $htmlContent !!}
+        </div>
+    @else
+        <p class="text-gray-500 italic text-sm">Document preview not available.</p>
+    @endif
+</div>
+
+<style>
+    .pdf-content {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .pdf-content a {
+        color: #0066cc !important;
+        text-decoration: underline !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
+
+    .pdf-content a:hover {
+        color: #0052a3 !important;
+    }
+
+    .pdf-content a[href*="/documents/"] {
+        pointer-events: auto !important;
+    }
+
+    /* List styling */
+    .pdf-content ul {
+        list-style-type: disc !important;
+        margin: 15px 0 !important;
+        padding-left: 40px !important;
+    }
+
+    .pdf-content ol {
+        list-style-type: decimal !important;
+        margin: 15px 0 !important;
+        padding-left: 40px !important;
+    }
+
+    .pdf-content li {
+        margin: 8px 0 !important;
+        line-height: 1.6 !important;
+        display: list-item !important;
+    }
+
+    .pdf-content ul li {
+        list-style-type: disc !important;
+    }
+
+    .pdf-content ol li {
+        list-style-type: decimal !important;
+    }
+
+    /* Heading styling */
+    .pdf-content h1, .pdf-content h2, .pdf-content h3,
+    .pdf-content h4, .pdf-content h5, .pdf-content h6 {
+        margin-top: 15px !important;
+        margin-bottom: 10px !important;
+        font-weight: bold !important;
+    }
+
+    .pdf-content h1 { font-size: 28px !important; }
+    .pdf-content h2 { font-size: 24px !important; }
+    .pdf-content h3 { font-size: 20px !important; }
+    .pdf-content h4 { font-size: 18px !important; }
+    .pdf-content h5 { font-size: 16px !important; }
+    .pdf-content h6 { font-size: 14px !important; }
+
+    /* Table styling */
+    .pdf-content table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        margin: 15px 0 !important;
+    }
+
+    .pdf-content table, .pdf-content th, .pdf-content td {
+        border: 1px solid #999 !important;
+    }
+
+    .pdf-content th {
+        background-color: #f2f2f2 !important;
+        padding: 12px !important;
+        text-align: left !important;
+        font-weight: bold !important;
+    }
+
+    .pdf-content td {
+        padding: 12px !important;
+        vertical-align: top !important;
+    }
+
+    /* Paragraph styling */
+    .pdf-content p {
+        /* margin: 10px 0 !important; */
+    }
+
+    /* Image styling - inline-block respects text-align */
+    .pdf-content img {
+        max-width: 100% !important;
+        height: auto !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+        margin: 10px 5px !important;
+    }
+
+    /* Paragraph styling to ensure proper text alignment */
+    .pdf-content p[style*="text-align: center"] {
+        text-align: center !important;
+    }
+
+    .pdf-content p[style*="text-align: right"] {
+        text-align: right !important;
+    }
+
+    .pdf-content p[style*="text-align: left"] {
+        text-align: left !important;
+    }
+
+    .pdf-content p[style*="text-align: justify"] {
+        text-align: justify !important;
+    }
+
+    .pdf-content div[style*="text-align: center"] {
+        text-align: center !important;
+    }
+
+    .pdf-content div[style*="text-align: center"] img {
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const viewer = document.getElementById('document-viewer');
+        if (viewer) {
+            viewer.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const href = this.getAttribute('href');
+                    if (href && href.includes('/documents/')) {
+                        window.open(href, '_blank', 'noopener,noreferlrer');
+                    }
+                });
+            });
+        }
+    });
+</script>

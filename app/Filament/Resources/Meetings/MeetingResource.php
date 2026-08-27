@@ -6,8 +6,11 @@ use App\Filament\Resources\Meetings\Pages\CreateMeeting;
 use App\Filament\Resources\Meetings\Pages\EditMeeting;
 use App\Filament\Resources\Meetings\Pages\ListMeetings;
 use App\Filament\Resources\Meetings\Pages\ViewMeeting;
+use App\Filament\Resources\Meetings\Pages\ManageDocumentAttachments;
+use App\Filament\Resources\Meetings\Pages\EditDocument;
 use App\Filament\Resources\Meetings\RelationManagers\ActivitiesRelationManager;
 use App\Filament\Resources\Meetings\RelationManagers\AttendeesRelationManager;
+use App\Filament\Resources\Meetings\RelationManagers\DocumentsRelationManager;
 use App\Filament\Resources\Meetings\Schemas\MeetingForm;
 use App\Filament\Resources\Meetings\Schemas\MeetingInfolist;
 use App\Filament\Resources\Meetings\Tables\MeetingsTable;
@@ -42,6 +45,7 @@ class MeetingResource extends Resource
     public static function getRelations(): array
     {
         return [
+            DocumentsRelationManager::class,
             AttendeesRelationManager::class,
             ActivitiesRelationManager::class,
         ];
@@ -54,6 +58,8 @@ class MeetingResource extends Resource
             'create' => CreateMeeting::route('/create'),
             'view' => ViewMeeting::route('/{record}'),
             'edit' => EditMeeting::route('/{record}/edit'),
+            'edit-document' => EditDocument::route('/{record}/document/{document}/edit'),
+            'manage-document-attachments' => ManageDocumentAttachments::route('/document/{document}/attachments'),
         ];
     }
 }

@@ -16,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 
@@ -26,6 +27,11 @@ class AttendeesRelationManager extends RelationManager
     public function refresh(): void
     {}
     protected static string $relationship = 'attendees';
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return auth()->user()->can("Update:Meeting");
+    }
 
     public function form(Schema $schema): Schema
     {

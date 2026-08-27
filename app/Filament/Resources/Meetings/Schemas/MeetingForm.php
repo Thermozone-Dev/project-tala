@@ -48,7 +48,7 @@ class MeetingForm
                                 ->required()
                                 ->reactive()
                                 ->default(1)
-                                ->disableOptionWhen(fn (string $value): bool => $value != 1)
+                                // ->disableOptionWhen(fn (string $value): bool => $value != 1)
                         ])
                         ->columns()
                         ->columnSpanFull(),
@@ -72,12 +72,15 @@ class MeetingForm
                                     return "Click 'Create Meeting Link' to generate a new meeting link, then paste the generated URL into this field.";
                                 }),
 
-                            DateTimePicker::make('scheduled_at')->required()
-                                ->default(fn () => now()->setTime(8, 0)),
-                        ])
+                                 DateTimePicker::make('scheduled_at')
+                                    ->required()
+                                    ->seconds(false)
+                                    ->default(fn () => now()->setTime(8, 0)),
+                            ])
                             ->columnSpanFull()
                             ->columns()
-                        ->visible(fn(Get $get) => $get('meeting_type_id'))
+
+                            ->visible(fn(Get $get) => $get('meeting_type_id'))
                     ]),
 
                 Section::make('Attendees')
@@ -130,13 +133,9 @@ class MeetingForm
                                     if ($get('committee_id') && $get('committee_id') == 'bot_meetings') {
                                         return User::whereHas(
                                                 'roles',
-                                                fn ($q) => $q->whereIn('name',[
-                                                    'Trustee',
-                                                    'Corporate Secretary',
-                                                    'Lead Resource Person',
-                                                    'Treasurer',
-                                                    'Comptroller',
-                                                    'EVP-GM'
+                                                fn ($q) => $q->whereNotIn('name',[
+                                                    'Super Admin',
+                                                    'Secretariat',
                                                 ])
                                             )
                                             ->pluck('name', 'id')

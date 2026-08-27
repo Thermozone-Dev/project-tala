@@ -37,7 +37,7 @@ class MeetingsTable
                     ->dateTime()
                     ->formatStateUsing(fn($state) => $state->format('M d, Y H:i A'))
                     ->sortable(),
-                TextColumn::make('evaluationPeriod.formattedCoverage'),
+                // TextColumn::make('evaluationPeriod.formattedCoverage'),
                 TextColumn::make('createdBy.name')
                     ->label('Created by')
                     ->sortable(),

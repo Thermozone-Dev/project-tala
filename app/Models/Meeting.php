@@ -55,4 +55,9 @@ class Meeting extends Model
     {
         return $this->belongsTo(EvaluationPeriod::class, 'evaluation_period_id');
     }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(MeetingDocument::class);
+    }
 }
