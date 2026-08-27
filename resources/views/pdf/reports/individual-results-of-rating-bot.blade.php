@@ -10,7 +10,7 @@
         <link rel="stylesheet" href="{{ base_path('public/css/custom.css') }}" />
         <style>
             /* Disable header repetition - treat thead as regular row group */
-            thead { display: table-row-group; }
+            thead { display: table-header-group; }
             tfoot { display: table-row-group; }
 
             /* Prevent rows from breaking - keep entire row together */
@@ -20,7 +20,7 @@
             /* PDF Header Class - Fixed height with responsive text */
             .pdf-header {
                 height: 60px;
-                padding: 2px !important;
+                padding: 8px !important;
                 vertical-align: middle;
                 word-break: break-word;
                 overflow-wrap: break-word;
@@ -42,7 +42,7 @@
                     <div class="row">
                         <div class="col-xs-12 text-center">
                         </div>
-                        <div class="col-xs-12" style="margin: 10px 0; margin-bottom: 20px; overflow-x: auto;">
+                        <div class="col-xs-12" style="margin: 10px 0; margin-bottom: 20px; overflow: visible !important;">
                             <table style="width: 100%; table-layout: auto; word-wrap: break-word; word-break: break-word; margin-bottom: 15px;">
                                 <thead class="header-color">
                                     <tr>
@@ -63,7 +63,7 @@
                                     @foreach ($members['questions'] as $key => $question)
                                         <tr>
                                             <td class="text-center" style="padding: 8px;">{{$key+1}}</td>
-                                            <td style="padding: 4px; word-wrap: break-word; word-break: break-word;">{{$question['question']}}</td>
+                                            <td style="padding: 8px; word-wrap: break-word; word-break: break-word;">{{$question['question']}}</td>
                                             @foreach ($question['evaluators'] as $evaluator)
                                                 <td class="text-center" style="padding: 8px;">{{number_format($evaluator['answer_value'],2)}}</td>
                                             @endforeach
