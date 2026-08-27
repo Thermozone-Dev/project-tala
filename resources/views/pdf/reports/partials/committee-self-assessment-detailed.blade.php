@@ -40,7 +40,7 @@
                             <div class="col-xs-12" style="white-space:nowrap; padding: 0;">
                                 @php
                                     $chunkSize = 8; // Split into 8 questions per table
-                                    $questionChunks = array_chunk($section['questions'], $chunkSize);
+                                    $questionChunks = $section['questions']->chunk($chunkSize);
                                 @endphp
 
                                 @foreach ($questionChunks as $chunkIndex => $chunk)
