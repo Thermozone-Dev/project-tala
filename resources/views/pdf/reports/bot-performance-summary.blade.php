@@ -10,7 +10,7 @@
         <link rel="stylesheet" href="{{ base_path('public/css/custom.css') }}" />
         <style>
             /* Disable header repetition - treat thead as regular row group */
-            thead { display: table-row-group; }
+            thead { display: table-header-group; }
             tfoot { display: table-row-group; }
 
             /* Prevent rows from breaking - keep entire row together */
@@ -20,7 +20,7 @@
             /* PDF Header Class - Fixed height with responsive text */
             .pdf-header {
                 height: 60px;
-                padding: 2px !important;
+                padding: 8px !important;
                 vertical-align: middle;
                 word-break: break-word;
                 overflow-wrap: break-word;
@@ -49,7 +49,7 @@
                     </div>
 
                     <div class="row" style="white-space:nowrap;">
-                        <div class="col-xs-12" style="white-space:nowrap; margin: 10px 0; margin-bottom: 20px;">
+                        <div class="col-xs-12" style="white-space:nowrap; margin-bottom: 20px; overflow: visible !important;">
                             <table style="margin-bottom: 15px;">
                                 <thead class="header-color">
                                 <tr>
