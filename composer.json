@@ -15,9 +15,10 @@
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
         "lorisleiva/laravel-actions": "^2.9",
+        "maatwebsite/excel": "^3.1",
         "mews/purifier": "^3.4",
         "phpoffice/phpword": "^1.4",
-        "maatwebsite/excel": "^3.1",
+        "saade/filament-fullcalendar": "^4.0@beta",
         "spatie/laravel-activitylog": "^4.11"
     },
     "require-dev": {
