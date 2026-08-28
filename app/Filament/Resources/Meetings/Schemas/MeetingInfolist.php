@@ -32,15 +32,17 @@ class MeetingInfolist
                     ->placeholder('-'),
                 TextEntry::make('scheduled_at')
                     ->dateTime()
-                    ->formatStateUsing(fn($state) => $state->format('M d, Y H:i A')),
+                    ->formatStateUsing(fn($state) => $state->format('M d, Y h:i A')),
                 TextEntry::make('createdBy.name')
                     ->label('Created by'),
                 TextEntry::make('created_at')
                     ->dateTime()
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->formatStateUsing(fn($state) => $state->format('M d, Y h:i A')),
                 TextEntry::make('updated_at')
                     ->dateTime()
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->formatStateUsing(fn($state) => $state->format('M d, Y h:i A')),
             ]);
     }
 }

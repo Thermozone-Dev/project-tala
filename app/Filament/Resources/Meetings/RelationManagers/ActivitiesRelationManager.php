@@ -44,7 +44,7 @@ class ActivitiesRelationManager extends RelationManager
           ->columns([
               TextColumn::make('created_at')
                   ->label('Time')
-                  ->dateTime('M j, H:i')
+                  ->dateTime('M d, Y h:i A')
                   ->sortable(),
               TextColumn::make('event')
                   ->badge()

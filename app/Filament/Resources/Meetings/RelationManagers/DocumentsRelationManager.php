@@ -49,7 +49,7 @@ class DocumentsRelationManager extends RelationManager
                     ->searchable(['first_name', 'last_name']),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Uploaded')
-                    ->dateTime()
+                    ->dateTime('M d, Y h:i A')
                     ->sortable(),
             ])
             ->headerActions([
