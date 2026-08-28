@@ -19,11 +19,13 @@ class MeetingAttendee extends Model
         'is_late',
         'mark_timestamp',
         'updated_by',
+        'seen_at'
     ];
 
     protected $casts = [
         'is_late'        => 'integer',
         'mark_timestamp' => 'datetime',
+        'seen_at' => 'datetime',
     ];
 
     public function getActivitylogOptions(): LogOptions
