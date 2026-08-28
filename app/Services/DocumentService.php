@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\File;
 
 class DocumentService
 {
-    public function uploadMeetingDocument(Meeting $meeting, UploadedFile $file): MeetingDocument
+    public function uploadMeetingDocument(Meeting $meeting, UploadedFile $file, $title = null): MeetingDocument
     {
         // Store the original file
         $filename = uniqid() . '.' . $file->getClientOriginalExtension();
@@ -23,6 +23,8 @@ class DocumentService
             'original_filename' => $file->getClientOriginalName(),
             'file_path' => $path,
             'file_size' => $file->getSize(),
+            'title' => $title,
+            'uploaded_by' => auth()->id(),
         ]);
 
         // Parse the DOCX and save as HTML for editing
