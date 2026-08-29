@@ -32,12 +32,18 @@
     </tr>
     </thead>
     <tbody>
-        @foreach($attendees as $attendee)
+        @forelse($attendees as $attendee)
             <tr>
-                <td colspan="2" style="text-wrap">{{$attendee->user->fullname}}</td>
-                <td>{{$attendee->seen_at?->format('M d, Y h:i A')}}</td>
+                <td colspan="2" style="text-wrap">{{ $attendee->user->fullname }}</td>
+                <td>{{ $attendee->seen_at?->format('M d, Y h:i A') ?? 'Not yet seen' }}</td>
             </tr>
-        @endforeach
+        @empty
+            <tr>
+                <td colspan="3" style="text-align: center; padding: 20px; color: #666;">
+                    No attendees found.
+                </td>
+            </tr>
+        @endforelse
     </tbody>
 </table>
 
