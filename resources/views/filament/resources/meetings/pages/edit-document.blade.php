@@ -521,7 +521,7 @@
             }
 
             /* Anchor links styling */
-            a {
+            #editor-container a {
                 color: #0066cc !important;
                 text-decoration: underline !important;
                 cursor: pointer !important;

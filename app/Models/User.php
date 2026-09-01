@@ -18,8 +18,10 @@ use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
+use Filament\Models\Contracts\HasName;
 
-class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerifyEmail, HasEmailAuthentication, HasAppAuthentication
+
+class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerifyEmail, HasEmailAuthentication, HasAppAuthentication, HasName
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
@@ -74,6 +76,13 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
             'has_email_authentication' => 'boolean',
             'app_authentication_secret' => 'encrypted',
         ];
+    }
+
+
+    public function getFilamentName(): string
+    {
+        return $this->getFullNameAttribute();
+
     }
 
 
