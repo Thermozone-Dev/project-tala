@@ -24,7 +24,8 @@ class CalendarWidget extends BaseCalendarWidget
     public static function canView(): bool
     {
         // Check if the user has a specific permission using Spatie or standard auth
-        return auth()->user()->can('View:CalendarWidget');
+//        return auth()->user()->can('View:CalendarWidget');
+        return false;
     }
 
 

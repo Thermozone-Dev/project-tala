@@ -49,7 +49,7 @@ class DocumentsRelationManager extends RelationManager
                     ->searchable(['first_name', 'last_name']),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Uploaded')
-                    ->dateTime()
+                    ->dateTime('M d, Y h:i A')
                     ->sortable(),
             ])
             ->headerActions([
@@ -82,13 +82,7 @@ class DocumentsRelationManager extends RelationManager
 
                         if ($file && $file instanceof \Illuminate\Http\UploadedFile) {
                             $documentService = new DocumentService();
-                            $document = $documentService->uploadMeetingDocument($this->getOwnerRecord(), $file);
-
-                            // Set title and uploaded_by
-                            $document->update([
-                                'title' => $data['title'],
-                                'uploaded_by' => Auth::id(),
-                            ]);
+                            $document = $documentService->uploadMeetingDocument($this->getOwnerRecord(), $file,$data['title']);
 
                             Notification::make()
                                 ->title('Document Uploaded')

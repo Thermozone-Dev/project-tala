@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\MyCustomLogin;
 use App\Filament\Resources\Committees\CommitteeResource;
+use App\Livewire\CalendarWidget;
 use App\Livewire\CustomPersonalInfo;
 use App\Livewire\CustomUpdatePassword;
 use App\Models\Committee;
@@ -32,6 +33,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Illuminate\Support\Facades\Schema;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -103,6 +105,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
+                CalendarWidget::class
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -116,6 +119,8 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
+                FilamentFullCalendarPlugin::make()
+                    ->selectable(),
                 FilamentShieldPlugin::make()
                     ->navigationGroup('Settings'),
                 BreezyCore::make()

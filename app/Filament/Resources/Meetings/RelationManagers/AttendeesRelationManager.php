@@ -64,7 +64,7 @@ class AttendeesRelationManager extends RelationManager
                     ->color(fn ($state) => ($state == true) ? 'danger' : 'success'),
                 TextColumn::make('mark_timestamp')
                     ->label('Marked At')
-                    ->formatStateUsing(fn ($state) => $state->format('M d, Y H:i A')),
+                    ->formatStateUsing(fn ($state) => $state->format('M d, Y h:i A')),
                 TextColumn::make('updatedBy.name')
                     ->label('Updated By'),
             ])

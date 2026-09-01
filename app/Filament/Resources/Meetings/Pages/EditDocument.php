@@ -69,6 +69,12 @@ class EditDocument extends Page implements HasForms
         $documentService = new DocumentService();
         $success = $documentService->saveEditedContent($this->document, $content);
 
+        activity()
+            ->performedOn($this->document)
+            ->causedBy(auth()->user())
+            ->event('updated')
+            ->log('Document updated');
+
         if ($success) {
             Notification::make()
                 ->title('Document Saved')

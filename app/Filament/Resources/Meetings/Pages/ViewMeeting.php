@@ -17,6 +17,11 @@ class ViewMeeting extends ViewRecord
     {
         $this->record = $this->resolveRecord($record);
 
+        $this->record->attendees()->where('user_id',auth()->user()->id)
+            ->update([
+                'seen_at' => now()
+            ]);
+
         // Check authorization for non-executive users
         $user = auth()->user();
         if (!get_executive_role()) {
@@ -36,7 +41,20 @@ class ViewMeeting extends ViewRecord
 
     protected function getHeaderActions(): array
     {
+        $attendees = $this->record->attendees->where('seen_at','!=', null)->sortByDesc('seen_at');
+
         return [
+            Action::make('seen_by')
+                ->authorize(auth()->user()->can('Update:Meeting'))
+                ->tooltip('Seen by')
+                ->label(fn() => 'Seen by '.$attendees->count().' attendee'.($attendees->count() > 1 ? 's' : null))
+                ->modalContent(function() use ($attendees) {
+                    return view('filament.resources.meetings.pages.seen-by-table', ['attendees' => $attendees]);
+                })
+                ->hiddenLabel()
+                ->icon(Heroicon::OutlinedEye)
+                ->action(function () {})
+                ->modalFooterActions([]),
             EditAction::make(),
         ];
     }
