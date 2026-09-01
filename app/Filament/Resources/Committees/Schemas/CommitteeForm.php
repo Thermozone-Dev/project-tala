@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Committees\Schemas;
 
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
@@ -20,6 +21,7 @@ class CommitteeForm
                             ->required(),
                         Textarea::make('description')
                             ->columnSpanFull(),
+                        ColorPicker::make('color')->required(),
                     ])
 
             ]);

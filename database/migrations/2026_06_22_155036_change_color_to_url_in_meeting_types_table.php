@@ -65,26 +65,6 @@ return new class extends Migration
         });
 
         DB::table('meeting_types')->truncate();
-
-        DB::table('meeting_types')->insert([
-            [
-                'name' => 'Google Meet',
-                'color' => '#00ac47',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Microsoft Teams',
-                'color' => '#6264a7',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Zoom',
-                'color' => '#2d8cff',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        
     }
 };
