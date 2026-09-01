@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -20,8 +21,18 @@ return new class extends Migration
             $table->unsignedBigInteger('created_by');
             $table->timestamps();
 
-            $table->foreign('meeting_document_id')->references('id')->on('meeting_documents')->onDelete('cascade');
-            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            // MSSQL doesn't allow multiple cascade paths, use conditional logic
+            $isMssql = DB::getDriverName() === 'sqlsrv';
+
+            $table->foreign('meeting_document_id', 'document_highlights_meeting_document_fk')
+                ->references('id')
+                ->on('meeting_documents')
+                ->onDelete($isMssql ? 'no action' : 'cascade');
+
+            $table->foreign('created_by', 'document_highlights_created_by_fk')
+                ->references('id')
+                ->on('users')
+                ->onDelete($isMssql ? 'no action' : 'cascade');
         });
     }
 
