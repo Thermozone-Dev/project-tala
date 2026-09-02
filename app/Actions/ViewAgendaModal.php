@@ -14,6 +14,7 @@ class ViewAgendaModal
         return Actions\Action::make('viewDocument')
             ->label('View')
             ->icon('heroicon-o-eye')
+            ->visible(fn (MeetingDocument $record) => (!$record->is_published && !get_executive_role() ? false : true))
             ->modalContent(function (MeetingDocument $record) use ($meetingDocumentId) {
                 $documentService = new DocumentService();
                 $htmlContent = $documentService->getEditableContent($record);

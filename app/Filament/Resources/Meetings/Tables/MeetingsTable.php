@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Meetings\Tables;
 
+use App\Actions\ViewAgendaModal;
 use App\Models\Committee;
+use App\Services\DocumentService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -13,6 +15,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\View;
 
 class MeetingsTable
 {
@@ -74,6 +77,25 @@ class MeetingsTable
                     }),
             ])
             ->recordActions([
+                // \Filament\Actions\Action::make('viewLatestAgenda')
+                //     ->label('View Agenda')
+                //     ->icon('heroicon-o-document-text')
+                //     ->visible(fn ($record) => $record->documents()->exists())
+                //     ->modalContent(function ($record) {
+                //         $latestDocument = $record->documents()->latest('created_at')->first();
+                //         if (!$latestDocument) {
+                //             return null;
+                //         }
+                //         $documentService = new DocumentService();
+                //         $htmlContent = $documentService->getEditableContent($latestDocument);
+                //         return View::make('livewire.document-highlights-modal', [
+                //             'document' => $latestDocument,
+                //             'htmlContent' => $htmlContent,
+                //         ]);
+                //     })
+                //     ->modalCancelActionLabel('Close')
+                //     ->modalSubmitAction(false)
+                //     ->modalHeading(fn ($record) => $record->documents()->latest('created_at')->first()?->title ?? 'Latest Agenda'),
                 ViewAction::make(),
                 EditAction::make(),
             ])

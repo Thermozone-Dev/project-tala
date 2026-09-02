@@ -19,6 +19,7 @@ class MeetingDocument extends Model
         'uploaded_by',
         'file_path',
         'file_size',
+        'is_published',
     ];
 
     public function meeting(): BelongsTo

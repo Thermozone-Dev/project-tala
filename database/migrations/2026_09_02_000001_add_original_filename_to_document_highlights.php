@@ -21,10 +21,18 @@ return new class extends Migration
                 ->on('users')
                 ->onDelete($isMssql ? 'no action' : 'set null');
         });
+
+        Schema::table('meeting_documents', function (Blueprint $table) {
+            $table->boolean('is_published')->default(false)->after('id');
+        });
     }
 
     public function down(): void
     {
+
+        Schema::table('meeting_documents', function (Blueprint $table) {
+            $table->dropColumn(['is_published']);
+        });
         Schema::table('document_highlights', function (Blueprint $table) {
             $table->dropForeign('document_highlights_uploader_fk');
             $table->dropColumn(['original_filename', 'uploader_id']);

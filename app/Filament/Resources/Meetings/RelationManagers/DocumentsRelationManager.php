@@ -93,6 +93,31 @@ class DocumentsRelationManager extends RelationManager
             ->recordActions([
                 ViewAgendaModal::make(),
 
+                Action::make('publish')
+                    ->label(fn (MeetingDocument $record) => $record->is_published ? 'Unpublish' : 'Publish')
+                    ->icon(fn (MeetingDocument $record) => $record->is_published ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->authorize(fn () => auth()->user()->can("ManageMeetingDocuments"))
+                    ->color(fn (MeetingDocument $record) => $record->is_published ? 'danger' : 'success')
+                    ->action(function (MeetingDocument $record) {
+                        $record->update([
+                            'is_published' => !$record->is_published,
+                        ]);
+
+                        activity()
+                            ->performedOn($record)
+                            ->causedBy(auth()->user())
+                            ->event($record->is_published ? 'published' : 'unpublished')
+                            ->log('Document ' . ($record->is_published ? 'published' : 'unpublished'));
+
+                        $status = $record->is_published ? 'published' : 'unpublished';
+                        $documentName = $record->title ?? $record->original_filename;
+                        Notification::make()
+                            ->title(ucfirst($status))
+                            ->body("Document '{$documentName}' has been {$status}.")
+                            ->success()
+                            ->send();
+                    }),
+
                 Action::make('edit')
                     ->label('Edit ')
                     ->icon('heroicon-o-pencil')
