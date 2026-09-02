@@ -12,6 +12,7 @@ use App\Filament\Resources\Committees\Pages\ViewCommitteeEvaluation;
 use App\Filament\Resources\Committees\RelationManagers\AllMembersRelationManager;
 use App\Filament\Resources\Committees\RelationManagers\CorporateOfficersRelationManager;
 use App\Filament\Resources\Committees\RelationManagers\LRPsRelationManager;
+use App\Filament\Resources\Committees\RelationManagers\MeetingsRelationManager;
 use App\Filament\Resources\Committees\RelationManagers\TrusteesRelationManager;
 use App\Filament\Resources\Committees\Schemas\CommitteeForm;
 use App\Filament\Resources\Committees\Tables\CommitteesTable;
@@ -50,7 +51,8 @@ class CommitteeResource extends Resource
             AllMembersRelationManager::class,
             TrusteesRelationManager::class,
             LRPsRelationManager::class,
-            CorporateOfficersRelationManager::class
+            CorporateOfficersRelationManager::class,
+            MeetingsRelationManager::class,
         ];
     }
 

@@ -2,12 +2,11 @@
 
 namespace App\Filament\Resources\Meetings\RelationManagers;
 
+use App\Actions\ViewAgendaModal;
 use App\Models\MeetingDocument;
 use App\Services\DocumentService;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -15,8 +14,6 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\View;
 
 class DocumentsRelationManager extends RelationManager
 {
@@ -54,7 +51,7 @@ class DocumentsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Action::make('upload')
-                    ->visible(fn () => count($this->getOwnerRecord()->documents) == 0)
+                    // ->visible(fn () => count($this->getOwnerRecord()->documents) == 0)
                     ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
                     ->label('Upload Agenda')
                     ->form([
@@ -94,22 +91,9 @@ class DocumentsRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-                Action::make('view')
-                    ->label('View')
-                    ->icon('heroicon-o-eye')
-                    ->modalContent(function (MeetingDocument $record) {
-                        $documentService = new DocumentService();
-                        $htmlContent = $documentService->getEditableContent($record);
-                        return View::make('livewire.document-highlights-modal', [
-                            'document' => $record,
-                            'htmlContent' => $htmlContent,
-                        ]);
-                    })
-                    ->modalCancelActionLabel(fn () => 'Close')
-                    ->modalSubmitAction(false)
-                    ->modalHeading(fn (MeetingDocument $record) => $record->original_filename),
+                ViewAgendaModal::make(),
 
-                 Action::make('edit')
+                Action::make('edit')
                     ->label('Edit ')
                     ->icon('heroicon-o-pencil')
                     ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
