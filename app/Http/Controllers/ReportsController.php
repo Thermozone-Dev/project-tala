@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\AssesmentComputation;
 use App\Models\AttendanceAnswer;
 use App\Models\Committee;
+use App\Models\Meeting;
 use App\Models\Report;
 use App\Models\TrusteeHasEvaluation;
 use App\Models\User;
@@ -1909,6 +1910,124 @@ class ReportsController extends Controller
                 }
             },
 
+            $fileName
+        );
+    }
+
+    public function export_meetings(Request $request)
+    {
+        $data = $request->input('data', []);
+
+        $start_date = Carbon::parse($data['from'])->startOfDay();
+        $end_date = Carbon::parse($data['until'])->endOfDay();
+
+        $meeting_range = $start_date->format('M d, Y').' to '.$end_date->format('M d, Y');
+        $meetings = Meeting::query()->whereBetween('scheduled_at', [$start_date, $end_date])->orderBy('scheduled_at')->get();
+
+        $trusteeRoles = ['Trustee', 'Chairman', 'Vice Chairman'];
+        $coLrpRoles = [
+            'Corporate Secretary',
+            'Treasurer',
+            'Comptroller',
+            'EVP-GM',
+            'SVP-Operation',
+            'SVP Administration',
+            'Lead Resource Person',
+        ];
+
+        $trustees = User::role($trusteeRoles)->orderBy('last_name')->get();
+        $coLrps = User::role($coLrpRoles)->orderBy('last_name')->get();
+
+        $categories = [
+            [
+                'label' => 'Trustees',
+                'users' => $trustees,
+            ],
+            [
+                'label' => 'Corporate Officer/LRP',
+                'users' => $coLrps,
+            ],
+        ];
+
+        $fileName = 'Meeting Attendance.xlsx';
+
+        return Excel::download(
+            new class($meeting_range, $meetings, $categories) implements FromView, WithTitle, WithColumnWidths {
+
+                public function __construct(
+                    private $meeting_range,
+                    private $meetings,
+                    private $categories
+                ) {}
+
+                public function title(): string
+                {
+                    return 'Attendance';
+                }
+
+                public function view(): View
+                {
+                    foreach ($this->categories as &$category) {
+                        $matrix = [];
+                        $totals = [];
+
+                        foreach ($category['users'] as $user) {
+                            $eligible = 0;
+                            $present = 0;
+
+                            foreach ($this->meetings as $meeting) {
+                                $attendee = $meeting->attendees->firstWhere('user_id', $user->id);
+
+                                if (!$attendee) {
+                                    $status = 'N/A';
+                                } elseif (is_null($attendee->attendance_status_id)) {
+                                    $status = '✗';
+                                    $eligible++;
+                                } else {
+                                    $status = '✓';
+                                    $eligible++;
+                                    $present++;
+                                }
+
+                                $matrix[$user->id][$meeting->id] = $status;
+                            }
+
+                            $percentage = $eligible > 0
+                                ? round(($present / $eligible) * 100, 2)
+                                : 0;
+
+                            $totals[$user->id] = [
+                                'eligible'   => $eligible,
+                                'present'    => $present,
+                                'percentage' => $percentage,
+                            ];
+                        }
+
+                        $category['matrix'] = $matrix;
+                        $category['totals'] = $totals;
+                    }
+                    unset($category);
+
+                    return view('excel.meeting-attendance', [
+                        'meeting_range' => $this->meeting_range,
+                        'meetings'   => $this->meetings,
+                        'categories' => $this->categories,
+                    ]);
+                }
+
+                public function columnWidths(): array
+                {
+                    $widths = ['A' => 40];
+
+                    foreach (range('B', 'Y') as $col) {
+                        $widths[$col] = 14;
+                    }
+
+                    $widths['Z'] = 20;
+
+                    return $widths;
+                }
+            },
             $fileName
         );
     }

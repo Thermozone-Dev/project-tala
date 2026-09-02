@@ -14,6 +14,7 @@ Route::middleware('auth')->group(function () {
 
     // Reports
     Route::get('preview-report', [ReportsController::class, 'preview_report'])->name('preview-report');
+    Route::get('export-meeting-attendance-report', [ReportsController::class, 'export_meetings'])->name('export-meeting-attendance-report');
 
     // Documents
     Route::post('documents/attach-pdf', [DocumentHighlightController::class, 'attachPdf'])->name('documents.attach-pdf');
