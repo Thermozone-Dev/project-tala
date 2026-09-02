@@ -80,7 +80,7 @@ class MeetingForm
                             ->columnSpanFull()
                             ->columns()
 
-                            ->visible(fn(Get $get) => $get('meeting_type_id'))
+                            ->visible(fn(Get $get) => $get('meeting_type_id') !== null)
                     ]),
 
                 Section::make('Attendees')
