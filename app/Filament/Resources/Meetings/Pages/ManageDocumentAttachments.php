@@ -44,6 +44,13 @@ class ManageDocumentAttachments extends Page implements HasTable
                     ]))
                     ->openUrlInNewTab()
                     ->color('primary'),
+                Tables\Columns\TextColumn::make('original_filename')
+                    ->label('File Name')
+                    ->limit(50)
+                    ->default('-'),
+                Tables\Columns\TextColumn::make('uploader.full_name')
+                    ->label('Uploaded By')
+                    ->default('-'),
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Notes')
                     ->limit(60)
@@ -86,10 +93,15 @@ class ManageDocumentAttachments extends Page implements HasTable
                             // Get the filename from the path
                             $filename = basename($newFilePath);
 
+                            // Get original filename from uploaded file
+                            $originalFilename = $data['pdf_file']->getClientOriginalName() ?? $filename;
+
                             // Update database record with the new file path
                             $record->update([
                                 'pdf_filename' => $filename,
+                                'original_filename' => $originalFilename,
                                 'pdf_path' => $newFilePath,
+                                'uploader_id' => auth()->id(),
                             ]);
 
                             Notification::make()
@@ -98,6 +110,35 @@ class ManageDocumentAttachments extends Page implements HasTable
                                 ->body('The attachment has been successfully replaced.')
                                 ->send();
                         }
+                    }),
+                Actions\Action::make('edit')
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil')
+                    ->form([
+                        \Filament\Forms\Components\TextInput::make('original_filename')
+                            ->label('File Name')
+                            ->required()
+                            ->maxLength(255),
+                        \Filament\Forms\Components\Textarea::make('notes')
+                            ->label('Notes')
+                            ->rows(3)
+                            ->maxLength(500),
+                    ])
+                    ->fillForm(fn (DocumentHighlight $record) => [
+                        'original_filename' => $record->original_filename,
+                        'notes' => $record->notes,
+                    ])
+                    ->action(function (DocumentHighlight $record, array $data) {
+                        $record->update([
+                            'original_filename' => $data['original_filename'],
+                            'notes' => $data['notes'] ?? null,
+                        ]);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Updated')
+                            ->body('Attachment details have been updated.')
+                            ->send();
                     }),
                 Actions\DeleteAction::make()
                     ->label('Delete')

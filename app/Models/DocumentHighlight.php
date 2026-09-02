@@ -13,9 +13,11 @@ class DocumentHighlight extends Model
         'start_offset',
         'end_offset',
         'pdf_filename',
+        'original_filename',
         'pdf_path',
         'notes',
         'created_by',
+        'uploader_id',
     ];
 
     public function document(): BelongsTo
@@ -26,5 +28,10 @@ class DocumentHighlight extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function uploader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'uploader_id');
     }
 }

@@ -9,6 +9,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -34,6 +35,11 @@ class Committee extends Model
 		'name',
 		'description'
 	];
+
+	public function meetings(): HasMany
+	{
+		return $this->hasMany(Meeting::class);
+	}
 
 	public function committee_has_trustees()
 	{

@@ -43,6 +43,31 @@ class EditDocument extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('set_active')
+                ->label(fn () => $this->document->is_published ? 'Unpublish' : 'Publish')
+                ->icon(fn () => $this->document->is_published ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                ->action(function () {
+                    $this->document->update([
+                        'is_published' => !$this->document->is_published,
+                    ]);
+
+                    activity()
+                        ->performedOn($this->document)
+                        ->causedBy(auth()->user())
+                        ->event($this->document->is_published ? 'published' : 'unpublished')
+                        ->log('Document ' . ($this->document->is_published ? 'published' : 'unpublished'));
+
+                    $status = $this->document->is_published ? 'published' : 'unpublished';
+                    Notification::make()
+                        ->title(ucfirst($status))
+                        ->body("Document has been {$status}.")
+                        ->success()
+                        ->send();
+
+                    $this->redirect(request()->header('Referer') ?? MeetingResource::getUrl('edit', ['record' => $this->meeting]));
+                })
+                ->color(fn () => $this->document->is_published ? 'danger' : 'success'),
+
             Action::make('back')
                 ->label('Back')
                 ->url(MeetingResource::getUrl('edit', ['record' => $this->meeting]))

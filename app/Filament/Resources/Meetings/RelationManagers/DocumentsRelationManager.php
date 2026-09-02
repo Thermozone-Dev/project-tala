@@ -2,12 +2,11 @@
 
 namespace App\Filament\Resources\Meetings\RelationManagers;
 
+use App\Actions\ViewAgendaModal;
 use App\Models\MeetingDocument;
 use App\Services\DocumentService;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -15,8 +14,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\View;
+use Illuminate\Database\Eloquent\Model;
 
 class DocumentsRelationManager extends RelationManager
 {
@@ -24,7 +22,12 @@ class DocumentsRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'original_filename';
 
-    protected static ?string $title = 'Attachments';
+    protected static ?string $title = 'Meeting Agenda';
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return auth()->user()->can("ManageMeetingDocuments");
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -45,8 +48,7 @@ class DocumentsRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\TextColumn::make('uploadedBy.full_name')
                     ->label('Uploaded By')
-                    ->sortable(['first_name', 'last_name'])
-                    ->searchable(['first_name', 'last_name']),
+                    ->sortable(['first_name', 'last_name']),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Uploaded')
                     ->dateTime('M d, Y h:i A')
@@ -54,8 +56,9 @@ class DocumentsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Action::make('upload')
+                    ->visible(fn () => count($this->getOwnerRecord()->documents) == 0)
                     ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
-                    ->label('Upload Word File')
+                    ->label('Upload Agenda')
                     ->form([
                         TextInput::make('title')
                             ->label('Document Title')
@@ -93,22 +96,34 @@ class DocumentsRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-                Action::make('view')
-                    ->label('View')
-                    ->icon('heroicon-o-eye')
-                    ->modalContent(function (MeetingDocument $record) {
-                        $documentService = new DocumentService();
-                        $htmlContent = $documentService->getEditableContent($record);
-                        return View::make('livewire.document-highlights-modal', [
-                            'document' => $record,
-                            'htmlContent' => $htmlContent,
-                        ]);
-                    })
-                    ->modalCancelActionLabel(fn () => 'Close')
-                    ->modalSubmitAction(false)
-                    ->modalHeading(fn (MeetingDocument $record) => $record->original_filename),
+                ViewAgendaModal::make(),
 
-                 Action::make('edit')
+                Action::make('publish')
+                    ->label(fn (MeetingDocument $record) => $record->is_published ? 'Unpublish' : 'Publish')
+                    ->icon(fn (MeetingDocument $record) => $record->is_published ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->authorize(fn () => auth()->user()->can("ManageMeetingDocuments"))
+                    ->color(fn (MeetingDocument $record) => $record->is_published ? 'danger' : 'success')
+                    ->action(function (MeetingDocument $record) {
+                        $record->update([
+                            'is_published' => !$record->is_published,
+                        ]);
+
+                        activity()
+                            ->performedOn($record)
+                            ->causedBy(auth()->user())
+                            ->event($record->is_published ? 'published' : 'unpublished')
+                            ->log('Document ' . ($record->is_published ? 'published' : 'unpublished'));
+
+                        $status = $record->is_published ? 'published' : 'unpublished';
+                        $documentName = $record->title ?? $record->original_filename;
+                        Notification::make()
+                            ->title(ucfirst($status))
+                            ->body("Document '{$documentName}' has been {$status}.")
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('edit')
                     ->label('Edit ')
                     ->icon('heroicon-o-pencil')
                     ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
@@ -135,26 +150,26 @@ class DocumentsRelationManager extends RelationManager
                     }),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
-                        ->action(function () {
-                            $records = $this->getSelectedTableRecords();
-                            $documentService = new DocumentService();
-                            $count = 0;
+                // BulkActionGroup::make([
+                //     DeleteBulkAction::make()
+                //         ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
+                //         ->action(function () {
+                //             $records = $this->getSelectedTableRecords();
+                //             $documentService = new DocumentService();
+                //             $count = 0;
 
-                            foreach ($records as $record) {
-                                $documentService->deleteDocument($record);
-                                $count++;
-                            }
+                //             foreach ($records as $record) {
+                //                 $documentService->deleteDocument($record);
+                //                 $count++;
+                //             }
 
-                            Notification::make()
-                                ->title('Documents Deleted')
-                                ->body("$count document(s) and all associated files have been deleted.")
-                                ->success()
-                                ->send();
-                        }),
-                ]),
+                //             Notification::make()
+                //                 ->title('Documents Deleted')
+                //                 ->body("$count document(s) and all associated files have been deleted.")
+                //                 ->success()
+                //                 ->send();
+                //         }),
+                // ]),
             ]);
     }
 }

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Builder;
+
 
 class MeetingDocument extends Model
 {
@@ -19,11 +21,18 @@ class MeetingDocument extends Model
         'uploaded_by',
         'file_path',
         'file_size',
+        'is_published',
     ];
 
     public function meeting(): BelongsTo
     {
         return $this->belongsTo(Meeting::class);
+    }
+
+
+    protected function scopePublished(Builder $query): void
+    {
+        $query->where('is_published', 1);
     }
 
     public function uploadedBy(): BelongsTo

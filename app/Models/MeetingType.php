@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MeetingType extends Model
 {
-    protected $fillable = ['name', 'color'];
+    protected $fillable = ['name', 'url'];
+
+    protected $table = 'meeting_types';
 
     public function meetings(): HasMany
     {
