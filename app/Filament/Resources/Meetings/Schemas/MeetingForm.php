@@ -58,7 +58,7 @@ class MeetingForm
                                 ->required()
                                 ->hintAction(function (Get $get){
 
-                                    if(!$get('meeting_type_id')) return;
+                                    if($get('meeting_type_id') === null) return;
 
                                     $meeting_type = MeetingType::find($get('meeting_type_id'));
 
