@@ -24,7 +24,7 @@ class DocumentsRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'original_filename';
 
-    protected static ?string $title = 'Attachments';
+    protected static ?string $title = 'Meeting Agenda';
 
     public function form(Schema $schema): Schema
     {
@@ -54,8 +54,9 @@ class DocumentsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Action::make('upload')
+                    ->visible(fn () => count($this->getOwnerRecord()->documents) == 0)
                     ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
-                    ->label('Upload Word File')
+                    ->label('Upload Agenda')
                     ->form([
                         TextInput::make('title')
                             ->label('Document Title')
@@ -135,26 +136,26 @@ class DocumentsRelationManager extends RelationManager
                     }),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
-                        ->action(function () {
-                            $records = $this->getSelectedTableRecords();
-                            $documentService = new DocumentService();
-                            $count = 0;
+                // BulkActionGroup::make([
+                //     DeleteBulkAction::make()
+                //         ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
+                //         ->action(function () {
+                //             $records = $this->getSelectedTableRecords();
+                //             $documentService = new DocumentService();
+                //             $count = 0;
 
-                            foreach ($records as $record) {
-                                $documentService->deleteDocument($record);
-                                $count++;
-                            }
+                //             foreach ($records as $record) {
+                //                 $documentService->deleteDocument($record);
+                //                 $count++;
+                //             }
 
-                            Notification::make()
-                                ->title('Documents Deleted')
-                                ->body("$count document(s) and all associated files have been deleted.")
-                                ->success()
-                                ->send();
-                        }),
-                ]),
+                //             Notification::make()
+                //                 ->title('Documents Deleted')
+                //                 ->body("$count document(s) and all associated files have been deleted.")
+                //                 ->success()
+                //                 ->send();
+                //         }),
+                // ]),
             ]);
     }
 }

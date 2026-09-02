@@ -48,9 +48,11 @@ class DocumentHighlightController extends Controller
             'start_offset' => 0,
             'end_offset' => strlen($request->highlighted_text),
             'pdf_filename' => $filename,
+            'original_filename' => $request->file('pdf_file')->getClientOriginalName(),
             'pdf_path' => $path,
             'notes' => $sanitizedNotes,
             'created_by' => auth()->id(),
+            'uploader_id' => auth()->id(),
         ]);
 
         return response()->json([
