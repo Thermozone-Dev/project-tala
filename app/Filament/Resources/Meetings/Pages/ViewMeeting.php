@@ -39,6 +39,7 @@ class ViewMeeting extends ViewRecord
         }
     }
 
+
     protected function getHeaderActions(): array
     {
         $attendees = $this->record->attendees->where('seen_at','!=', null)->sortByDesc('seen_at');

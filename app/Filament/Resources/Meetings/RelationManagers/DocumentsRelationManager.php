@@ -14,6 +14,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class DocumentsRelationManager extends RelationManager
 {
@@ -22,6 +23,11 @@ class DocumentsRelationManager extends RelationManager
     protected static ?string $recordTitleAttribute = 'original_filename';
 
     protected static ?string $title = 'Meeting Agenda';
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return auth()->user()->can("ManageMeetingDocuments");
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -42,8 +48,7 @@ class DocumentsRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\TextColumn::make('uploadedBy.full_name')
                     ->label('Uploaded By')
-                    ->sortable(['first_name', 'last_name'])
-                    ->searchable(['first_name', 'last_name']),
+                    ->sortable(['first_name', 'last_name']),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Uploaded')
                     ->dateTime('M d, Y h:i A')
@@ -51,7 +56,7 @@ class DocumentsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Action::make('upload')
-                    // ->visible(fn () => count($this->getOwnerRecord()->documents) == 0)
+                    ->visible(fn () => count($this->getOwnerRecord()->documents) == 0)
                     ->authorize( fn () => auth()->user()->can("ManageMeetingDocuments"))
                     ->label('Upload Agenda')
                     ->form([
