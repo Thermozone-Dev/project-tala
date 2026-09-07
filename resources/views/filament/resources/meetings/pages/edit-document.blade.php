@@ -33,12 +33,6 @@
                     <!-- Completed items will be added here -->
                 </div>
             </div>
-            <div class="mt-6 flex gap-3 justify-end">
-                <button type="button" id="save-document-btn" onclick="saveTinyMceContent(); return false;"
-                        class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer">
-                    Save Document
-                </button>
-            </div>
         </div>
     </div>
 

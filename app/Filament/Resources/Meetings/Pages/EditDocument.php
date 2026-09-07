@@ -43,6 +43,14 @@ class EditDocument extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('save')
+                ->label('Save Document')
+                ->icon('heroicon-o-document-check')
+                ->color('primary')
+                ->extraAttributes([
+                    'id' => 'save-document-btn',
+                    'onclick' => 'saveTinyMceContent(); return false;',
+                ]),
             Action::make('set_active')
                 ->label(fn () => $this->document->is_published ? 'Unpublish' : 'Publish')
                 ->icon(fn () => $this->document->is_published ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
@@ -72,6 +80,7 @@ class EditDocument extends Page implements HasForms
                 ->color(fn () => $this->document->is_published ? 'danger' : 'success'),
 
             Action::make('back')
+                ->icon('heroicon-o-arrow-left')
                 ->label('Back')
                 ->url(MeetingResource::getUrl('edit', ['record' => $this->meeting]))
                 ->color('gray'),
