@@ -61,4 +61,9 @@ class EditMeeting extends EditRecord
 
         $this->dispatch('refreshAttendees');
     }
+    
+    protected function getRedirectUrl(): ?string
+    {
+        return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
+    }
 }
