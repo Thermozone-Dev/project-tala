@@ -49,10 +49,6 @@ class MeetingsRelationManager extends RelationManager
                     ->label('Meeting Title')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('title')
-                    ->label('Agenda Title')
-                    ->sortable()
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('meeting.scheduled_at')
                     ->label('Meeting Date')
                     ->dateTime('M d, Y H:i A')
