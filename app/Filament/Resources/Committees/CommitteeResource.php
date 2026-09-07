@@ -48,11 +48,11 @@ class CommitteeResource extends Resource
     public static function getRelations(): array
     {
         return [
+            MeetingsRelationManager::class,
             AllMembersRelationManager::class,
             TrusteesRelationManager::class,
             LRPsRelationManager::class,
             CorporateOfficersRelationManager::class,
-            MeetingsRelationManager::class,
         ];
     }
 

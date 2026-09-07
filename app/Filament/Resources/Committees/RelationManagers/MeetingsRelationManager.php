@@ -18,7 +18,7 @@ class MeetingsRelationManager extends RelationManager
     protected static ?string $recordTitleAttribute = 'title';
 
 
-    protected static ?string $title = 'Meeting Agenda';
+    protected static ?string $title = 'Meetings';
 
 
     public function table(Table $table): Table
