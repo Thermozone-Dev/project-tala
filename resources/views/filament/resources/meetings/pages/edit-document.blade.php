@@ -201,6 +201,19 @@
                 }
             });
 
+            window.isLeavingDocument = false;
+
+            window.addEventListener('beforeunload', function (event) {
+                if (
+                    !window.isLeavingDocument &&
+                    window.tinyMceEditor &&
+                    window.tinyMceEditor.isDirty()
+                ) {
+                    event.preventDefault();
+                    event.returnValue = '';
+                }
+            });
+
             function saveTinyMceContent() {
                 if (window.tinyMceEditor) {
                     const content = window.tinyMceEditor.getContent();
@@ -209,6 +222,8 @@
                         alert('No content to save. Please add some content to the editor.');
                         return;
                     }
+
+                    window.isLeavingDocument = true;
 
                     @this.call('saveDocument', content);
                 } else {

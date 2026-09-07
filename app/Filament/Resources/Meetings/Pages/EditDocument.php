@@ -46,6 +46,9 @@ class EditDocument extends Page implements HasForms
             Action::make('set_active')
                 ->label(fn () => $this->document->is_published ? 'Unpublish' : 'Publish')
                 ->icon(fn () => $this->document->is_published ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                ->extraAttributes([
+                    'onclick' => 'window.isLeavingDocument = true;',
+                ])
                 ->action(function () {
                     $this->document->update([
                         'is_published' => !$this->document->is_published,
