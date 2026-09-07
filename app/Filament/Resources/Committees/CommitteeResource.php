@@ -15,6 +15,7 @@ use App\Filament\Resources\Committees\RelationManagers\LRPsRelationManager;
 use App\Filament\Resources\Committees\RelationManagers\MeetingsRelationManager;
 use App\Filament\Resources\Committees\RelationManagers\TrusteesRelationManager;
 use App\Filament\Resources\Committees\Schemas\CommitteeForm;
+use App\Filament\Resources\Committees\Schemas\CommitteeInfolist;
 use App\Filament\Resources\Committees\Tables\CommitteesTable;
 use App\Models\Committee;
 use BackedEnum;
@@ -43,6 +44,11 @@ class CommitteeResource extends Resource
     public static function table(Table $table): Table
     {
         return CommitteesTable::configure($table);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return CommitteeInfolist::configure($schema);
     }
 
     public static function getRelations(): array
