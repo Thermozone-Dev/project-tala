@@ -80,7 +80,7 @@ class EditDocument extends Page implements HasForms
         // This will be called via JavaScript that gets the content from TinyMCE
     }
 
-    public function saveDocument(string $content = ''): void
+    public function saveDocument(string $content = '')
     {
         if (empty($content)) {
             Notification::make()
@@ -106,6 +106,10 @@ class EditDocument extends Page implements HasForms
                 ->body('Your edits have been saved!')
                 ->success()
                 ->send();
+
+            $this->redirect(
+                MeetingResource::getUrl('view', ['record' => $this->meeting,]),
+            );
         } else {
             Notification::make()
                 ->title('Save Failed')

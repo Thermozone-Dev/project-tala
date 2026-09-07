@@ -217,13 +217,13 @@
             }
 
             // Auto-reload page after save to show updated content
-            const originalSave = saveTinyMceContent;
-            saveTinyMceContent = function() {
-                originalSave.call(this);
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            };
+            // const originalSave = saveTinyMceContent;
+            // saveTinyMceContent = function() {
+            //     originalSave.call(this);
+            //     setTimeout(() => {
+            //         location.reload();
+            //     }, 1500);
+            // };
 
             function showPdfAttachmentModal(selectedText, editor) {
                 // Store editor reference globally for modal button
