@@ -23,7 +23,6 @@ class CalendarWidget extends FullCalendarWidget
 
         return Meeting::query()
             ->with(['meetingType'])
-            ->where('scheduled_at', '>=', now())
             ->when(
                 !$user->hasRole(['Super Admin', 'Secretariat']),
                 fn ($query) => $query->whereHas('attendees', function ($q) use ($user) {
