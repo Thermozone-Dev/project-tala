@@ -56,9 +56,9 @@ class CommitteeResource extends Resource
         return [
             MeetingsRelationManager::class,
             AllMembersRelationManager::class,
-            TrusteesRelationManager::class,
-            LRPsRelationManager::class,
-            CorporateOfficersRelationManager::class,
+//            TrusteesRelationManager::class,
+//            LRPsRelationManager::class,
+//            CorporateOfficersRelationManager::class,
         ];
     }
 
