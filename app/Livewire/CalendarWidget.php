@@ -64,6 +64,11 @@ class CalendarWidget extends FullCalendarWidget
                 'center' => 'title',
                 'left' => 'prev,next today',
             ],
+            'eventTimeFormat' => [
+                'hour' => 'numeric',
+                'minute' => '2-digit',
+                'hour12' => true,
+            ],
         ];
     }
 
