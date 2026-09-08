@@ -190,6 +190,10 @@ class DocumentService
             'background-color,vertical-align'
         );
 
+        // Required: without this, HTML Purifier silently strips target="_blank"
+        // even though "a[...target...]" is whitelisted above.
+        $config->set('Attr.AllowedFrameTargets', ['_blank']);
+
         // Disable auto-formatting that might strip styles
         $config->set('HTML.Trusted', false);
         $config->set('CSS.Trusted', false);
