@@ -28,6 +28,11 @@ class EvaluationPeriodResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && !auth()->user()?->hasRole('Trustee');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return EvaluationPeriodForm::configure($schema);
