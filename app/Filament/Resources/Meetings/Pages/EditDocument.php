@@ -43,9 +43,20 @@ class EditDocument extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('save')
+                ->label('Save Document')
+                ->icon('heroicon-o-document-check')
+                ->color('primary')
+                ->extraAttributes([
+                    'id' => 'save-document-btn',
+                    'onclick' => 'saveTinyMceContent(); return false;',
+                ]),
             Action::make('set_active')
                 ->label(fn () => $this->document->is_published ? 'Unpublish' : 'Publish')
                 ->icon(fn () => $this->document->is_published ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                ->extraAttributes([
+                    'onclick' => 'window.isLeavingDocument = true;',
+                ])
                 ->action(function () {
                     $this->document->update([
                         'is_published' => !$this->document->is_published,
@@ -69,6 +80,7 @@ class EditDocument extends Page implements HasForms
                 ->color(fn () => $this->document->is_published ? 'danger' : 'success'),
 
             Action::make('back')
+                ->icon('heroicon-o-arrow-left')
                 ->label('Back')
                 ->url(MeetingResource::getUrl('edit', ['record' => $this->meeting]))
                 ->color('gray'),
@@ -80,7 +92,7 @@ class EditDocument extends Page implements HasForms
         // This will be called via JavaScript that gets the content from TinyMCE
     }
 
-    public function saveDocument(string $content = ''): void
+    public function saveDocument(string $content = '')
     {
         if (empty($content)) {
             Notification::make()
@@ -106,6 +118,10 @@ class EditDocument extends Page implements HasForms
                 ->body('Your edits have been saved!')
                 ->success()
                 ->send();
+
+            $this->redirect(
+                MeetingResource::getUrl('view', ['record' => $this->meeting,]),
+            );
         } else {
             Notification::make()
                 ->title('Save Failed')

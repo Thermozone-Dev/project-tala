@@ -33,7 +33,9 @@ class Committee extends Model
 
 	protected $fillable = [
 		'name',
-		'description'
+		'description',
+        'charter',
+        'agenda_forecast'
 	];
 
 	public function meetings(): HasMany

@@ -38,8 +38,13 @@
         padding-left: 40px !important;
     }
 
+    .pdf-content ul {
+        list-style-type: disc !important;
+        margin: 15px 0 !important;
+        padding-left: 40px !important;
+    }
+
     .pdf-content ol {
-        list-style-type: decimal !important;
         margin: 15px 0 !important;
         padding-left: 40px !important;
     }
@@ -52,10 +57,6 @@
 
     .pdf-content ul li {
         list-style-type: disc !important;
-    }
-
-    .pdf-content ol li {
-        list-style-type: decimal !important;
     }
 
     /* Heading styling */

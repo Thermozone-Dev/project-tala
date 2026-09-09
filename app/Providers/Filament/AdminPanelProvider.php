@@ -4,11 +4,13 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\MyCustomLogin;
 use App\Filament\Resources\Committees\CommitteeResource;
+use App\Filament\Resources\EvaluationPeriods\EvaluationPeriodResource;
 use App\Livewire\CalendarWidget;
 use App\Livewire\CustomPersonalInfo;
 use App\Livewire\CustomUpdatePassword;
 use App\Models\Committee;
 use App\Models\CommitteeHasTrustee;
+use App\Models\EvaluationPeriod;
 use App\Models\TrusteeHasEvaluation;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Auth\MultiFactor\Email\EmailAuthentication;
@@ -30,6 +32,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Illuminate\Support\Facades\Schema;
@@ -71,6 +74,40 @@ class AdminPanelProvider extends PanelProvider
                     });
             }
         }
+
+        $navigation[] = NavigationItem::make('Evaluation Period')
+            ->group('Evaluation Periods')
+            ->icon(Heroicon::OutlinedChartBar)
+            ->isActiveWhen(fn() => request()->is('admin/evaluation-period*'))
+            ->url(fn(): string => EvaluationPeriodResource::getUrl('index'))
+            ->visible(fn() => Auth::user()?->hasRole('Trustee'))
+            ->badge(function () {
+                $activeEvaluationPeriod = EvaluationPeriod::where('status_id', 1)->first();
+
+                if (!$activeEvaluationPeriod) {
+                    return null;
+                }
+
+                $user = Auth::user();
+                $userRole = $user->roles->first()?->name;
+                $isExecutive = get_executive_role($userRole);
+
+                // Status IDs: 1 = In Progress, 3 = Pending
+                $pendingStatuses = [1, 3];
+
+                if ($isExecutive) {
+                    $hasPending = TrusteeHasEvaluation::where('evaluation_id', $activeEvaluationPeriod->id)
+                        ->whereIn('trustee_evaluation_statuses_id', $pendingStatuses)
+                        ->exists();
+                } else {
+                    $hasPending = TrusteeHasEvaluation::where('evaluation_id', $activeEvaluationPeriod->id)
+                        ->where('evaluator_id', $user->id)
+                        ->whereIn('trustee_evaluation_statuses_id', $pendingStatuses)
+                        ->exists();
+                }
+
+                return $hasPending ? '!' : null;
+            },'danger');
 
         $navigation[] = NavigationItem::make('Setup MFA')
             ->group('Settings')
@@ -142,6 +179,12 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()
                     ->label('Committees')
                     ->icon(Heroicon::OutlinedUserGroup),
+                NavigationGroup::make()
+                    ->label('Evaluation Periods')
+                    ->icon(Heroicon::OutlinedChartBar),
+                NavigationGroup::make()
+                    ->label('Settings')
+                    ->icon(Heroicon::OutlinedCog6Tooth),
             ])
             ->navigationItems($navigation)
             ->brandLogo(asset('image/logos/brand-logo-white-bg.jpeg'))

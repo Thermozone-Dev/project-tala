@@ -7,12 +7,24 @@ use Filament\Forms\Components\Checkbox;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString;
+use Override;
 
 class MyCustomLogin extends BaseLogin
 {
     public bool $showPrivacyModal = false;
 
     protected string $view = 'filament.pages.auth.my-custom-login';
+
+    #[Override]
+    public function mount(): void
+    {
+        // Redirect authenticated users to dashboard
+        if (auth()->check()) {
+            redirect()->intended(filament()->getHomeUrl());
+        }
+
+        $this->showModal();
+    }
 
     public function form(Schema $schema): Schema
     {

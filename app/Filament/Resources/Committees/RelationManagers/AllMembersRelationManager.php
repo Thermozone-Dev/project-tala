@@ -21,9 +21,9 @@ use Illuminate\Support\Facades\Auth;
 class AllMembersRelationManager extends RelationManager
 {
 
-    protected static ?string $title = 'All Members';
+    protected static ?string $title = 'Members';
 
-    protected static ?string $label = 'All Members';
+    protected static ?string $label = 'Members';
     protected static string $relationship = 'committee_has_trustees';
     protected static ?string $relatedResource = CommitteeResource::class;
 

@@ -18,15 +18,10 @@ class MeetingInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('evaluationPeriod.formattedCoverage')
-                    ->label('Evaluation period')
-                    ->columnSpanFull(),
+//                TextEntry::make('evaluationPeriod.formattedCoverage')
+//                    ->label('Evaluation period')
+//                    ->columnSpanFull(),
                 TextEntry::make('title'),
-                TextEntry::make('meetingType.name')
-                    ->label('Meeting type'),
-                TextEntry::make('committee.name')
-                    ->label('Category')
-                    ->placeholder('BOT Meetings'),
                 TextEntry::make('meeting_link')
                     ->url(fn($state) => $state)
                     ->color(Color::Blue)
@@ -37,16 +32,7 @@ class MeetingInfolist
                 TextEntry::make('scheduled_at')
                     ->dateTime()
                     ->formatStateUsing(fn($state) => $state->format('M d, Y h:i A')),
-                TextEntry::make('createdBy.name')
-                    ->label('Created by'),
-                TextEntry::make('created_at')
-                    ->dateTime()
-                    ->placeholder('-')
-                    ->formatStateUsing(fn($state) => $state->format('M d, Y h:i A')),
-                TextEntry::make('updated_at')
-                    ->dateTime()
-                    ->placeholder('-')
-                    ->formatStateUsing(fn($state) => $state->format('M d, Y h:i A')),
+
 
                 Section::make()
                     ->columnSpanFull()

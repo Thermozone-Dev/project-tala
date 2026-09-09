@@ -12,7 +12,7 @@ class ViewAgendaModal
     public static function make(?int $meetingDocumentId = null)
     {
         return Actions\Action::make('viewDocument')
-            ->label('View')
+            ->label('View Agenda')
             ->icon('heroicon-o-eye')
             ->visible(fn (MeetingDocument $record) => (!$record->is_published && !get_executive_role() ? false : true))
             ->modalContent(function (MeetingDocument $record) use ($meetingDocumentId) {
