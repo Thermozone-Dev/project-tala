@@ -187,7 +187,7 @@ class DocumentService
             'margin,margin-left,margin-right,margin-top,margin-bottom,' .
             'padding,padding-left,padding-right,padding-top,padding-bottom,' .
             'line-height,border,border-collapse,width,height,' .
-            'background-color,vertical-align'
+            'background-color,vertical-align,list-style-type'
         );
 
         // Required: without this, HTML Purifier silently strips target="_blank"
