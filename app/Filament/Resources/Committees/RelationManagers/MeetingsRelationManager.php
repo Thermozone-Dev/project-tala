@@ -18,7 +18,7 @@ class MeetingsRelationManager extends RelationManager
     protected static ?string $recordTitleAttribute = 'title';
 
 
-    protected static ?string $title = 'Meeting Agenda';
+    protected static ?string $title = 'Meetings';
 
 
     public function table(Table $table): Table
@@ -47,10 +47,6 @@ class MeetingsRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('meeting.title')
                     ->label('Meeting Title')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('title')
-                    ->label('Agenda Title')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('meeting.scheduled_at')

@@ -33,12 +33,6 @@
                     <!-- Completed items will be added here -->
                 </div>
             </div>
-            <div class="mt-6 flex gap-3 justify-end">
-                <button type="button" id="save-document-btn" onclick="saveTinyMceContent(); return false;"
-                        class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer">
-                    Save Document
-                </button>
-            </div>
         </div>
     </div>
 
@@ -122,10 +116,17 @@
                 `,
                 // Allow style attribute to preserve alignment and other formatting
                 valid_children: '+p[style],+div[style],+h1[style],+h2[style],+h3[style],+h4[style],+h5[style],+h6[style]',
-                extended_valid_elements: 'p[style|class],div[style|class],h1[style|class],h2[style|class],h3[style|class],h4[style|class],h5[style|class],h6[style|class]',
+                valid_attributes: 'href,src,alt,title,class,id,data-*,style,target,rel',
+                extended_valid_elements: 'p[style|class],div[style|class],h1[style|class],h2[style|class],h3[style|class],h4[style|class],h5[style|class],h6[style|class],a[href|target|rel|title|class]',
+                allow_unsafe_link_target: true,
+                // Link target options (used by the Link toolbar/dialog)
+                target_list: [
+                    { title: 'None', value: '' },
+                    { title: 'New window', value: '_blank' }
+                ],
+                default_link_target: '_blank',
                 // Security: Block dangerous elements
                 invalid_elements: 'script,iframe,embed,object,style,input,form,button',
-                valid_attributes: 'href,src,alt,title,class,id,data-*,style',
                 // Force style preservation
                 force_br_newlines: false,
                 paste_as_text: false,
@@ -201,6 +202,19 @@
                 }
             });
 
+            window.isLeavingDocument = false;
+
+            window.addEventListener('beforeunload', function (event) {
+                if (
+                    !window.isLeavingDocument &&
+                    window.tinyMceEditor &&
+                    window.tinyMceEditor.isDirty()
+                ) {
+                    event.preventDefault();
+                    event.returnValue = '';
+                }
+            });
+
             function saveTinyMceContent() {
                 if (window.tinyMceEditor) {
                     const content = window.tinyMceEditor.getContent();
@@ -210,6 +224,8 @@
                         return;
                     }
 
+                    window.isLeavingDocument = true;
+
                     @this.call('saveDocument', content);
                 } else {
                     alert('Editor not loaded. Please wait and try again.');
@@ -217,13 +233,13 @@
             }
 
             // Auto-reload page after save to show updated content
-            const originalSave = saveTinyMceContent;
-            saveTinyMceContent = function() {
-                originalSave.call(this);
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            };
+            // const originalSave = saveTinyMceContent;
+            // saveTinyMceContent = function() {
+            //     originalSave.call(this);
+            //     setTimeout(() => {
+            //         location.reload();
+            //     }, 1500);
+            // };
 
             function showPdfAttachmentModal(selectedText, editor) {
                 // Store editor reference globally for modal button
@@ -447,7 +463,7 @@
                 } else {
                     saveBtn.disabled = false;
                     saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    saveBtn.textContent = 'Save Document';
+                    saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 inline-block mr-1" style="vertical-align: -3px;"><path stroke-linecap="round" stroke-linejoin="round" d="M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a9 9 0 0 1 9 9v.375M10.125 2.25A3.375 3.375 0 0 1 13.5 5.625v1.5c0 .621.504 1.125 1.125 1.125h1.5a3.375 3.375 0 0 1 3.375 3.375M9 15l2.25 2.25L15 12"/></svg>Save Document';
                 }
             }
 

@@ -15,6 +15,7 @@ use App\Filament\Resources\Committees\RelationManagers\LRPsRelationManager;
 use App\Filament\Resources\Committees\RelationManagers\MeetingsRelationManager;
 use App\Filament\Resources\Committees\RelationManagers\TrusteesRelationManager;
 use App\Filament\Resources\Committees\Schemas\CommitteeForm;
+use App\Filament\Resources\Committees\Schemas\CommitteeInfolist;
 use App\Filament\Resources\Committees\Tables\CommitteesTable;
 use App\Models\Committee;
 use BackedEnum;
@@ -27,11 +28,10 @@ class CommitteeResource extends Resource
 {
     protected static ?string $model = Committee::class;
 
-
-    // public static function shouldRegisterNavigation(): bool
-    // {
-    //     return auth()->user()->hasRole(['Super Admin',]);
-    // }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && !auth()->user()?->hasRole('Trustee');
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
@@ -45,14 +45,19 @@ class CommitteeResource extends Resource
         return CommitteesTable::configure($table);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return CommitteeInfolist::configure($schema);
+    }
+
     public static function getRelations(): array
     {
         return [
-            AllMembersRelationManager::class,
-            TrusteesRelationManager::class,
-            LRPsRelationManager::class,
-            CorporateOfficersRelationManager::class,
             MeetingsRelationManager::class,
+            AllMembersRelationManager::class,
+//            TrusteesRelationManager::class,
+//            LRPsRelationManager::class,
+//            CorporateOfficersRelationManager::class,
         ];
     }
 

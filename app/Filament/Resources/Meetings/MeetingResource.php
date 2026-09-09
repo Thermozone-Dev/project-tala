@@ -27,6 +27,11 @@ class MeetingResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedVideoCamera;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation() && !auth()->user()?->hasRole('Trustee');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return MeetingForm::configure($schema);
