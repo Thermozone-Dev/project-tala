@@ -53,7 +53,7 @@
                 browser_spellcheck: false,
                 // TinyMCE 7: Use only essential plugins that are available
                 plugins: 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code fullscreen table help wordcount image',
-                toolbar: 'undo redo | formatselect | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image link | highlightText attachPdf',
+                toolbar: 'undo redo | formatselect | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | indent outdent | image | highlightText attachPdf',
                 // Image upload configuration
                 image_upload_url: '{{ route("documents.upload-image") }}',
                 images_upload_handler: function(blobInfo, progress) {

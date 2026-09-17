@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('committees', function (Blueprint $table) {
-            //
+            $table->dropColumn(['charter', 'agenda_forecast']);
         });
     }
 };
